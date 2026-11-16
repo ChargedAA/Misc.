@@ -332,6 +332,7 @@ export class View {
     const cueSide = sim.cueActive ? sim.cueSide : -1;
     if (sim.cueActive) sim.markCueDrawn(performance.now());
     for (let side = 0; side < 2; side++) {
+      if (side === 1 && sim.fixedRight) continue; // pinned to the rail, no cable
       const x = side === 0 ? xL : xR;
       const y = side === 0 ? yL : yR;
       if (side === cueSide) {

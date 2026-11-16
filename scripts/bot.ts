@@ -101,6 +101,8 @@ const maxSeconds = Number(process.argv[3] ?? 300);
 const skills: Record<string, Skill> = {
   sharp: { keyCps: 7.5, reactionMs: 230, look: 2.6 },
   casual: { keyCps: 5.5, reactionMs: 330, look: 1.6 },
+  // Never answers a cue: shows how much a missed reaction costs.
+  asleep: { keyCps: 7.5, reactionMs: 5000, look: 2.6 },
 };
 
 for (const [name, skill] of Object.entries(skills)) {

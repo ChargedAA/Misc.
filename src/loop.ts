@@ -24,6 +24,8 @@ export class Runner {
   private frozenAt = 0;
   /** Ticks simulated by the last frame() call (for the perf overlay). */
   lastTicks = 0;
+  /** Interpolation factor for rendering, set by frame(). Kept as a field so no number is boxed per frame. */
+  alpha = 0;
 
   constructor(sim: Sim) {
     this.sim = sim;
@@ -61,8 +63,8 @@ export class Runner {
     this.qLen++;
   }
 
-  /** Simulate up to `now`. Returns the interpolation factor for rendering. */
-  frame(now: number): number {
+  /** Simulate up to `now`, then set `alpha` for render interpolation. */
+  frame(now: number): void {
     const sim = this.sim;
     if (!this.synced) {
       this.t0 = now - sim.tick * STEP_MS;
@@ -93,6 +95,6 @@ export class Runner {
     }
     this.lastTicks = ticks;
     const alpha = (now - this.t0) / STEP_MS - sim.tick;
-    return alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
+    this.alpha = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
   }
 }

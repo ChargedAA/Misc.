@@ -84,11 +84,14 @@ const touchKey = new Int8Array(2);
 const perf: PerfStats = { show: false, fps: 0, frameMs: 0, maxMs: 0, ticks: 0 };
 let looping = false;
 let rafId = 0;
-let lastFrame = 0;
-let perfSum = 0;
-let perfMax = 0;
-let perfN = 0;
-let perfAt = 0;
+// Frame timing lives in a typed array: doubles kept in module-level `let`s are
+// re-boxed on every write, which would be the only garbage the loop makes.
+const clock = new Float64Array(5);
+const LAST = 0;
+const SUM = 1;
+const MAX = 2;
+const COUNT = 3;
+const SAMPLED_AT = 4;
 
 // --- Mode and bindings ------------------------------------------------------------
 
@@ -130,7 +133,7 @@ function bestRun(mode: number): RunRecord | null {
 function startLoop(): void {
   if (looping) return;
   looping = true;
-  lastFrame = 0;
+  clock[LAST] = 0;
   rafId = requestAnimationFrame(frame);
 }
 
@@ -143,32 +146,32 @@ function frame(now: number): void {
   if (!looping) return;
   rafId = requestAnimationFrame(frame);
 
-  if (lastFrame > 0) {
-    const d = now - lastFrame;
-    perfSum += d;
-    perfN++;
-    if (d > perfMax) perfMax = d;
-    if (now - perfAt >= 250) {
-      perf.frameMs = perfSum / perfN;
+  if (clock[LAST]! > 0) {
+    const d = now - clock[LAST]!;
+    clock[SUM]! += d;
+    clock[COUNT]!++;
+    if (d > clock[MAX]!) clock[MAX] = d;
+    if (now - clock[SAMPLED_AT]! >= 250) {
+      perf.frameMs = clock[SUM]! / clock[COUNT]!;
       perf.fps = 1000 / perf.frameMs;
-      perf.maxMs = perfMax;
-      perfSum = 0;
-      perfN = 0;
-      perfMax = 0;
-      perfAt = now;
+      perf.maxMs = clock[MAX]!;
+      clock[SUM] = 0;
+      clock[COUNT] = 0;
+      clock[MAX] = 0;
+      clock[SAMPLED_AT] = now;
     }
   }
-  lastFrame = now;
+  clock[LAST] = now;
 
   if (screen === 'play') {
-    const alpha = runner.frame(now);
+    runner.frame(now);
     perf.ticks = runner.lastTicks;
     const fx = sim.fx;
     if (fx !== 0) {
       sim.fx = 0;
       playFx(fx);
     }
-    view.drawGame(sim, alpha, now, hints);
+    view.drawGame(sim, runner.alpha, now, hints);
     view.drawPerf(perf);
     if (sim.phase === PHASE_OVER) finishRun();
   } else if (screen === 'rt') {

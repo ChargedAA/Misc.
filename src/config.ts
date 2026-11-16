@@ -41,7 +41,7 @@ export const BALL_BOUNCE = 0.25;
 // --- Events ---------------------------------------------------------------
 /** Keydowns faster than this after a cue cannot be reactions. */
 export const ANTICIPATION_MS = 100;
-export const LURCH = 2.1;
+export const LURCH = 2.5;
 export const FALSE_START_JOLT = 0.55;
 export const CUE_SLIP = 1.6;
 export const BURST_LEAD = 1.0;
