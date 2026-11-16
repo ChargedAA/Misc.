@@ -68,6 +68,7 @@ const BEAM_LEN = BEAM_HALF * 2;
 const BALL_DRAG_K = Math.exp(-BALL_DRAG * DT);
 const SHAKE_K = Math.exp(-9 * DT);
 const FALL_TIME = 0.85;
+const CUE_FORGIVE_TICKS = Math.round(0.45 / DT);
 const BURST_OUT_TIME = 0.5;
 const LANE_LIM = BALL_LIMIT - 0.9;
 const HOLE_X_LIM = BEAM_HALF - 0.25;
@@ -134,6 +135,8 @@ export class Sim {
   lastRtSide = 0;
   /** Ticks since the last successful reaction (for the brief ms readout). */
   lastRtAge = 1e9;
+  /** Tick the last cue ended on; reflex presses just after it are forgiven. */
+  private cueEndTick = -1e9;
   readonly rt = new Float32Array(RT_CAP);
   rtCount = 0;
 
@@ -246,6 +249,7 @@ export class Sim {
     this.falseStarts = 0;
     this.lastRt = 0;
     this.lastRtAge = 1e9;
+    this.cueEndTick = -1e9;
     this.rtCount = 0;
 
     this.burstState = BURST_NONE;
@@ -353,6 +357,8 @@ export class Sim {
       }
       if (rt > this.cueWindow) return; // too late; the miss is handled in step()
     }
+    // A second press right after a cue resolved is a stutter, not a false start.
+    if (this.tick - this.cueEndTick < CUE_FORGIVE_TICKS) return;
     this.falseStarts++;
     this.v[0]! -= FALSE_START_JOLT;
     if (!this.fixedRight) this.v[1]! -= FALSE_START_JOLT;
@@ -515,6 +521,7 @@ export class Sim {
         if (this.headless) this.cueDrawnAt = tickMs;
       } else if (tickMs > this.cueDrawnAt + this.cueWindow) {
         this.cueActive = false;
+        this.cueEndTick = this.tick;
         this.cueMisses++;
         this.lurch(this.cueSide);
         this.fx |= FX_CUE_MISS;
@@ -542,6 +549,7 @@ export class Sim {
 
   private catchCue(rt: number): void {
     this.cueActive = false;
+    this.cueEndTick = this.tick;
     this.cueHits++;
     if (this.rtCount < RT_CAP) this.rt[this.rtCount++] = rt;
     this.lastRt = rt;
@@ -704,7 +712,7 @@ export class Sim {
 
     for (let i = 0; i < n; i++) {
       for (let attempt = 0; attempt < 10; attempt++) {
-        const r = 0.42 + 0.1 * rng.next() + 0.08 * d;
+        const r = 0.37 + 0.1 * rng.next() + 0.08 * d;
         const yj = y + (rng.next() - 0.5) * jitter;
         const lane = this.laneAt(yj);
         let x: number;

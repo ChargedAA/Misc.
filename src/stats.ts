@@ -115,6 +115,8 @@ export interface CpsStats {
   handEvenness: number;
   /** Same key twice in a row within its alternation group. */
   repeats: number;
+  /** Taps that had a chance to alternate (groups with more than one key). */
+  alternations: number;
   repeatRate: number;
 }
 
@@ -136,17 +138,22 @@ export function cpsStats(
   let repeats = 0;
   let grouped = 0;
   const last = [-1, -1];
+  // A group only has alternation to get wrong if it holds more than one key.
+  const leftKeys = slots.filter((s) => s < 3).length;
+  const groupSize = crossHand ? [slots.length, slots.length] : [leftKeys, slots.length - leftKeys];
   for (let i = 0; i < n; i++) {
     const k = keys[i]!;
     const hand = k >= 3 ? 1 : 0;
     perKeyT[k]!.push(times[i]!);
     handT[hand].push(times[i]!);
     const g = crossHand ? 0 : hand;
-    if (last[g] >= 0) {
-      grouped++;
-      if (last[g] === k) repeats++;
+    if (groupSize[g]! > 1) {
+      if (last[g]! >= 0) {
+        grouped++;
+        if (last[g] === k) repeats++;
+      }
+      last[g] = k;
     }
-    last[g] = k;
   }
 
   const keyStats: KeyStat[] = slots.map((slot) => {
@@ -191,6 +198,7 @@ export function cpsStats(
     hands,
     handEvenness: a > 0 && b > 0 ? Math.min(a, b) / Math.max(a, b) : a + b > 0 ? 0 : 1,
     repeats,
+    alternations: grouped,
     repeatRate: grouped ? repeats / grouped : 0,
   };
 }

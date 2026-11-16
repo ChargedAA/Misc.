@@ -12,7 +12,7 @@ export const VIEW_H = 13.5;
 /** Cables hang at x = +-BEAM_HALF; the beam spans between them. */
 export const BEAM_HALF = 5.6;
 /** Height of an end at h = 0, measured from the bottom of the view. */
-export const BASE_Y = 2.5;
+export const BASE_Y = 1.7;
 /** Vertical travel of each end, h in [0, 1]. */
 export const TRAVEL = 3.2;
 export const BALL_R = 0.26;
@@ -109,6 +109,7 @@ export function getMode(id: number): ModeDef {
 export const COL_BG = '#0a0a0b';
 export const COL_HOLE = '#000000';
 export const COL_FAINT = '#1b1b1e';
+export const COL_TICK = '#2b2b30';
 export const COL_DIM = '#3a3a40';
 export const COL_MID = '#8b8b92';
 export const COL_LINE = '#ececee';
