@@ -1,0 +1,19 @@
+{
+  "name": "tension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "TENSION (working title) - a tap-to-lift ball-and-beam climber that doubles as a reaction and CPS tool.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
