@@ -519,7 +519,7 @@ function onKeyDown(e: KeyboardEvent): void {
     if (code === 'Escape') {
       e.preventDefault();
       if (!e.repeat) pause();
-    } else if (code === 'Space' || code.startsWith('Arrow')) {
+    } else if (code === 'Space' || code === 'Tab' || code.startsWith('Arrow')) {
       e.preventDefault();
     }
     return;
@@ -572,6 +572,8 @@ function onKeyDown(e: KeyboardEvent): void {
   // Menus.
   if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
   if (performance.now() < inputLockUntil) return;
+  // A button reached with Tab keeps its own Enter / Space activation.
+  if ((code === 'Enter' || code === 'Space') && document.activeElement instanceof HTMLButtonElement) return;
   sfx.unlock();
   const digit = code.startsWith('Digit') ? Number(code.slice(5)) : code.startsWith('Numpad') ? Number(code.slice(6)) : NaN;
   switch (screen) {

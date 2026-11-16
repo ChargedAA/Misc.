@@ -247,7 +247,8 @@ export class View {
       const idx = m / 10;
       let label = TICK_LABELS[idx];
       if (label === undefined) label = TICK_LABELS[idx] = String(m);
-      this.text(label, left + 17 * dpr, bottom - (m + HEIGHT_ZERO - cam) * s + 3.5 * dpr, this.fontTiny, 'left');
+      // Just inside the left cable, so the label never sits on the line.
+      this.text(label, ox - BEAM_HALF * s + 9 * dpr, bottom - (m + HEIGHT_ZERO - cam) * s + 3.5 * dpr, this.fontTiny, 'left');
     }
 
     // Target zones.
