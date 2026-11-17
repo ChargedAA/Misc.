@@ -1,38 +1,63 @@
 # Handwriting imitator
 
-Goal: type text, get it back written out in a particular person's handwriting.
+Goal: type text, and have a Bambu Lab A1 mini write it out with a pen in a
+particular person's handwriting.
 
-This folder holds the research into how that can be done and two working
-prototypes, one for each of the two main ways of doing it. Both run without a
-GPU (tested on 4 CPU cores) using published pretrained weights; nothing here
-needed training.
+```
+photo of a page          typed text
+of your handwriting          |
+        |                    v
+prepare_samples.py  -->  imitate.py  -->  page image  -->  pen paths  -->  G-code  -->  A1 mini + pen holder
+   (line samples)        (copies the hand)               (traced from the image)
+```
 
 ## Where this stands
 
-- **It already works from a single scanned line.** `imitate.py` takes one
-  line of someone's handwriting and writes new text in that hand, about 12
-  seconds per line on 4 CPU cores. Tested on 7 writers from a public research
-  dataset: when a handwriting OCR model reads the output back, it gets 2.1% of
-  characters wrong, against 0.9% on the same writers' real handwriting.
-- **The second prototype writes with pen strokes instead of pixels.**
-  `write_strokes.py` produces vector paths (SVG) that a pen plotter could draw.
-  It writes in a consistent hand, but it cannot yet copy a *given* person's
-  hand, because that needs a recording of their pen movements.
-- **Recommended direction:** build on the image route (section 2 below). It
-  needs the least from the person being imitated and is where the current
-  research and ready-to-use models are. The stroke route is worth returning to
-  only if the output has to be physically drawn by a machine.
-- **Not yet tested on your own handwriting.** Everything below was measured on
-  a public research dataset. Trying it on a phone photo of your writing is the
-  first next step.
+- **The software chain runs end to end.** One reference line of handwriting
+  plus typed text gives a page in that hand and a matching G-code file. The
+  test page came out as 322 pen strokes, 138 mm wide at 8 mm line spacing, an
+  estimated 4.5 minutes of plotting.
+- **The imitation has been measured.** On 7 writers from a public research
+  dataset, a handwriting OCR model misread 2.1% of characters in the generated
+  lines, against 0.9% on the same writers' real handwriting.
+- **Nothing has touched real hardware or your handwriting yet.** The G-code has
+  not been run on a printer, the pen holder has not been printed, and the
+  sample tool has only seen a simulated photo. Each of those is a first-run
+  risk, described in its section.
+- **Nothing is trained on your handwriting.** See the next section.
 
 | File | What it does |
 | --- | --- |
-| `imitate.py` | Style photo + text → page image in that handwriting |
-| `write_strokes.py` | Text → handwriting as SVG/PNG pen strokes |
-| `evaluate.py` | Reproduces the measurements in this README |
+| `prepare_samples.py` | Photo of a handwritten page + its text → folder of line samples |
+| `imitate.py` | Line sample(s) + text → page image in that handwriting, and G-code |
+| `write_strokes.py` | Text → pen strokes from a stroke model (SVG, PNG, G-code); cannot copy a given hand yet |
+| `evaluate.py` | Reproduces the imitation measurements below |
 | `download_models.py` | Fetches the pretrained weights (about 3 GB) |
-| `hwsynth/` | Model code: `eruku.py` (image), `graves.py` (strokes), `preprocess.py`, `render.py` |
+| `hwsynth/` | `eruku.py` (image model), `graves.py` (stroke model), `preprocess.py`, `vectorize.py`, `gcode.py`, `render.py` |
+| `mount/` | Printable pen and pencil holder for the A1 mini, with its own README |
+| `tests/` | Tests for the G-code writer, the tracer and the page splitter |
+
+## How it works, and what "training" means here
+
+Nothing in this folder learns from the text you type or from your handwriting.
+The models were trained by their authors on public handwriting collections and
+are used as they are.
+
+When you run `imitate.py`, the model is handed two things: a picture of a line
+of handwriting, and the text to write. It looks at the picture and writes the
+text in that style, the way a person could copy someone's hand from a sample.
+Nothing is saved afterwards. Give it a different picture and it writes in a
+different hand. The typed text is only what to write.
+
+So there are two ways to make it write like you:
+
+1. **Show it samples (works now).** Photograph a page of your writing and run
+   `prepare_samples.py`. No training, no GPU.
+2. **Train it on your samples (not built).** Fine-tuning the image model on a
+   few pages of one person's writing is the standard way to get closer than a
+   sample alone can. It needs a GPU. The folder `prepare_samples.py` writes is
+   already in the layout a fine-tuning run takes, so the samples you collect
+   for option 1 are not wasted.
 
 ## The ways to do it
 
@@ -48,6 +73,11 @@ works on images.
 | 2. Image model with a style reference | A photo of a line or a few words | Image | Yes for the newer models |
 | 3. Stroke model | A pen recording, or strokes recovered from a photo | Vector paths | Weakly |
 | 4. Fine-tuning an image model | A few pages plus a GPU | Image | It is the training |
+
+This project builds on approach 2, then traces its output into pen paths for
+the plotter. It needs the least from the writer (a photo) and is where the
+current research and ready-to-use models are. Approach 3 produces pen paths
+directly, which suits a plotter, but cannot yet copy a given person.
 
 ### 1. Handwriting font (no machine learning)
 
@@ -115,10 +145,11 @@ does exactly that conversion and has public weights.
 ### 4. Fine-tuning
 
 Training one of the image models further on a few pages of one person's
-writing is the standard next step when a reference alone does not get close
+writing is the standard next step when a sample alone does not get close
 enough. It needs a GPU and transcribed samples, and is untested here. Emuru's
 [training code](https://github.com/aimagelab/Emuru-autoregressive-text-img) is
-public.
+public, and `prepare_samples.py` produces the image-plus-text pairs it would
+need.
 
 ## Prototype 1: `imitate.py` (image route)
 
@@ -214,7 +245,7 @@ git clone https://github.com/X-rayLaser/pytorch-handwriting-synthesis-toolkit
 python write_strokes.py --checkpoint pytorch-handwriting-synthesis-toolkit/checkpoints/Epoch_52 --out page "First line." "Second line."
 ```
 
-Writes `page.svg`, `page.png` and the raw strokes. `--style-seed` picks the
+Writes `page.svg`, `page.png` and the raw strokes, and G-code with `--gcode`. `--style-seed` picks the
 hand; every line on a page is primed with the same sample so the page stays
 consistent. Only the repository's weight files are used; the model code is in
 `hwsynth/graves.py`.
@@ -236,20 +267,106 @@ consistent. Only the repository's weight files are used; the model code is in
   strokes is supported by the code (`Handwriter.write(prime=...)`) but
   untested, since no real stroke recording was available.
 
+## Using your own handwriting
+
+```bash
+python prepare_samples.py --page page.jpg --text page.txt --out my_handwriting
+```
+
+```bash
+python imitate.py --style-dir my_handwriting --out letter.png "Text to write out by hand."
+```
+
+`page.txt` says what the page says, one line of the file per handwritten line.
+The tool evens out the lighting, straightens a tilted photo, finds the lines,
+and crops them all to one common frame. It also saves a copy of the page with
+the lines it found boxed and numbered, and refuses to continue if that count
+does not match the text file. With `--style-dir`, each generated line copies a
+different sample in turn.
+
+![A page photo, the lines found in it, and new text written from them](samples/own_samples.png)
+
+How to write the sample page: dark pen, plain unlined paper, 5 to 10 full
+lines with clear gaps between them, and include tall letters and tails (a
+sentence like "the quick brown fox jumps over the lazy dog" covers them).
+Photograph it square-on in even light and crop to the paper.
+
+**Tested only on a simulated photo**: a generated page with tilt, uneven
+light, paper tone, blur and JPEG compression added. All 7 lines were found. A
+real phone photo will be harder (perspective, shadows, lines that touch), and
+this is the first thing to try for real.
+
+## Plotting on the A1 mini
+
+Add `--gcode` to either tool:
+
+```bash
+python imitate.py --style-dir my_handwriting --out letter.png --gcode letter.gcode --z-draw 12.0 --pen-offset 0 -45 "Text to write."
+```
+
+The `--z-draw` and `--pen-offset` values above are placeholders; both have to
+be measured on your printer (see below).
+
+The image model's output is pixels, so `hwsynth/vectorize.py` first traces the
+centre of every stroke into a pen path. Next to the G-code the tool saves
+`letter_preview.png`, drawn by reading the G-code back the way a printer would,
+so it shows what the file would draw:
+
+![What the generated G-code draws](samples/plot_preview.png)
+
+The printer has no pen-up command, so the pen is raised and lowered with the Z
+axis. The file is cold: heaters and fan off, no extrusion. The bed is checked:
+a drawing that leaves the usable area, or whose pen offset would push the
+nozzle off the bed, is refused.
+
+**This G-code has not been run on a printer.** The start and end sequences
+follow two open-source projects that plot on the A1 mini from plain `.gcode`
+files ([Hansolox80/a1-mini-pen-plotter](https://github.com/Hansolox80/a1-mini-pen-plotter),
+[LeanBread/Processing-BBLGCodePlot](https://github.com/LeanBread/Processing-BBLGCodePlot)).
+The first describes copying the file to the microSD card and starting it from
+the touchscreen; the second describes dragging it into Bambu Studio and
+sending it.
+
+Before the first real run:
+
+- **Homing lowers the nozzle onto the bed.** A pen that hangs below the nozzle
+  would hit first. The file therefore homes, lifts, brings the toolhead
+  forward and pauses; put the pen on then and press resume.
+- **Two numbers must be measured on your machine.** `--z-draw` is the nozzle
+  height at which the pen touches the paper. `--pen-offset X Y` is where the
+  pen tip sits relative to the nozzle. With the holder in `mount/` the pen is
+  in front of the nozzle, so Y is negative: 26 to 32 mm in front of the cover
+  face depending on the pen's thickness, plus the distance from the cover face
+  back to the nozzle, which has not been measured.
+- **Do an air run first.** `--air 5` traces everything 5 mm above the paper.
+- Unload the filament, and tape the paper flat with nothing standing proud
+  where the toolhead travels.
+
+Other options: `--line-pitch` (distance between lines of writing, default
+8 mm), `--draw-speed`, `--z-lift`.
+
+## Pen and pencil holder
+
+`mount/` has a printable holder that sits on the printer's own clip-on front
+cover, with print files, pictures and fitting steps in
+[`mount/README.md`](mount/README.md). The pen rests on the paper under its own
+weight instead of being pressed down, which makes the drawing height forgiving
+and lets a pencil keep touching as its lead wears. It is designed from
+measurements of the owner's printer and has not been printed yet.
+
 ## Next steps, in order
 
-1. **Try it on real target handwriting.** Photograph 3 to 5 lines on unlined
-   paper, type what each says, run `imitate.py`. This decides whether the
-   reference-only route is good enough or fine-tuning is needed.
-2. **Check every line automatically.** `evaluate.py` already reads output back
+1. **Print the holder's saddle and check it on the cover.** Then the rest.
+2. **Photograph a real page of handwriting** and run `prepare_samples.py`. This
+   decides whether samples alone are good enough or fine-tuning is needed.
+3. **Air-run a short G-code file**, then measure `--z-draw` and `--pen-offset`.
+4. **Check every line automatically.** `evaluate.py` already reads output back
    with OCR. Doing that inside `imitate.py`, and redrawing any line that does
    not match its text, would remove most misspellings.
-3. **Use several reference lines.** Rotating between a few references per
-   page should add natural variation and cover more letter shapes.
-4. **Make it look like paper.** Ruled-paper background, ink colour, slight
-   line drift, and upscaling or vectorising for print.
-5. **If strokes are needed:** recover strokes from the photo with InkSight and
-   prime the stroke model with them.
+5. **Pencil support in the G-code**: a pause every so many millimetres of
+   drawing to advance the lead, for pencils that do not feed themselves.
+6. **Fine-tune on your samples** if the reference-only result is not close
+   enough.
 
 Use this on your own handwriting, or with the writer's agreement. Signatures
 and anything meant to pass as written by someone else are out of scope.
@@ -260,9 +377,14 @@ and anything meant to pass as written by someone else are out of scope.
 pip install -r requirements.txt
 ```
 
+```bash
+python download_models.py
+```
+
 Tested on Python 3.13 with torch 2.15 and transformers 5.23. The image model
 needs about 5 GB of RAM and 3 GB of disk; the evaluation downloads another
-1.3 GB for the OCR model.
+1.3 GB for the OCR model. To run the tests, `pip install pytest` and run
+`pytest tests`. Regenerating the holder needs `pip install cadquery`.
 
 ## Sources
 
@@ -276,5 +398,6 @@ needs about 5 GB of RAM and 3 GB of disk; the evaluation downloads another
 - Luhman & Luhman, *Diffusion models for Handwriting Generation*, 2020. <https://arxiv.org/abs/2011.06704>
 - Pan et al., *DiffInk*, ICLR 2026. <https://arxiv.org/abs/2509.23624>
 - Google Research, *InkSight: Offline-to-Online Handwriting Conversion by Learning to Read and Write*, 2024. <https://arxiv.org/abs/2402.05804>
+- A1 mini pen plotting, used for the G-code start and end sequences: <https://github.com/Hansolox80/a1-mini-pen-plotter>, <https://github.com/LeanBread/Processing-BBLGCodePlot>
 - Curated list of methods, datasets and metrics: <https://github.com/koninik/awesome-handwritten-text-generation>
 - Evaluation lines: IAM Handwriting Database (Marti & Bunke, 2002), via `Teklia/IAM-line` on Hugging Face. Free for non-commercial research.
