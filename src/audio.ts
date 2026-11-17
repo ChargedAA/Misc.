@@ -11,9 +11,11 @@ export const SND_LURCH = 4;
 export const SND_FALSE = 5;
 export const SND_FALL = 6;
 export const SND_BURST_OK = 7;
-export const SND_ZONE = 8;
-export const SND_UI = 9;
-const SOUND_COUNT = 10;
+export const SND_UI = 8;
+export const SND_SURGE = 9;
+/** Five pickup ticks, rising with the chain: SND_RING + 0..4. */
+export const SND_RING = 10;
+const SOUND_COUNT = 15;
 
 type Synth = (t: number, i: number) => number;
 
@@ -101,8 +103,17 @@ export class Sfx {
     this.make(ctx, SND_TAP_L, 0.022, -1, tick(1750, 0.16));
     this.make(ctx, SND_TAP_R, 0.022, 1, tick(2150, 0.16));
     this.make(ctx, SND_TAP_WEAK, 0.02, 0, tick(820, 0.1));
-    this.make(ctx, SND_ZONE, 0.016, 0, tick(3100, 0.06));
     this.make(ctx, SND_UI, 0.018, 0, tick(1300, 0.08));
+    for (let i = 0; i < 5; i++) this.make(ctx, SND_RING + i, 0.03, 0, tick(2300 * Math.pow(1.122, i), 0.085));
+
+    // Surge: a short upward whip.
+    let ph = 0;
+    this.make(ctx, SND_SURGE, 0.14, 0, (t) => {
+      const f = 260 + 900 * (t / 0.14);
+      ph += (TAU * f) / ctx.sampleRate;
+      const env = Math.min(1, t / 0.012) * Math.exp(-t / 0.05);
+      return (Math.sin(ph) * 0.7 + this.noise() * 0.3) * env * 0.2;
+    });
 
     // Reflex caught: a crisp two-part click.
     this.make(ctx, SND_CATCH, 0.05, 0, (t) => {

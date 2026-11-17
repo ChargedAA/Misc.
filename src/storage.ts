@@ -29,8 +29,12 @@ export function defaultBindings(modeId: number): Bindings {
 /** Keys the game keeps for itself; they cannot be bound. */
 export const RESERVED = new Set(['Escape', 'Enter', 'Backquote', 'Tab']);
 
+export type GameId = 'climb' | 'reflex' | 'burst';
+export const GAME_IDS: readonly GameId[] = ['climb', 'reflex', 'burst'];
+
 export interface Settings {
-  mode: number;
+  /** Number of keys last chosen for each game. */
+  keys: Record<GameId, number>;
   muted: boolean;
   bindings: Record<number, Bindings>;
 }
@@ -54,17 +58,22 @@ export interface CpsSummary {
 }
 
 export interface RunRecord {
+  /** 'run' is Climb, 'rt' is Reflex, 'cps' is Burst. */
   kind: 'run' | 'rt' | 'cps';
   at: number;
+  /** Number of keys used. */
   mode: number;
   time: number;
   score?: number;
   height?: number;
   rt?: RtSummary;
   cps?: CpsSummary;
-  /** Reaction trainer: window (ms) reached at the end. */
+  /** Reflex: response window (ms) at the end. */
   window?: number;
-  /** CPS trainer: highest target cleared. */
+  /** Reflex: rounds finished and share of correct answers. */
+  rounds?: number;
+  accuracy?: number;
+  /** Burst: highest target cleared. */
   target?: number;
 }
 
@@ -98,16 +107,32 @@ function validBindings(b: unknown, mode: ModeDef): b is Bindings {
   return mode.reflex ? typeof x.reflex === 'string' && x.reflex.length > 0 : true;
 }
 
+interface SavedSettings {
+  keys?: Partial<Record<GameId, number>>;
+  /** Before the title screen there was one key count for everything. */
+  mode?: number;
+  muted?: boolean;
+  bindings?: Record<number, Bindings>;
+}
+
 export function loadSettings(): Settings {
-  const saved = read<Partial<Settings>>(SETTINGS_KEY);
+  const saved = read<SavedSettings>(SETTINGS_KEY);
   const bindings: Record<number, Bindings> = {};
   for (const m of MODES) {
     const b = saved?.bindings?.[m.id];
     bindings[m.id] = validBindings(b, m) ? { left: [...b.left], right: [...b.right], reflex: m.reflex ? b.reflex : null } : defaultBindings(m.id);
   }
-  const mode = Number(saved?.mode);
+  const count = (v: unknown, fallback: number): number => {
+    const n = Number(v);
+    return n >= 1 && n <= 6 ? n | 0 : fallback;
+  };
+  const old = count(saved?.mode, 2);
   return {
-    mode: mode >= 1 && mode <= 6 ? mode | 0 : 2,
+    keys: {
+      climb: count(saved?.keys?.climb, old),
+      reflex: count(saved?.keys?.reflex, old),
+      burst: count(saved?.keys?.burst, old === 1 ? 2 : old),
+    },
     muted: saved?.muted === true,
     bindings,
   };

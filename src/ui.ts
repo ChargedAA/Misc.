@@ -1,11 +1,11 @@
-// DOM screens: menu, pause, results, stats, key rebinding. The game itself is
-// drawn on the canvas; these only appear between runs, so plain HTML strings
-// and one delegated click handler are enough.
+// DOM screens: title, the key-count pop-out, pause, results, stats, key
+// rebinding. The games themselves are drawn on the canvas; these only appear
+// between runs, so plain HTML strings and one delegated click handler are enough.
 
 import { MODES, getMode } from './config.ts';
 import { histogramSvg, trendSvg } from './charts.ts';
 import type { CpsStats, Histogram, RtStats } from './stats.ts';
-import { keyLabel, type Bindings, type RunRecord, type Settings } from './storage.ts';
+import { keyLabel, type Bindings, type GameId, type RunRecord, type Settings } from './storage.ts';
 
 export class Ui {
   private readonly root: HTMLElement;
@@ -36,6 +36,7 @@ export class Ui {
 // --- Formatting -----------------------------------------------------------------
 
 const THIN = ' ';
+const DOT = ' · ';
 
 export function fmtInt(v: number): string {
   return Math.round(v)
@@ -68,12 +69,12 @@ function kbd(code: string): string {
 function foot(items: [label: string, act: string, key: string][]): string {
   return (
     '<div class="foot">' +
-    items.map(([label, act, key]) => `<button data-act="${act}">${label}<span class="k">${key}</span></button>`).join('') +
+    items.map(([label, act, key]) => `<button data-act="${act}">${label}${key ? `<span class="k">${key}</span>` : ''}</button>`).join('') +
     '</div>'
   );
 }
 
-function modeSeg(current: number, act: string, withAll = false): string {
+function keySeg(current: number, act: string, withAll = false): string {
   let h = `<div class="seg"><span class="lbl">Keys</span>`;
   if (withAll) h += `<button data-act="${act}" data-arg="0" aria-pressed="${current === 0}">all</button>`;
   for (const m of MODES) {
@@ -82,52 +83,112 @@ function modeSeg(current: number, act: string, withAll = false): string {
   return h + '</div>';
 }
 
-/** One-line description of what the keys of a mode do. */
-export function modeHint(modeId: number, b: Bindings): string {
-  const m = getMode(modeId);
-  const left = b.left.map(kbd).join('');
-  const right = b.right.map(kbd).join('');
-  let h = m.right === 0 ? `${left} lifts the left end. The right end is fixed.` : `${left} lift left &nbsp; ${right} lift right`;
-  if (m.reflex && b.reflex) h += ` &nbsp; ${kbd(b.reflex)} reflex`;
-  if (m.left === 2) h += '<br>Alternate the two keys of a hand for full lift.';
-  else if (m.left === 3) h += '<br>Roll the three keys of a hand for full lift.';
-  else if (m.reflex) h += '<br>Hit reflex when a cable flashes.';
-  else h += '<br>When a cable flashes, tap that side.';
-  return h;
+// --- Title and pop-out ------------------------------------------------------------
+
+interface GameInfo {
+  id: GameId;
+  name: string;
+  blurb: string;
+  key: string;
 }
 
-// --- Screens --------------------------------------------------------------------
+export const GAMES: readonly GameInfo[] = [
+  { id: 'climb', name: 'Climb', blurb: 'Dash between lanes and surge over what you cannot dodge. Endless.', key: 'c' },
+  { id: 'reflex', name: 'Reflex', blurb: 'A reaction test that changes its rules every round.', key: 'r' },
+  { id: 'burst', name: 'Burst', blurb: 'Hold a rising tap rate. Tracks evenness and repeated keys.', key: 'b' },
+];
 
-export function menuHtml(s: Settings, best: RunRecord | null): string {
-  const bestLine = best
-    ? `<span class="l">best</span> ${fmtInt(best.score ?? 0)} &nbsp;·&nbsp; ${fmtInt(best.height ?? 0)} m`
-    : '';
-  return `<section class="screen">
-  <h1>TENSION</h1>
-  ${modeSeg(s.mode, 'mode')}
-  <p class="hint">${modeHint(s.mode, s.bindings[s.mode]!)}${bestLine ? '<br>' + bestLine : ''}</p>
-  <div class="rows">
-    <button class="row" data-act="play">Play<span class="k">enter</span></button>
-    <button class="row" data-act="rt">Reaction trainer<span class="k">r</span></button>
-    <button class="row" data-act="cps">CPS trainer<span class="k">c</span></button>
-    <button class="row" data-act="stats">Stats<span class="k">s</span></button>
-    <button class="row" data-act="keys">Rebind keys<span class="k">k</span></button>
-    <button class="row" data-act="mute">Sound ${s.muted ? 'off' : 'on'}<span class="k">0</span></button>
+/** What the keys of a key count do in a given game. */
+export function controlsHint(game: GameId, keys: number, b: Bindings): string {
+  const m = getMode(keys);
+  const left = b.left.map(kbd).join('');
+  const right = b.right.map(kbd).join('');
+  const reflex = m.reflex && b.reflex ? kbd(b.reflex) : '';
+  const lines: string[] = [];
+  if (game === 'climb') {
+    if (m.right === 0) {
+      lines.push(`${left} surges: the beam jerks upward and carries the ball over a hole or bar. Time it.`);
+      lines.push('When a cable turns orange, press once to catch it.');
+    } else {
+      if (m.left === 1) lines.push(`${left} dash left &nbsp; ${right} dash right`);
+      else lines.push(`${left} dash left, ${right} dash right. Outer keys dash further.`);
+      lines.push('Both sides together: surge. The beam jerks upward over a hole or bar, then recharges.');
+      lines.push(reflex ? `${reflex} when a cable turns orange.` : 'When a cable turns orange, tap that side.');
+    }
+    lines.push(m.left > 1 ? 'Heavy pull: both hands fast, alternating the keys of each hand.' : 'Heavy pull: tap fast until the meter fills.');
+  } else if (game === 'reflex') {
+    lines.push('Each round shows its rules, then shapes appear one at a time.');
+    lines.push(`Press what the rules say with ${left}${right}${reflex}, or press nothing. Three mistakes end it.`);
+    if (m.left === 1 && m.right === 1) lines.push('Some answers need both keys together.');
+  } else {
+    lines.push(`Tap ${left}${right} to hold the target rate for 5 seconds. It rises each time you do.`);
+    if (m.left > 1) lines.push('Alternate the keys of each hand. Repeats are counted.');
+    else if (m.right > 0) lines.push('Alternate the two keys. Repeats are counted.');
+    lines.push('Two drops at the same target end the session.');
+  }
+  return lines.join('<br>');
+}
+
+function bestLine(game: GameId, best: RunRecord | null): string {
+  if (!best) return '';
+  if (game === 'climb') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}${fmtInt(best.height ?? 0)} m`;
+  if (game === 'reflex') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}round ${best.rounds ?? 0}`;
+  return `<span class="l">best</span>${(best.target ?? 0).toFixed(1)} taps/s held`;
+}
+
+/**
+ * The title screen. With `picked` set, the key-count pop-out is open over it;
+ * `slide` plays its entrance (only the first time, not on each re-render).
+ */
+export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean): string {
+  let h = `<section class="screen title"${picked ? ' aria-hidden="true"' : ''}>
+  <h1 class="logo">TENSION</h1>
+  <div class="modes">
+    ${GAMES.map(
+      (g) =>
+        `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.key}</span></button>`,
+    ).join('')}
   </div>
+  ${foot([
+    ['Stats', 'stats', 's'],
+    ['Keys', 'keys', 'k'],
+    [`Sound ${s.muted ? 'off' : 'on'}`, 'mute', '0'],
+  ])}
 </section>`;
+  if (picked) {
+    const g = GAMES.find((x) => x.id === picked)!;
+    const keys = s.keys[picked];
+    h += `<div class="scrim" data-act="closepop"></div>
+<aside class="pop${slide ? ' slide' : ''}" role="dialog" aria-label="${g.name}">
+  <button class="back" data-act="closepop">Back<span class="k">esc</span></button>
+  <h1>${g.name.toUpperCase()}</h1>
+  <p class="d">${g.blurb}</p>
+  <h2>How many keys</h2>
+  <div class="counts">${MODES.map(
+    (m) => `<button data-act="keycount" data-arg="${m.id}" aria-pressed="${m.id === keys}">${m.id}</button>`,
+  ).join('')}</div>
+  <p class="hint">${controlsHint(picked, keys, s.bindings[keys]!)}</p>
+  <p class="best">${bestLine(picked, best)}</p>
+  <button class="go" data-act="start">Start<span class="k">enter</span></button>
+  <p class="muted">On a touch screen the keys are pads in the bottom corners.</p>
+</aside>`;
+  }
+  return h;
 }
 
 export function pauseHtml(muted: boolean): string {
   return `<section class="screen">
   <h1>PAUSED</h1>
   <div class="rows">
-    <button class="row" data-act="resume">Resume<span class="k">enter or a lift key</span></button>
+    <button class="row" data-act="resume">Resume<span class="k">enter or a key</span></button>
     <button class="row" data-act="restart">Restart<span class="k">r</span></button>
     <button class="row" data-act="mute">Sound ${muted ? 'off' : 'on'}<span class="k">0</span></button>
     <button class="row" data-act="menu">Menu<span class="k">esc</span></button>
   </div>
 </section>`;
 }
+
+// --- Results --------------------------------------------------------------------
 
 function rtBlock(rt: RtStats, hist: Histogram, note: string): string {
   if (rt.n === 0) return `<h2>Reaction <span>${note}</span></h2><p class="muted">No reaction times logged.</p>`;
@@ -137,7 +198,7 @@ function rtBlock(rt: RtStats, hist: Histogram, note: string): string {
     <span><span class="l">median</span>${rt.median.toFixed(0)}</span>
     <span><span class="l">best</span>${rt.best.toFixed(0)}</span>
     <span><span class="l">sd</span>${rt.sd.toFixed(0)}</span>
-    <span class="muted">ms · n ${rt.n}</span>
+    <span class="muted">ms${DOT}n ${rt.n}</span>
   </div>
   ${histogramSvg(hist, rt.median)}`;
 }
@@ -173,8 +234,13 @@ function cpsBlock(c: CpsStats, labels: string[], showJitter: boolean): string {
   ${even || rep ? `<div class="line"><span class="muted">evenness</span>${even}${rep}</div>` : ''}`;
 }
 
+const AGAIN: [string, string, string][] = [
+  ['Again', 'again', 'enter'],
+  ['Stats', 'stats', 's'],
+  ['Menu', 'menu', 'esc'],
+];
+
 export interface RunSummary {
-  mode: number;
   score: number;
   height: number;
   time: number;
@@ -185,6 +251,9 @@ export interface RunSummary {
   falseStarts: number;
   pullsWon: number;
   pulls: number;
+  rings: number;
+  bestChain: number;
+  surges: number;
   cps: CpsStats;
   labels: string[];
   best: boolean;
@@ -193,50 +262,72 @@ export interface RunSummary {
 export function resultsHtml(r: RunSummary): string {
   const note = [`${r.caught} of ${r.cues} caught`];
   if (r.falseStarts) note.push(`${r.falseStarts} false start${r.falseStarts === 1 ? '' : 's'}`);
-  const pulls = r.pulls ? ` · ${r.pullsWon} of ${r.pulls} pulls held` : '';
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${r.best ? ' · best' : ''}</div></div>
+    <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${r.best ? `${DOT}best` : ''}</div></div>
     <div class="stat"><div class="v">${fmtInt(r.height)} m</div><div class="l">height</div></div>
     <div class="stat"><div class="v">${fmtTime(r.time)}</div><div class="l">time</div></div>
   </div>
-  ${rtBlock(r.rt, r.hist, note.join(' · ') + pulls)}
+  <div class="line under">
+    <span><span class="l">pickups</span>${r.rings}</span>
+    <span><span class="l">best chain</span>×${r.bestChain + 1}</span>
+    <span><span class="l">surges</span>${r.surges}</span>
+    <span><span class="l">pulls held</span>${r.pullsWon} of ${r.pulls}</span>
+  </div>
+  ${rtBlock(r.rt, r.hist, note.join(DOT))}
   ${cpsBlock(r.cps, r.labels, false)}
-  ${foot([
-    ['Again', 'play', 'enter'],
-    ['Stats', 'stats', 's'],
-    ['Menu', 'menu', 'esc'],
-  ])}
+  ${foot(AGAIN)}
 </section>`;
 }
 
-export interface RtTrainSummary {
-  rt: RtStats;
-  hist: Histogram;
-  hits: number;
-  late: number;
-  early: number;
-  misses: number;
-  window: number;
-  time: number;
-  saved: boolean;
+export interface ReflexGameRow {
+  name: string;
+  tried: number;
+  correct: number;
+  avg: number;
 }
 
-export function rtResultsHtml(r: RtTrainSummary): string {
-  const note = `${r.hits} in window · ${r.late + r.misses} late · ${r.early} early`;
+export interface ReflexSummary {
+  rt: RtStats;
+  hist: Histogram;
+  score: number;
+  rounds: number;
+  trials: number;
+  correct: number;
+  wrong: number;
+  late: number;
+  early: number;
+  window: number;
+  games: ReflexGameRow[];
+  saved: boolean;
+  best: boolean;
+}
+
+export function reflexResultsHtml(r: ReflexSummary): string {
+  const acc = r.trials ? r.correct / r.trials : 0;
+  const note = `${r.correct} right${DOT}${r.wrong} wrong${DOT}${r.late} too slow${DOT}${r.early} too early`;
+  const rows = r.games
+    .filter((g) => g.tried > 0)
+    .map(
+      (g) =>
+        `<tr><td>${g.name.toLowerCase()}</td><td>${g.correct} of ${g.tried}</td><td>${pct(g.correct / g.tried)}</td><td>${g.avg > 0 ? g.avg.toFixed(0) : '–'}</td></tr>`,
+    )
+    .join('');
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${r.rt.n ? r.rt.median.toFixed(0) + ' ms' : '–'}</div><div class="l">median</div></div>
-    <div class="stat"><div class="v">${r.rt.n ? r.rt.best.toFixed(0) + ' ms' : '–'}</div><div class="l">best</div></div>
-    <div class="stat"><div class="v">${r.window.toFixed(0)} ms</div><div class="l">window</div></div>
+    <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${r.best ? `${DOT}best` : ''}</div></div>
+    <div class="stat"><div class="v">${r.rounds}</div><div class="l">rounds cleared</div></div>
+    <div class="stat"><div class="v">${pct(acc)}</div><div class="l">correct</div></div>
   </div>
   ${rtBlock(r.rt, r.hist, note)}
-  ${r.saved ? '' : '<p class="muted">Sessions under 5 reactions are not saved.</p>'}
-  ${foot([
-    ['Again', 'rt', 'enter'],
-    ['Stats', 'stats', 's'],
-    ['Menu', 'menu', 'esc'],
-  ])}
+  ${
+    rows
+      ? `<h2>By game <span>window ended at ${r.window.toFixed(0)} ms</span></h2>
+  <table><tr><th></th><th>right</th><th>share</th><th>avg ms</th></tr>${rows}</table>`
+      : ''
+  }
+  ${r.saved ? '' : '<p class="muted">Sessions under 5 answers are not saved.</p>'}
+  ${foot(AGAIN)}
 </section>`;
 }
 
@@ -257,11 +348,7 @@ export function cpsResultsHtml(r: CpsTrainSummary): string {
   </div>
   ${cpsBlock(r.cps, r.labels, true)}
   ${r.saved ? '' : '<p class="muted">Sessions under 20 taps are not saved.</p>'}
-  ${foot([
-    ['Again', 'cps', 'enter'],
-    ['Stats', 'stats', 's'],
-    ['Menu', 'menu', 'esc'],
-  ])}
+  ${foot(AGAIN)}
 </section>`;
 }
 
@@ -285,14 +372,17 @@ const RUN_METRICS: Metric[] = [
 ];
 
 const RT_METRICS: Metric[] = [
-  { label: 'Trainer median', get: (r) => r.rt?.median, fmt: (v) => v.toFixed(0) + ' ms', lower: true },
-  { label: 'Trainer window', get: (r) => r.window, fmt: (v) => v.toFixed(0) + ' ms', lower: true },
+  { label: 'Median reaction', get: (r) => (r.rt && r.rt.n ? r.rt.median : undefined), fmt: (v) => v.toFixed(0) + ' ms', lower: true },
+  { label: 'Correct', get: (r) => r.accuracy, fmt: pct },
+  { label: 'Rounds cleared', get: (r) => r.rounds, fmt: (v) => v.toFixed(0) },
+  { label: 'Window', get: (r) => r.window, fmt: (v) => v.toFixed(0) + ' ms', lower: true },
 ];
 
 const CPS_METRICS: Metric[] = [
-  { label: 'Trainer target held', get: (r) => r.target || undefined, fmt: (v) => v.toFixed(1) },
-  { label: 'Trainer sustained 5 s', get: (r) => r.cps?.s5 || undefined, fmt: (v) => v.toFixed(1) },
-  { label: 'Trainer repeats', get: (r) => r.cps?.repeatRate, fmt: pct, lower: true },
+  { label: 'Target held', get: (r) => r.target || undefined, fmt: (v) => v.toFixed(1) },
+  { label: 'Sustained 5 s', get: (r) => r.cps?.s5 || undefined, fmt: (v) => v.toFixed(1) },
+  { label: 'Peak CPS', get: (r) => r.cps?.peak || undefined, fmt: (v) => v.toFixed(0) },
+  { label: 'Repeats', get: (r) => r.cps?.repeatRate, fmt: pct, lower: true },
 ];
 
 function card(m: Metric, records: RunRecord[]): string {
@@ -312,14 +402,15 @@ function shortDate(at: number): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-export function statsHtml(history: RunRecord[], filter: number): string {
+export function statsHtml(history: RunRecord[], filter: number, perf: boolean): string {
   const byMode = (r: RunRecord) => filter === 0 || r.mode === filter;
   const runs = history.filter((r) => r.kind === 'run' && byMode(r));
-  const rts = history.filter((r) => r.kind === 'rt');
+  const rts = history.filter((r) => r.kind === 'rt' && byMode(r));
   const cps = history.filter((r) => r.kind === 'cps' && byMode(r));
+  const n = (list: RunRecord[]) => `${list.length} session${list.length === 1 ? '' : 's'}`;
   const recent = runs.slice(-8).reverse();
   const table = recent.length
-    ? `<h2>Recent runs</h2><table>
+    ? `<h2>Recent climbs</h2><table>
     <tr><th>when</th><th>keys</th><th>score</th><th>height</th><th>time</th><th>median rt</th><th>peak</th></tr>
     ${recent
       .map(
@@ -331,15 +422,18 @@ export function statsHtml(history: RunRecord[], filter: number): string {
     : '';
   return `<section class="screen wide">
   <h1>STATS</h1>
-  ${modeSeg(filter, 'filter', true)}
-  <h2>Runs <span>${runs.length} session${runs.length === 1 ? '' : 's'} · white line is the 5-session average</span></h2>
+  ${keySeg(filter, 'filter', true)}
+  <h2>Climb <span>${n(runs)}${DOT}white line is the 5-session average</span></h2>
   <div class="grid">${RUN_METRICS.map((m) => card(m, runs)).join('')}</div>
-  <h2>Training <span>${rts.length} reaction · ${cps.length} CPS</span></h2>
-  <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>
+  <h2>Reflex <span>${n(rts)}</span></h2>
+  <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}</div>
+  <h2>Burst <span>${n(cps)}</span></h2>
+  <div class="grid">${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>
   ${table}
   ${foot([
     ['Back', 'menu', 'esc'],
     ['Export JSON', 'export', ''],
+    [`FPS overlay ${perf ? 'on' : 'off'}`, 'perf', '`'],
     ['Clear history', 'clear', ''],
   ])}
 </section>`;
@@ -348,22 +442,22 @@ export function statsHtml(history: RunRecord[], filter: number): string {
 // --- Key rebinding ----------------------------------------------------------------
 
 /** `listening` is the slot waiting for a key: "left:0", "right:1", "reflex", or "". */
-export function keysHtml(s: Settings, listening: string): string {
-  const m = getMode(s.mode);
-  const b = s.bindings[s.mode]!;
+export function keysHtml(s: Settings, keys: number, listening: string): string {
+  const m = getMode(keys);
+  const b = s.bindings[keys]!;
   const slot = (id: string, code: string) =>
     `<button class="slot${listening === id ? ' listen' : ''}" data-act="bind" data-arg="${id}">${listening === id ? 'press a key' : esc(keyLabel(code))}</button>`;
-  let rows = `<span class="l">Left</span><div>${b.left.map((c, i) => slot(`left:${i}`, c)).join('')}</div>`;
+  let rows = `<span class="l">${m.right === 0 ? 'Key' : 'Left'}</span><div>${b.left.map((c, i) => slot(`left:${i}`, c)).join('')}</div>`;
   if (m.right > 0) rows += `<span class="l">Right</span><div>${b.right.map((c, i) => slot(`right:${i}`, c)).join('')}</div>`;
   if (m.reflex && b.reflex) rows += `<span class="l">Reflex</span><div>${slot('reflex', b.reflex)}</div>`;
   return `<section class="screen">
   <h1>KEYS</h1>
-  ${modeSeg(s.mode, 'mode')}
+  ${keySeg(keys, 'bindmode')}
   <div class="slots">${rows}</div>
-  <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.</p>
+  <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, shared by all three games.</p>
   ${foot([
     ['Back', 'menu', 'esc'],
-    ['Reset this mode', 'resetkeys', ''],
+    ['Reset these keys', 'resetkeys', ''],
   ])}
 </section>`;
 }

@@ -11,53 +11,75 @@ export const BOARD_W = 12;
 export const VIEW_H = 13.5;
 /** Cables hang at x = +-BEAM_HALF; the beam spans between them. */
 export const BEAM_HALF = 5.6;
+/** The ball moves between lanes; a dash is exactly one lane wide. */
+export const LANES = 7;
+export const LANE_W = (BEAM_HALF * 2) / LANES;
+export const MID_LANE = (LANES - 1) / 2;
 /** Height of an end at h = 0, measured from the bottom of the view. */
 export const BASE_Y = 1.7;
-/** Vertical travel of each end, h in [0, 1]. */
+/** Vertical travel of each end, h in [0, 1]. The beam rests at h = 0.5. */
 export const TRAVEL = 3.2;
+export const REST_Y = BASE_Y + 0.5 * TRAVEL;
 export const BALL_R = 0.26;
-export const BALL_LIMIT = BEAM_HALF - BALL_R - 0.06;
 
-// --- Beam ends ("taps are lift") -------------------------------------------
-// Each end obeys  dv/dt = -SAG * (1 + SAG_K * h) * heavy - END_DRAG * v
-// and a tap adds LIFT * modeLift to v. The hover tap rate therefore rises with
-// height, so tap rate maps to height: 1.2 /s at the bottom, 3 /s in the
-// middle, 4.8 /s at the top for a one-key side.
+export function laneX(lane: number): number {
+  return (lane - MID_LANE) * LANE_W;
+}
+
+// --- Ball: dashes and surges ------------------------------------------------
+/** Sideways dash speed (m/s). One lane takes about 65 ms. */
+export const DASH_SPEED = 24;
+/** Two opposite-side taps this close together are a chord, i.e. a surge. */
+export const CHORD_MS = 60;
+/** A surge jerks the beam this far up the board, carrying the ball over anything in between. */
+export const SURGE_DIST = 1.9;
+export const SURGE_TIME = 0.26;
+export const SURGE_RECHARGE = 2.2;
+/** One-key mode has only the surge, so it comes back fast. */
+export const SURGE_RECHARGE_ONE_KEY = 0.5;
+export const HOP_H = 0.55;
+
+// --- Beam ends --------------------------------------------------------------
+// Normally a damped spring holds each end at mid height and taps only kick it
+// (cosmetic). During a heavy pull the load comes on and each end obeys
+//   dv/dt = -SAG * (1 + SAG_K * h) * heavy - END_DRAG * v
+// with each tap adding LIFT * modeLift, so holding the target tap rate holds
+// the beam level.
 export const LIFT = 0.55;
 export const SAG = 0.66;
 export const SAG_K = 3;
 export const END_DRAG = 5;
+export const SPRING = 70;
+export const SPRING_DRAG = 9;
 /** Hover rate at mid height for modeLift = 1 (taps per second). */
 export const HOVER_MID = (SAG * (1 + SAG_K * 0.5)) / LIFT;
-/** Impulse factor when the same key is hit twice in a row on a multi-key side. */
+/** Lift factor when the same key is hit twice in a row on a multi-key side. */
 export const REPEAT_LIFT = 0.42;
-
-// --- Ball -----------------------------------------------------------------
-/** Effective gravity along the beam (already includes the 5/7 rolling factor). */
-export const BALL_G = 22;
-export const BALL_DRAG = 0.55;
-export const BALL_BOUNCE = 0.25;
 
 // --- Events ---------------------------------------------------------------
 /** Keydowns faster than this after a cue cannot be reactions. */
 export const ANTICIPATION_MS = 100;
 export const LURCH = 2.5;
-export const FALSE_START_JOLT = 0.55;
-export const CUE_SLIP = 1.6;
 export const BURST_LEAD = 1.0;
 export const BURST_GRACE = 0.85;
+/** A pull that drags on past this multiple of its hold time is lost. */
+export const BURST_MAX_FACTOR = 1.7;
 export const RATE_WINDOW = 1.25;
 
 // --- Scoring --------------------------------------------------------------
 export const SCORE_PER_M = 10;
-export const ZONE_MULT = 3;
+export const RING_SCORE = 15;
+/** Each pickup adds one to the chain; the multiplier is 1 + chain, up to this. */
+export const CHAIN_MAX = 4;
+/** Seconds without a pickup before the chain drops a step. */
+export const CHAIN_HOLD = 6;
 
 // --- Difficulty ramp ------------------------------------------------------
 export function difficulty(t: number): number {
   return 1 - Math.exp(-t / 120);
 }
 export function climbSpeed(t: number): number {
-  return 1.1 + 2.7 * (1 - Math.exp(-t / 110));
+  return 1.2 + 2.4 * (1 - Math.exp(-t / 110));
 }
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
@@ -66,14 +88,14 @@ export function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
-// --- Modes ----------------------------------------------------------------
+// --- Key modes --------------------------------------------------------------
 export interface ModeDef {
   id: number;
-  /** Lift keys on the left / right side. 0 means that end is fixed. */
+  /** Keys on the left / right side. Right is 0 in the one-key mode. */
   left: number;
   right: number;
   reflex: boolean;
-  /** Lift multiplier: more keys per side means each tap lifts less. */
+  /** Lift multiplier in a heavy pull: more keys per side means each tap lifts less. */
   lift: number;
   /** Heavy-pull target (taps per second per side): start, step per pull, cap. */
   burstBase: number;
@@ -104,6 +126,19 @@ export const MODES: readonly ModeDef[] = [
 export function getMode(id: number): ModeDef {
   return MODES[clamp(id | 0, 1, 6) - 1]!;
 }
+
+/**
+ * Lanes covered by one tap. Keys further from the middle of the keyboard dash
+ * further: with Z X | N M, X and N move one lane, Z and M two.
+ */
+export function dashLanes(m: ModeDef, side: number, keyIdx: number): number {
+  return side === 0 ? m.left - keyIdx : keyIdx + 1;
+}
+
+/** Slot ids: side * 3 + key index for the six lift keys, 6 for reflex. */
+export const SLOT_REFLEX = 6;
+export const LEFT_MASK = 0b000111;
+export const RIGHT_MASK = 0b111000;
 
 // --- Palette (one accent, used only for the ball and the active cue) -------
 export const COL_BG = '#0a0a0b';

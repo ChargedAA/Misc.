@@ -1,36 +1,51 @@
-// Fixed-timestep simulation. No DOM, no allocation inside step(): everything
-// lives in preallocated typed arrays so the same code runs in the browser and
-// headless under node (tests, tuning bot).
+// Fixed-timestep simulation of the Climb mode. No DOM, no allocation inside
+// step(): everything lives in preallocated typed arrays so the same code runs
+// in the browser and headless under node (tests, tuning bot).
+//
+// The ball rides the beam in one of LANES lanes. A tap on a side dashes it that
+// way; a tap on both sides at once is a surge, which jerks the beam up the board
+// and carries the ball over whatever is in between.
 
 import {
   ANTICIPATION_MS,
-  BALL_BOUNCE,
-  BALL_DRAG,
-  BALL_G,
-  BALL_LIMIT,
   BALL_R,
-  BASE_Y,
   BEAM_HALF,
   BURST_GRACE,
   BURST_LEAD,
-  CUE_SLIP,
+  BURST_MAX_FACTOR,
+  CHAIN_HOLD,
+  CHAIN_MAX,
+  CHORD_MS,
+  DASH_SPEED,
   DT,
   END_DRAG,
-  FALSE_START_JOLT,
+  HOP_H,
   HOVER_MID,
+  LANES,
   LIFT,
   LURCH,
+  MID_LANE,
   RATE_WINDOW,
   REPEAT_LIFT,
+  REST_Y,
+  RING_SCORE,
   SAG,
   SAG_K,
   SCORE_PER_M,
+  SPRING,
+  SPRING_DRAG,
+  SURGE_DIST,
+  SURGE_RECHARGE,
+  SURGE_RECHARGE_ONE_KEY,
+  SURGE_TIME,
   TRAVEL,
-  ZONE_MULT,
+  BASE_Y,
   clamp,
   climbSpeed,
+  dashLanes,
   difficulty,
   getMode,
+  laneX,
   lerp,
   type ModeDef,
 } from './config.ts';
@@ -44,9 +59,11 @@ export const FX_FALSE = 4;
 export const FX_FALL = 8;
 export const FX_BURST_OK = 16;
 export const FX_BURST_FAIL = 32;
-export const FX_ZONE = 64;
+export const FX_RING = 64;
 export const FX_BURST_START = 128;
 export const FX_CUE_MISS = 256;
+export const FX_SURGE = 512;
+export const FX_DUD = 1024;
 
 export const PHASE_READY = 0;
 export const PHASE_RUN = 1;
@@ -58,25 +75,38 @@ export const BURST_LEADIN = 1;
 export const BURST_ACTIVE = 2;
 export const BURST_OUT = 3;
 
-export const HOLE_CAP = 256;
-export const ZONE_CAP = 16;
+// Hazard kinds. All are horizontal capsules: centre (x, y), half-length l, radius r.
+export const HAZ_HOLE = 0;
+export const HAZ_PIT = 1;
+export const HAZ_BAR = 2;
+export const HAZ_SLIDER = 3;
+
+// Board sections, so a run moves through stretches with different hazards.
+export const SEC_HOLES = 0;
+export const SEC_PITS = 1;
+export const SEC_BARS = 2;
+export const SEC_SLIDERS = 3;
+export const SEC_MIX = 4;
+export const SECTION_NAMES = ['HOLES', 'PITS', 'BARS', 'SLIDERS', 'MIX'] as const;
+
+export const HAZ_CAP = 256;
+export const RING_CAP = 64;
+export const MARK_CAP = 8;
 export const TRAIL_CAP = 64;
 const TRAIL_EVERY = 4;
 const RT_CAP = 4096;
 const GEN_AHEAD = 18;
-const BEAM_LEN = BEAM_HALF * 2;
-const BALL_DRAG_K = Math.exp(-BALL_DRAG * DT);
 const SHAKE_K = Math.exp(-9 * DT);
 const FALL_TIME = 0.85;
-const CUE_FORGIVE_TICKS = Math.round(0.45 / DT);
 const BURST_OUT_TIME = 0.5;
-const LANE_LIM = BALL_LIMIT - 0.9;
-const HOLE_X_LIM = BEAM_HALF - 0.25;
-/** Key id used in the tap log: side * 3 + key index. */
-export const KEY_SLOTS = 6;
+const CUE_FORGIVE_TICKS = Math.round(0.45 / DT);
+const BAR_R = 0.16;
+const DASH_STEP = DASH_SPEED * DT;
+const BALL_REST = REST_Y + BALL_R;
 
 export class Sim {
   mode: ModeDef = getMode(2);
+  oneKey = false;
   seed = 1;
   /** When true the cue counts as drawn the tick it starts (tests, bot). */
   headless = false;
@@ -91,19 +121,32 @@ export class Sim {
   climb = 0;
   climbPrev = 0;
 
-  // Beam ends: [left, right], h normalised to [0, 1].
+  // Beam ends: [left, right], h normalised to [0, 1], resting at 0.5.
   readonly h = new Float64Array(2);
   readonly hPrev = new Float64Array(2);
   readonly v = new Float64Array(2);
   readonly lastKey = new Int8Array(2);
-  fixedRight = false;
   heavy = 1;
 
   // Ball.
+  /** Lane the ball is in, or is dashing to. */
+  lane = MID_LANE;
   ballX = 0;
   ballXPrev = 0;
-  ballV = 0;
-  ballY = 0;
+  /** World y of the ball when it sits on the level beam. */
+  ballY = BALL_REST;
+  hop = 0;
+  hopPrev = 0;
+  /** False while dashing or surging: nothing can swallow the ball then. */
+  grounded = true;
+  /** Surge charge, 0..1. A surge needs a full charge. */
+  charge = 1;
+  surgeT = 0;
+  /** Seconds the surge stays locked after a lurch (one-key mode). */
+  stun = 0;
+  private readonly lastTapTs = new Float64Array(2);
+  private readonly lastTapDelta = new Int8Array(2);
+  private readonly lastTapOpen = new Uint8Array(2);
 
   // Fall animation.
   fallT = 0;
@@ -115,8 +158,13 @@ export class Sim {
   // Score.
   score = 0;
   height = 0;
-  mult = 1;
-  zoneTime = 0;
+  /** Pickup chain, 0..CHAIN_MAX. The score multiplier is 1 + chain. */
+  chain = 0;
+  bestChain = 0;
+  private chainT = 0;
+  rings = 0;
+  surges = 0;
+  dashes = 0;
   shake = 0;
   fx = 0;
 
@@ -135,7 +183,6 @@ export class Sim {
   lastRtSide = 0;
   /** Ticks since the last successful reaction (for the brief ms readout). */
   lastRtAge = 1e9;
-  /** Tick the last cue ended on; reflex presses just after it are forgiven. */
   private cueEndTick = -1e9;
   readonly rt = new Float32Array(RT_CAP);
   rtCount = 0;
@@ -150,6 +197,7 @@ export class Sim {
   burstsWon = 0;
   burstsLost = 0;
   nextBurstY = Infinity;
+  repeats = 0;
   private heavyFrom = 1;
   private heavyGoal = 1;
   readonly burstLag = new Float64Array(2);
@@ -157,34 +205,42 @@ export class Sim {
   readonly burstOk = new Uint8Array(2);
   readonly meters = [new RateMeter(RATE_WINDOW), new RateMeter(RATE_WINDOW)] as const;
 
-  // Board: holes and target zones in ring buffers.
-  readonly hx = new Float32Array(HOLE_CAP);
-  readonly hy = new Float32Array(HOLE_CAP);
-  readonly hr = new Float32Array(HOLE_CAP);
-  holeStart = 0;
-  holeCount = 0;
-  readonly zx = new Float32Array(ZONE_CAP); // centre x
-  readonly zy = new Float32Array(ZONE_CAP); // bottom y
-  readonly zw = new Float32Array(ZONE_CAP);
-  readonly zh = new Float32Array(ZONE_CAP);
-  zoneStart = 0;
-  zoneCount = 0;
-  /** Ring index of the zone the ball is in, or -1. */
-  zoneIn = -1;
+  // Board: hazards, pickups and section markers in ring buffers.
+  readonly hazX = new Float32Array(HAZ_CAP);
+  readonly hazY = new Float32Array(HAZ_CAP);
+  readonly hazR = new Float32Array(HAZ_CAP);
+  /** Half-length of the capsule: 0 for a round hole. */
+  readonly hazL = new Float32Array(HAZ_CAP);
+  /** Sideways speed of a slider (m/s), and the x range it sweeps. */
+  readonly hazV = new Float32Array(HAZ_CAP);
+  readonly hazMin = new Float32Array(HAZ_CAP);
+  readonly hazMax = new Float32Array(HAZ_CAP);
+  readonly hazType = new Uint8Array(HAZ_CAP);
+  hazStart = 0;
+  hazCount = 0;
+  readonly ringX = new Float32Array(RING_CAP);
+  readonly ringY = new Float32Array(RING_CAP);
+  readonly ringLive = new Uint8Array(RING_CAP);
+  ringStart = 0;
+  ringCount = 0;
+  readonly markY = new Float32Array(MARK_CAP);
+  readonly markType = new Uint8Array(MARK_CAP);
+  markStart = 0;
+  markCount = 0;
 
   // Generator state.
   private readonly rngBoard = new Rng();
   private readonly rngEvent = new Rng();
-  private laneY0 = 0;
-  private laneX0 = 0;
-  private laneY1 = 0;
-  private laneX1 = 0;
-  private laneY2 = 0;
-  private laneX2 = 0;
-  private nextZoneY = 0;
+  private genY = 0;
+  private prevGap = 4;
+  private safeLane = MID_LANE;
+  private section = SEC_HOLES;
+  private sectionEndY = 0;
+  private skipRows = 0;
+  private lastBarY = -1e9;
   private burstGenY = 0;
-  private sparseFromY = Infinity;
-  private sparseUntilY = -Infinity;
+  private clearFrom = Infinity;
+  private clearUntil = -Infinity;
 
   // Ball trail in board space.
   readonly trailX = new Float32Array(TRAIL_CAP);
@@ -196,8 +252,7 @@ export class Sim {
   tapT = new Float64Array(8192);
   tapKey = new Uint8Array(8192);
   tapCount = 0;
-  repeats = 0;
-  /** Real-time ms of the tick that started the run. */
+  /** Real-time ms of the tap that started the run. */
   startMs = 0;
 
   constructor() {
@@ -206,6 +261,7 @@ export class Sim {
 
   reset(modeId: number, seed: number): void {
     this.mode = getMode(modeId);
+    this.oneKey = this.mode.right === 0;
     this.seed = seed >>> 0;
     this.rngBoard.seed(this.seed);
     this.rngEvent.seed((this.seed ^ 0x5bd1e995) >>> 0);
@@ -216,7 +272,6 @@ export class Sim {
     this.time = 0;
     this.climb = 0;
     this.climbPrev = 0;
-    this.fixedRight = this.mode.right === 0;
     this.h[0] = this.h[1] = 0.5;
     this.hPrev[0] = this.hPrev[1] = 0.5;
     this.v[0] = this.v[1] = 0;
@@ -225,16 +280,29 @@ export class Sim {
     this.heavyFrom = 1;
     this.heavyGoal = 1;
 
+    this.lane = MID_LANE;
     this.ballX = 0;
     this.ballXPrev = 0;
-    this.ballV = 0;
-    this.ballY = BASE_Y + 0.5 * TRAVEL + BALL_R;
+    this.ballY = BALL_REST;
+    this.hop = 0;
+    this.hopPrev = 0;
+    this.grounded = true;
+    this.charge = 1;
+    this.surgeT = 0;
+    this.stun = 0;
+    this.lastTapTs[0] = this.lastTapTs[1] = -1e9;
+    this.lastTapDelta[0] = this.lastTapDelta[1] = 0;
+    this.lastTapOpen[0] = this.lastTapOpen[1] = 0;
     this.fallT = 0;
 
     this.score = 0;
     this.height = 0;
-    this.mult = 1;
-    this.zoneTime = 0;
+    this.chain = 0;
+    this.bestChain = 0;
+    this.chainT = 0;
+    this.rings = 0;
+    this.surges = 0;
+    this.dashes = 0;
     this.shake = 0;
     this.fx = 0;
 
@@ -261,33 +329,34 @@ export class Sim {
     this.burstsWon = 0;
     this.burstsLost = 0;
     this.nextBurstY = Infinity;
+    this.repeats = 0;
     this.burstLag[0] = this.burstLag[1] = 0;
     this.burstRate[0] = this.burstRate[1] = 0;
     this.burstOk[0] = this.burstOk[1] = 1;
     this.meters[0].reset();
     this.meters[1].reset();
 
-    this.holeStart = 0;
-    this.holeCount = 0;
-    this.zoneStart = 0;
-    this.zoneCount = 0;
-    this.zoneIn = -1;
+    this.hazStart = 0;
+    this.hazCount = 0;
+    this.ringStart = 0;
+    this.ringCount = 0;
+    this.markStart = 0;
+    this.markCount = 0;
 
-    this.laneY0 = BASE_Y + 0.5 * TRAVEL;
-    this.laneX0 = 0;
-    this.laneY1 = 11;
-    this.laneX1 = this.rngBoard.range(-1.5, 1.5);
-    this.laneY2 = this.laneY1 + 3.6;
-    this.laneX2 = clamp(this.laneX1 + this.rngBoard.range(-2.5, 2.5), -LANE_LIM, LANE_LIM);
-    this.nextZoneY = 17 + this.rngBoard.next() * 6;
-    this.burstGenY = 26 + this.rngBoard.next() * 6;
-    this.sparseFromY = Infinity;
-    this.sparseUntilY = -Infinity;
+    this.genY = BALL_REST + 8;
+    this.prevGap = 4;
+    this.safeLane = MID_LANE;
+    this.section = SEC_HOLES;
+    this.sectionEndY = this.genY + 34 + this.rngBoard.next() * 8;
+    this.skipRows = 0;
+    this.lastBarY = -1e9;
+    this.burstGenY = 30 + this.rngBoard.next() * 6;
+    this.clearFrom = Infinity;
+    this.clearUntil = -Infinity;
 
     this.trailHead = 0;
     this.trailCount = 0;
     this.tapCount = 0;
-    this.repeats = 0;
     this.startMs = 0;
 
     this.generate();
@@ -302,48 +371,96 @@ export class Sim {
     return c + BASE_Y + h * TRAVEL;
   }
 
-  centerY(): number {
-    return this.climb + BASE_Y + (this.h[0]! + this.h[1]!) * 0.5 * TRAVEL;
+  /** Current score multiplier. */
+  get mult(): number {
+    return 1 + this.chain;
   }
 
   // --- Input ----------------------------------------------------------------
 
   /**
-   * A lift tap. `ts` is the keydown's event.timeStamp (same clock as
-   * performance.now). Returns 0 if ignored, 1 for a full lift, 2 for a weak
-   * (repeated-key) lift.
+   * A lift key. `ts` is the keydown's event.timeStamp (same clock as
+   * performance.now). Outside a heavy pull it dashes the ball (or, together
+   * with the other side, surges); inside one it lifts that end.
    */
-  tap(side: number, keyIdx: number, ts: number): number {
+  tap(side: number, keyIdx: number, ts: number): void {
     if (this.phase === PHASE_READY) {
       this.phase = PHASE_RUN;
       this.startMs = ts;
     }
-    if (this.phase !== PHASE_RUN) return 0;
-    if (side === 1 && this.fixedRight) return 0;
-
-    const keys = side === 0 ? this.mode.left : this.mode.right;
-    let f = this.mode.lift;
-    let kind = 1;
-    if (keys > 1 && this.lastKey[side] === keyIdx) {
-      f *= REPEAT_LIFT;
-      kind = 2;
-      this.repeats++;
-    }
-    this.lastKey[side] = keyIdx;
-    this.v[side]! += LIFT * f;
-    this.meters[side]!.push(this.time);
+    if (this.phase !== PHASE_RUN) return;
+    if (side === 1 && this.oneKey) return;
 
     if (this.tapCount === this.tapT.length) this.growTapLog();
     this.tapT[this.tapCount] = ts - this.startMs;
     this.tapKey[this.tapCount] = side * 3 + keyIdx;
     this.tapCount++;
+    this.meters[side]!.push(this.time);
 
-    // In modes without a reflex key, any key on the cued side answers the cue.
-    if (this.cueActive && !this.mode.reflex && side === this.cueSide && this.cueDrawnAt > 0) {
-      const rt = ts - this.cueDrawnAt;
-      if (rt >= ANTICIPATION_MS && rt <= this.cueWindow) this.catchCue(rt);
+    // Heavy pull: taps haul the beam instead of moving the ball.
+    if (this.burstState === BURST_LEADIN || this.burstState === BURST_ACTIVE) {
+      const keys = side === 0 ? this.mode.left : this.mode.right;
+      let f = this.mode.lift;
+      if (keys > 1 && this.lastKey[side] === keyIdx) {
+        f *= REPEAT_LIFT;
+        this.repeats++;
+      }
+      this.lastKey[side] = keyIdx;
+      this.v[side]! += LIFT * f;
+      if (this.oneKey) this.v[1]! += LIFT * f;
+      return;
     }
-    return kind;
+    this.lastKey[side] = keyIdx;
+
+    // Without a reflex key, a tap on the cued side answers the cue.
+    let caught = false;
+    if (this.cueActive && !this.mode.reflex && this.cueDrawnAt > 0 && (this.oneKey || side === this.cueSide)) {
+      const rt = ts - this.cueDrawnAt;
+      if (rt >= ANTICIPATION_MS && rt <= this.cueWindow) {
+        this.catchCue(rt);
+        caught = true;
+      }
+    }
+
+    if (this.oneKey) {
+      // The one key is the surge, unless it was just spent on a cue.
+      if (!caught) this.trySurge();
+      return;
+    }
+
+    // Both sides at once: take back the other side's dash and surge instead.
+    const other = 1 - side;
+    if (this.lastTapOpen[other] === 1 && ts - this.lastTapTs[other]! <= CHORD_MS) {
+      if (this.lastTapDelta[other] !== 0) {
+        this.lane = clamp(this.lane - this.lastTapDelta[other]!, 0, LANES - 1);
+        this.dashes--;
+      }
+      this.lastTapOpen[other] = 0;
+      this.trySurge();
+      return;
+    }
+
+    if (caught) {
+      // The tap is used up by the cue, but can still be half of a surge.
+      this.lastTapTs[side] = ts;
+      this.lastTapDelta[side] = 0;
+      this.lastTapOpen[side] = 1;
+      return;
+    }
+
+    const want = dashLanes(this.mode, side, keyIdx) * (side === 0 ? -1 : 1);
+    const to = clamp(this.lane + want, 0, LANES - 1);
+    const moved = to - this.lane;
+    this.lane = to;
+    if (moved !== 0) {
+      this.dashes++;
+      // The far cable jerks, tipping the beam the way the ball goes.
+      this.v[other]! += 0.9;
+      this.v[side]! -= 0.35;
+    }
+    this.lastTapTs[side] = ts;
+    this.lastTapDelta[side] = moved;
+    this.lastTapOpen[side] = 1;
   }
 
   /** The reflex key. Pressing it with no cue showing is a false start. */
@@ -360,8 +477,9 @@ export class Sim {
     // A second press right after a cue resolved is a stutter, not a false start.
     if (this.tick - this.cueEndTick < CUE_FORGIVE_TICKS) return;
     this.falseStarts++;
-    this.v[0]! -= FALSE_START_JOLT;
-    if (!this.fixedRight) this.v[1]! -= FALSE_START_JOLT;
+    this.charge = 0;
+    this.v[0]! -= 0.5;
+    this.v[1]! -= 0.5;
     this.shake = Math.max(this.shake, 0.4);
     this.fx |= FX_FALSE;
   }
@@ -369,12 +487,27 @@ export class Sim {
   /** Shift the real-time references after a pause so it does not count. */
   shiftClock(ms: number): void {
     this.startMs += ms;
+    this.lastTapTs[0]! += ms;
+    this.lastTapTs[1]! += ms;
     if (this.cueDrawnAt > 0) this.cueDrawnAt += ms;
   }
 
   /** Called by the renderer on the frame the active cue is first drawn. */
   markCueDrawn(now: number): void {
     if (this.cueActive && this.cueDrawnAt === 0) this.cueDrawnAt = now;
+  }
+
+  private trySurge(): void {
+    if (this.charge >= 1 && this.surgeT <= 0 && this.stun <= 0) {
+      this.surgeT = SURGE_TIME;
+      this.charge = 0;
+      this.surges++;
+      this.v[0]! += 2.4;
+      this.v[1]! += 2.4;
+      this.fx |= FX_SURGE;
+    } else {
+      this.fx |= FX_DUD;
+    }
   }
 
   // --- Step -----------------------------------------------------------------
@@ -385,6 +518,7 @@ export class Sim {
     this.hPrev[0] = this.h[0]!;
     this.hPrev[1] = this.h[1]!;
     this.ballXPrev = this.ballX;
+    this.hopPrev = this.hop;
     this.tick++;
     this.shake *= SHAKE_K;
 
@@ -398,21 +532,42 @@ export class Sim {
     this.runTicks++;
     const time = (this.time = this.runTicks * DT);
     const speed = climbSpeed(time);
-    this.climb += speed * DT;
+    let climb = this.climb + speed * DT;
     this.lastRtAge++;
+
+    // Surge: a short, sharp jerk up the board with the ball in the air.
+    if (this.surgeT > 0) {
+      const a = 1 - this.surgeT / SURGE_TIME;
+      this.surgeT -= DT;
+      const b = this.surgeT > 0 ? 1 - this.surgeT / SURGE_TIME : 1;
+      // Ease-out: distance fraction 1 - (1 - u)^2.
+      climb += SURGE_DIST * ((1 - a) * (1 - a) - (1 - b) * (1 - b));
+      this.hop = Math.sin(Math.PI * b) * HOP_H;
+    } else {
+      this.hop = 0;
+      if (this.stun > 0) this.stun -= DT;
+      else if (this.charge < 1) {
+        this.charge += DT / (this.oneKey ? SURGE_RECHARGE_ONE_KEY : SURGE_RECHARGE);
+        if (this.charge > 1) this.charge = 1;
+      }
+    }
+    this.climb = climb;
+    const by = (this.ballY = climb + BALL_REST);
 
     this.stepBurst(time);
     this.stepCue(time, speed, tickMs);
 
-    // Beam ends.
+    // Beam ends: sprung to mid height, or hauled against the load in a pull.
     const heavy = this.heavy;
     for (let s = 0; s < 2; s++) {
-      if (s === 1 && this.fixedRight) continue;
       let h = this.h[s]!;
       let v = this.v[s]!;
-      let g = SAG * (1 + SAG_K * h) * heavy;
-      if (this.cueActive && this.cueSide === s) g *= CUE_SLIP;
-      v += (-g - END_DRAG * v) * DT;
+      if (heavy > 1.0005) {
+        v += (-SAG * (1 + SAG_K * h) * heavy - END_DRAG * v) * DT;
+      } else {
+        const rest = this.cueActive && this.cueSide === s ? 0.36 : 0.5;
+        v += (-SPRING * (h - rest) - SPRING_DRAG * v) * DT;
+      }
       h += v * DT;
       if (h < 0) {
         h = 0;
@@ -425,65 +580,77 @@ export class Sim {
       this.v[s] = v;
     }
 
-    // Ball rolling on the beam.
-    const yL = this.h[0]! * TRAVEL;
-    const yR = this.h[1]! * TRAVEL;
-    const dy = yR - yL;
-    const sin = dy / Math.sqrt(dy * dy + BEAM_LEN * BEAM_LEN);
-    let bv = (this.ballV - BALL_G * sin * DT) * BALL_DRAG_K;
-    let bx = this.ballX + bv * DT;
-    if (bx > BALL_LIMIT) {
-      bx = BALL_LIMIT;
-      if (bv > 0) bv = -bv * BALL_BOUNCE;
-    } else if (bx < -BALL_LIMIT) {
-      bx = -BALL_LIMIT;
-      if (bv < 0) bv = -bv * BALL_BOUNCE;
-    }
-    this.ballV = bv;
+    // Ball: chase the lane it was sent to.
+    const target = laneX(this.lane);
+    let bx = this.ballX;
+    const dx = target - bx;
+    if (dx > DASH_STEP) bx += DASH_STEP;
+    else if (dx < -DASH_STEP) bx -= DASH_STEP;
+    else bx = target;
     this.ballX = bx;
-    const by = (this.ballY = this.climb + BASE_Y + yL + (dy * (bx + BEAM_HALF)) / BEAM_LEN + BALL_R);
+    const grounded = (this.grounded = bx === target && this.surgeT <= 0);
 
-    // Target zones.
-    let zoneIn = -1;
-    for (let i = 0; i < this.zoneCount; i++) {
-      const k = (this.zoneStart + i) % ZONE_CAP;
-      const dx = bx - this.zx[k]!;
-      const hw = this.zw[k]! * 0.5;
-      if (dx > -hw && dx < hw && by >= this.zy[k]! && by <= this.zy[k]! + this.zh[k]!) {
-        zoneIn = k;
-        break;
+    // Pickups extend the chain.
+    for (let i = 0; i < this.ringCount; i++) {
+      const k = (this.ringStart + i) % RING_CAP;
+      if (this.ringLive[k] === 0) continue;
+      const ry = by - this.ringY[k]!;
+      if (ry > 0.5 || ry < -0.5) continue;
+      const rx = bx - this.ringX[k]!;
+      if (rx > 0.62 || rx < -0.62) continue;
+      this.ringLive[k] = 0;
+      this.rings++;
+      if (this.chain < CHAIN_MAX) this.chain++;
+      if (this.chain > this.bestChain) this.bestChain = this.chain;
+      this.chainT = 0;
+      this.score += RING_SCORE * (1 + this.chain);
+      this.fx |= FX_RING;
+    }
+    if (this.chain > 0) {
+      this.chainT += DT;
+      if (this.chainT >= CHAIN_HOLD) {
+        this.chainT = 0;
+        this.chain--;
       }
     }
-    if (zoneIn >= 0) {
-      if (this.zoneIn < 0) this.fx |= FX_ZONE;
-      this.zoneTime += DT;
-      this.mult = ZONE_MULT;
-    } else {
-      this.mult = 1;
-    }
-    this.zoneIn = zoneIn;
 
-    // Height and score: only new height counts.
-    const gained = this.climb + (yL + yR) * 0.5 - 0.5 * TRAVEL;
-    if (gained > this.height) {
-      this.score += (gained - this.height) * SCORE_PER_M * this.mult;
-      this.height = gained;
+    // Height and score.
+    if (climb > this.height) {
+      this.score += (climb - this.height) * SCORE_PER_M * (1 + this.chain);
+      this.height = climb;
     }
 
-    // Hazard holes.
-    for (let i = 0; i < this.holeCount; i++) {
-      const k = (this.holeStart + i) % HOLE_CAP;
-      const ddy = by - this.hy[k]!;
+    // Hazards: sliders move, and anything under a grounded ball swallows it.
+    for (let i = 0; i < this.hazCount; i++) {
+      const k = (this.hazStart + i) % HAZ_CAP;
+      const vx = this.hazV[k]!;
+      if (vx !== 0) {
+        let x = this.hazX[k]! + vx * DT;
+        if (x > this.hazMax[k]!) {
+          x = this.hazMax[k]!;
+          this.hazV[k] = -vx;
+        } else if (x < this.hazMin[k]!) {
+          x = this.hazMin[k]!;
+          this.hazV[k] = -vx;
+        }
+        this.hazX[k] = x;
+      }
+      if (!grounded) continue;
+      const ddy = by - this.hazY[k]!;
       if (ddy > 1 || ddy < -1) continue;
-      const ddx = bx - this.hx[k]!;
-      const kill = this.hr[k]! - 0.04;
+      const len = this.hazL[k]!;
+      let ddx = bx - this.hazX[k]!;
+      if (ddx > len) ddx -= len;
+      else if (ddx < -len) ddx += len;
+      else ddx = 0;
+      const kill = this.hazR[k]! - 0.04;
       if (ddx * ddx + ddy * ddy < kill * kill) {
         this.phase = PHASE_FALL;
         this.fallT = 0;
         this.fallFromX = bx;
         this.fallFromY = by;
-        this.fallToX = this.hx[k]!;
-        this.fallToY = this.hy[k]!;
+        this.fallToX = clamp(bx, this.hazX[k]! - len, this.hazX[k]! + len);
+        this.fallToY = this.hazY[k]!;
         this.cueActive = false;
         this.shake = 1;
         this.fx |= FX_FALL;
@@ -494,22 +661,25 @@ export class Sim {
     // Trail.
     if (this.runTicks % TRAIL_EVERY === 0) {
       this.trailX[this.trailHead] = bx;
-      this.trailY[this.trailHead] = by;
+      this.trailY[this.trailHead] = by + this.hop;
       this.trailHead = (this.trailHead + 1) % TRAIL_CAP;
       if (this.trailCount < TRAIL_CAP) this.trailCount++;
     }
 
     // Board upkeep.
     this.generate();
-    const floor = this.climb - 1.5;
-    while (this.holeCount > 0 && this.hy[this.holeStart]! < floor) {
-      this.holeStart = (this.holeStart + 1) % HOLE_CAP;
-      this.holeCount--;
+    const floor = climb - 1.5;
+    while (this.hazCount > 0 && this.hazY[this.hazStart]! < floor) {
+      this.hazStart = (this.hazStart + 1) % HAZ_CAP;
+      this.hazCount--;
     }
-    while (this.zoneCount > 0 && this.zy[this.zoneStart]! + this.zh[this.zoneStart]! < floor) {
-      if (this.zoneIn === this.zoneStart) this.zoneIn = -1;
-      this.zoneStart = (this.zoneStart + 1) % ZONE_CAP;
-      this.zoneCount--;
+    while (this.ringCount > 0 && this.ringY[this.ringStart]! < floor) {
+      this.ringStart = (this.ringStart + 1) % RING_CAP;
+      this.ringCount--;
+    }
+    while (this.markCount > 0 && this.markY[this.markStart]! < floor) {
+      this.markStart = (this.markStart + 1) % MARK_CAP;
+      this.markCount--;
     }
   }
 
@@ -523,27 +693,56 @@ export class Sim {
         this.cueActive = false;
         this.cueEndTick = this.tick;
         this.cueMisses++;
-        this.lurch(this.cueSide);
+        this.lurch(this.cueSide, 1);
         this.fx |= FX_CUE_MISS;
         this.scheduleCue(time);
       }
       return;
     }
     if (time < this.nextCueAt) return;
-    // Keep reaction cues clear of heavy pulls.
-    if (this.burstState !== BURST_NONE || this.nextBurstY - this.centerY() < speed * 1.6) {
-      this.nextCueAt = time + 1.2;
+    const window = lerp(700, 400, difficulty(time));
+    // Keep cues clear of heavy pulls. Where answering one uses up a lift key,
+    // also wait until the ball does not need that key in the next moment.
+    const needs = (window / 1000 + 0.45) * speed + 1.2;
+    if (
+      this.burstState !== BURST_NONE ||
+      this.nextBurstY - this.ballY < speed * 1.6 ||
+      this.surgeT > 0 ||
+      (!this.mode.reflex && !this.pathClear(this.oneKey ? needs : 0.5 * speed + 0.8, needs))
+    ) {
+      this.nextCueAt = time + 0.4;
       return;
     }
     this.cueActive = true;
     this.cueDrawnAt = 0;
-    this.cueSide = this.fixedRight ? 0 : this.rngEvent.next() < 0.5 ? 0 : 1;
-    this.cueWindow = lerp(700, 400, difficulty(time));
+    this.cueSide = this.rngEvent.next() < 0.5 ? 0 : 1;
+    this.cueWindow = window;
     this.cueCount++;
   }
 
+  /**
+   * True when the ball's lane is free for `laneDist` ahead and nothing that
+   * needs a surge (a bar, a slider) comes within `surgeDist`.
+   */
+  private pathClear(laneDist: number, surgeDist: number): boolean {
+    const x = laneX(this.lane);
+    const by = this.ballY;
+    for (let i = 0; i < this.hazCount; i++) {
+      const k = (this.hazStart + i) % HAZ_CAP;
+      const dy = this.hazY[k]! - by;
+      if (dy < -0.8) continue;
+      if (this.hazType[k] === HAZ_BAR || this.hazV[k] !== 0) {
+        if (dy < surgeDist) return false;
+        continue;
+      }
+      if (dy > laneDist) continue;
+      if (Math.abs(this.hazX[k]! - x) - this.hazL[k]! < 0.6) return false;
+    }
+    return true;
+  }
+
   private scheduleCue(time: number): void {
-    const mean = lerp(8.5, 3.2, difficulty(time));
+    const mean = lerp(8.5, 3.4, difficulty(time));
     this.nextCueAt = time + mean * (0.55 + 0.9 * this.rngEvent.next());
   }
 
@@ -555,14 +754,19 @@ export class Sim {
     this.lastRt = rt;
     this.lastRtSide = this.cueSide;
     this.lastRtAge = 0;
-    this.v[this.cueSide]! += 0.22;
-    this.score += 40 + 60 * (1 - rt / this.cueWindow);
+    this.v[this.cueSide]! += 1.1;
+    this.score += (40 + 60 * (1 - rt / this.cueWindow)) * (1 + this.chain);
     this.fx |= FX_CATCH;
     this.scheduleCue(this.time);
   }
 
-  private lurch(side: number): void {
-    if (side === 1 && this.fixedRight) side = 0;
+  /** The beam slips on one side: the ball slides that way and the surge is lost. */
+  private lurch(side: number, lanes: number): void {
+    if (this.oneKey) this.stun = 0.9;
+    else this.lane = clamp(this.lane + (side === 0 ? -lanes : lanes), 0, LANES - 1);
+    this.charge = 0;
+    this.chain = 0;
+    this.lastTapOpen[0] = this.lastTapOpen[1] = 0;
     this.v[side]! -= LURCH;
     this.shake = 1;
     this.fx |= FX_LURCH;
@@ -571,7 +775,7 @@ export class Sim {
   private stepBurst(time: number): void {
     const state = this.burstState;
     if (state === BURST_NONE) {
-      if (this.centerY() >= this.nextBurstY) {
+      if (this.ballY >= this.nextBurstY) {
         const m = this.mode;
         this.burstState = BURST_LEADIN;
         this.burstT = 0;
@@ -581,8 +785,10 @@ export class Sim {
         this.burstLag[0] = this.burstLag[1] = 0;
         this.burstOk[0] = this.burstOk[1] = 1;
         this.heavyFrom = 1;
-        this.heavyGoal = Math.max(1, (this.burstTarget * m.lift) / HOVER_MID);
+        this.heavyGoal = Math.max(1.05, (this.burstTarget * m.lift) / HOVER_MID);
         this.nextBurstY = Infinity;
+        this.lastTapOpen[0] = this.lastTapOpen[1] = 0;
+        this.lastKey[0] = this.lastKey[1] = -1;
         this.fx |= FX_BURST_START;
       }
       return;
@@ -590,7 +796,7 @@ export class Sim {
 
     this.burstT += DT;
     const rL = (this.burstRate[0] = this.meters[0].rate(time));
-    const rR = (this.burstRate[1] = this.fixedRight ? 0 : this.meters[1].rate(time));
+    const rR = (this.burstRate[1] = this.oneKey ? rL : this.meters[1].rate(time));
 
     if (state === BURST_LEADIN) {
       this.heavy = lerp(this.heavyFrom, this.heavyGoal, Math.min(1, this.burstT / BURST_LEAD));
@@ -604,7 +810,7 @@ export class Sim {
     if (state === BURST_ACTIVE) {
       const target = this.burstTarget;
       const okL = rL >= target;
-      const okR = this.fixedRight || rR >= target;
+      const okR = rR >= target;
       this.burstOk[0] = okL ? 1 : 0;
       this.burstOk[1] = okR ? 1 : 0;
       this.burstLag[0] = okL ? 0 : this.burstLag[0]! + DT;
@@ -613,20 +819,22 @@ export class Sim {
 
       if (this.burstProgress >= this.burstNeed) {
         this.burstsWon++;
-        this.score += 25 * target * this.burstNeed;
+        this.score += 25 * target * this.burstNeed * (1 + this.chain);
         this.fx |= FX_BURST_OK;
         this.endBurst(time);
       } else if (
         this.burstLag[0]! > BURST_GRACE ||
         this.burstLag[1]! > BURST_GRACE ||
-        this.burstT > this.burstNeed * 2.5
+        this.burstT > this.burstNeed * BURST_MAX_FACTOR
       ) {
         // The slower side slips.
-        const side = this.fixedRight ? 0 : this.burstLag[0]! > this.burstLag[1]! ? 0 : this.burstLag[1]! > this.burstLag[0]! ? 1 : rL <= rR ? 0 : 1;
+        const l0 = this.burstLag[0]!;
+        const l1 = this.burstLag[1]!;
+        const side = l0 > l1 ? 0 : l1 > l0 ? 1 : rL <= rR ? 0 : 1;
         this.burstsLost++;
-        this.lurch(side);
-        this.fx |= FX_BURST_FAIL;
         this.endBurst(time);
+        this.lurch(side, 2);
+        this.fx |= FX_BURST_FAIL;
       }
       return;
     }
@@ -652,125 +860,194 @@ export class Sim {
 
   private generate(): void {
     const front = this.climb + GEN_AHEAD;
-    while (this.laneY1 < front) this.genRow();
+    while (this.genY < front) this.genRow();
   }
 
-  /** x of the guaranteed-clear lane at height y, near the current row. */
-  private laneAt(y: number): number {
-    if (y <= this.laneY1) {
-      const t = (y - this.laneY0) / (this.laneY1 - this.laneY0);
-      return this.laneX0 + (this.laneX1 - this.laneX0) * clamp(t, 0, 1);
+  private addHazard(type: number, x: number, y: number, r: number, len: number): number {
+    if (this.hazCount === HAZ_CAP) {
+      this.hazStart = (this.hazStart + 1) % HAZ_CAP;
+      this.hazCount--;
     }
-    const t = (y - this.laneY1) / (this.laneY2 - this.laneY1);
-    return this.laneX1 + (this.laneX2 - this.laneX1) * clamp(t, 0, 1);
+    const k = (this.hazStart + this.hazCount) % HAZ_CAP;
+    this.hazType[k] = type;
+    this.hazX[k] = x;
+    this.hazY[k] = y;
+    this.hazR[k] = r;
+    this.hazL[k] = len;
+    this.hazV[k] = 0;
+    this.hazMin[k] = x;
+    this.hazMax[k] = x;
+    this.hazCount++;
+    return k;
+  }
+
+  private addRing(lane: number, y: number): void {
+    if (this.ringCount === RING_CAP) {
+      this.ringStart = (this.ringStart + 1) % RING_CAP;
+      this.ringCount--;
+    }
+    const k = (this.ringStart + this.ringCount) % RING_CAP;
+    this.ringX[k] = laneX(clamp(lane, 0, LANES - 1));
+    this.ringY[k] = y;
+    this.ringLive[k] = 1;
+    this.ringCount++;
   }
 
   private genRow(): void {
     const rng = this.rngBoard;
-    const y = this.laneY1;
-    // Difficulty at the moment the beam will get there.
-    const ahead = Math.max(0, y - this.centerY());
+    const y = this.genY;
+    // Difficulty at the moment the ball will get there.
+    const ahead = Math.max(0, y - this.ballY);
     const tArr = this.time + ahead / climbSpeed(this.time);
     const d = difficulty(tArr);
     const speed = climbSpeed(tArr);
+    const one = this.oneKey;
 
-    // Heavy-pull section: thinner hazards while both hands are busy.
+    // A new section: a different mix of hazards, announced by a marker line.
+    if (y >= this.sectionEndY) {
+      let next = this.section;
+      while (next === this.section) {
+        const pick = rng.next();
+        if (one) next = pick < 0.4 ? SEC_HOLES : pick < 0.75 ? SEC_BARS : SEC_MIX;
+        else next = pick < 0.2 ? SEC_HOLES : pick < 0.42 ? SEC_PITS : pick < 0.62 ? SEC_BARS : pick < 0.82 ? SEC_SLIDERS : SEC_MIX;
+      }
+      this.section = next;
+      this.sectionEndY = y + rng.range(30, 46);
+      if (this.markCount < MARK_CAP) {
+        const k = (this.markStart + this.markCount) % MARK_CAP;
+        this.markY[k] = y - this.prevGap * 0.5;
+        this.markType[k] = next;
+        this.markCount++;
+      }
+    }
+
+    // Heavy pull: a clear stretch, because both hands are busy hauling.
     if (y >= this.burstGenY && this.nextBurstY === Infinity) {
       const need = lerp(3, 4.5, d);
-      this.nextBurstY = y;
-      this.sparseFromY = y - 1;
-      this.sparseUntilY = y + (BURST_LEAD + need * 1.5 + 0.5) * speed;
-      const gapT = lerp(26, 15, d) * (0.8 + 0.4 * rng.next());
-      this.burstGenY = this.sparseUntilY + gapT * speed;
+      this.nextBurstY = y + 0.6;
+      this.clearFrom = y - 0.2;
+      this.clearUntil = y + 0.6 + (BURST_LEAD + need * BURST_MAX_FACTOR + 0.9) * speed + 1.5;
+      const gapT = lerp(26, 16, d) * (0.8 + 0.4 * rng.next());
+      this.burstGenY = this.clearUntil + gapT * speed;
+      // A short run of pickups for whoever finishes the pull early.
+      const step = rng.next() < 0.5 ? 1 : -1;
+      const lane0 = clamp(this.safeLane, 1, LANES - 2) - step;
+      for (let i = 0; i < 3; i++) this.addRing(this.oneKey ? MID_LANE : lane0 + step * i, this.clearUntil - 4.4 + i * 1.3);
     }
-    const sparse = y >= this.sparseFromY && y <= this.sparseUntilY;
+    const clear = y >= this.clearFrom && y <= this.clearUntil;
 
-    // Target zone.
-    if (y >= this.nextZoneY && this.zoneCount < ZONE_CAP) {
-      const w = rng.range(1.8, 2.6);
-      const zh = rng.range(3.5, 6);
-      const lim = BEAM_HALF - w * 0.5 - 0.35;
-      const k = (this.zoneStart + this.zoneCount) % ZONE_CAP;
-      this.zx[k] = rng.range(-lim, lim);
-      this.zy[k] = y;
-      this.zw[k] = w;
-      this.zh[k] = zh;
-      this.zoneCount++;
-      this.nextZoneY = y + zh + rng.range(11, 22);
+    let gap = lerp(4.2, 2.4, d) * (0.85 + 0.3 * rng.next());
+    if (one) {
+      // One key: every hazard is a surge, so leave room to recharge and land.
+      const min = (SURGE_RECHARGE_ONE_KEY + 0.4) * speed + SURGE_DIST + 0.9;
+      if (gap < min) gap = min;
     }
 
-    // Holes for this row.
-    const gapPrev = this.laneY1 - this.laneY0;
-    const gapNext = this.laneY2 - this.laneY1;
-    const jitter = 0.6 * Math.min(gapPrev, gapNext, 3.6);
-    const laneHalf = sparse ? 1.7 : lerp(1.35, 0.82, d);
-    let n = 1;
-    if (rng.next() < 0.3 + 0.6 * d) n++;
-    if (rng.next() < 0.75 * d) n++;
-    if (rng.next() < 0.4 * d) n++;
-    if (sparse) n = rng.next() < 0.35 ? 2 : 1;
-
-    for (let i = 0; i < n; i++) {
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const r = 0.37 + 0.1 * rng.next() + 0.08 * d;
-        const yj = y + (rng.next() - 0.5) * jitter;
-        const lane = this.laneAt(yj);
-        let x: number;
-        if (rng.next() < 0.5) {
-          // Hug the lane so the corridor has walls.
-          const off = laneHalf + r + rng.next() * 1.3;
-          x = rng.next() < 0.5 ? lane - off : lane + off;
-        } else {
-          x = rng.range(-HOLE_X_LIM, HOLE_X_LIM);
-        }
-        if (x < -HOLE_X_LIM || x > HOLE_X_LIM) continue;
-        const dl = x - lane;
-        if (dl < laneHalf + r && dl > -(laneHalf + r)) continue;
-        if (this.holeBlocked(x, yj, r)) continue;
-        if (this.holeCount === HOLE_CAP) {
-          this.holeStart = (this.holeStart + 1) % HOLE_CAP;
-          this.holeCount--;
-        }
-        const k = (this.holeStart + this.holeCount) % HOLE_CAP;
-        this.hx[k] = x;
-        this.hy[k] = yj;
-        this.hr[k] = r;
-        this.holeCount++;
-        break;
-      }
+    if (this.skipRows > 0) {
+      this.skipRows--;
+    } else if (!clear) {
+      if (one) this.rowOneKey(y, d, speed);
+      else this.rowLanes(y, d, speed, gap);
     }
 
-    // Advance the lane: how far it may move depends on how long the ball has.
-    this.laneY0 = this.laneY1;
-    this.laneX0 = this.laneX1;
-    this.laneY1 = this.laneY2;
-    this.laneX1 = this.laneX2;
-    const gap = lerp(3.6, 2.0, d) * (0.8 + 0.4 * rng.next());
-    const maxShift = clamp((1.4 * gap) / speed, 0.5, 4);
-    this.laneY2 = this.laneY1 + gap;
-    this.laneX2 = clamp(this.laneX1 + (rng.next() * 2 - 1) * maxShift, -LANE_LIM, LANE_LIM);
+    this.prevGap = gap;
+    this.genY = y + gap;
   }
 
-  private holeBlocked(x: number, y: number, r: number): boolean {
-    // Other recent holes.
-    const from = Math.max(0, this.holeCount - 14);
-    for (let i = from; i < this.holeCount; i++) {
-      const k = (this.holeStart + i) % HOLE_CAP;
-      const dx = x - this.hx[k]!;
-      const dy = y - this.hy[k]!;
-      const min = r + this.hr[k]! + 0.3;
-      if (dx * dx + dy * dy < min * min) return true;
+  /** One-key mode: the ball stays in the middle lane and surges over everything. */
+  private rowOneKey(y: number, d: number, speed: number): void {
+    const rng = this.rngBoard;
+    const sec = this.section === SEC_MIX ? (rng.next() < 0.5 ? SEC_HOLES : SEC_BARS) : this.section;
+    const barGap = (SURGE_RECHARGE_ONE_KEY + 0.5) * speed + SURGE_DIST + 1.2;
+    if (sec === SEC_BARS && y - this.lastBarY >= barGap && rng.next() < 0.7) {
+      this.addHazard(HAZ_BAR, 0, y, BAR_R, BEAM_HALF + 0.4);
+      this.lastBarY = y;
+      return;
     }
-    // Zones are hazard-free.
-    for (let i = 0; i < this.zoneCount; i++) {
-      const k = (this.zoneStart + i) % ZONE_CAP;
-      const hw = this.zw[k]! * 0.5 + r + 0.12;
-      const dx = x - this.zx[k]!;
-      if (dx > -hw && dx < hw && y > this.zy[k]! - r - 0.12 && y < this.zy[k]! + this.zh[k]! + r + 0.12) {
-        return true;
+    if (rng.next() < 0.78) this.addHazard(HAZ_HOLE, 0, y, 0.44 + 0.1 * rng.next() + 0.06 * d, 0);
+    else if (rng.next() < 0.6) this.addRing(MID_LANE, y);
+    // Holes in the other lanes are scenery here, but they keep the board reading the same.
+    const p = lerp(0.12, 0.3, d);
+    for (let lane = 0; lane < LANES; lane++) {
+      if (lane === MID_LANE || rng.next() >= p) continue;
+      this.addHazard(HAZ_HOLE, laneX(lane), y + (rng.next() - 0.5) * 1.2, 0.42 + 0.12 * rng.next(), 0);
+    }
+  }
+
+  private rowLanes(y: number, d: number, speed: number, gap: number): void {
+    const rng = this.rngBoard;
+    // The lane that is guaranteed open, and how far it may move since the last row.
+    const dtRow = this.prevGap / speed;
+    const maxShift = clamp(Math.floor(dtRow / 0.3), 1, 3);
+    const shift = Math.floor(rng.next() * (maxShift * 2 + 1)) - maxShift;
+    const safe = clamp(this.safeLane + shift, 0, LANES - 1);
+    this.safeLane = safe;
+
+    const sec = this.section === SEC_MIX ? Math.floor(rng.next() * 4) : this.section;
+    const p = lerp(0.24, 0.6, d);
+    const r = 0.44 + 0.08 * d;
+    let placed = 0;
+
+    if (sec === SEC_BARS) {
+      const barGap = (SURGE_RECHARGE + 0.9) * speed + SURGE_DIST + 2;
+      if (y - this.lastBarY >= barGap && rng.next() < 0.5) {
+        this.addHazard(HAZ_BAR, 0, y, BAR_R, BEAM_HALF + 0.4);
+        this.lastBarY = y;
+        // Landing room: the row after a bar stays empty.
+        this.skipRows = 1;
+        this.addRing(safe, y + gap * 0.5);
+        return;
       }
     }
-    return false;
+
+    if (sec === SEC_SLIDERS && rng.next() < 0.75) {
+      // One hole sweeping back and forth across a few lanes.
+      const span = 2 + Math.floor(rng.next() * 3);
+      const from = Math.floor(rng.next() * (LANES - span));
+      const k = this.addHazard(HAZ_SLIDER, laneX(from + rng.next() * span), y, r, 0);
+      this.hazMin[k] = laneX(from);
+      this.hazMax[k] = laneX(from + span);
+      this.hazV[k] = lerp(1.5, 3.2, d) * (rng.next() < 0.5 ? -1 : 1);
+      for (let lane = 0; lane < LANES; lane++) {
+        if (lane === safe || (lane >= from && lane <= from + span) || rng.next() >= p * 0.6) continue;
+        this.addHazard(HAZ_HOLE, laneX(lane), y, r, 0);
+      }
+    } else if (sec === SEC_PITS) {
+      // Wide pits covering two or three lanes.
+      let lane = 0;
+      while (lane < LANES) {
+        if (lane !== safe && rng.next() < p) {
+          let w = 1;
+          const wantW = rng.next() < 0.45 ? 3 : 2;
+          while (w < wantW && lane + w < LANES && lane + w !== safe) w++;
+          const cx = (laneX(lane) + laneX(lane + w - 1)) / 2;
+          this.addHazard(w > 1 ? HAZ_PIT : HAZ_HOLE, cx, y, r, ((w - 1) * (laneX(1) - laneX(0))) / 2);
+          placed++;
+          lane += w + 1;
+        } else {
+          lane++;
+        }
+      }
+    } else {
+      for (let lane = 0; lane < LANES; lane++) {
+        if (lane === safe || rng.next() >= p) continue;
+        this.addHazard(HAZ_HOLE, laneX(lane), y + (rng.next() - 0.5) * 0.5, r + 0.08 * rng.next(), 0);
+        placed++;
+      }
+    }
+    if (placed === 0 && sec !== SEC_SLIDERS) {
+      // Never a blank row: put one hole beside the open lane.
+      const lane = safe + (safe < LANES - 1 && (safe === 0 || rng.next() < 0.5) ? 1 : -1);
+      this.addHazard(HAZ_HOLE, laneX(lane), y, r, 0);
+    }
+
+    // Pickups between rows, at or next to the open lane.
+    const roll = rng.next();
+    if (roll < 0.5) {
+      const lane = safe + Math.floor(rng.next() * 3) - 1;
+      this.addRing(lane, y + gap * 0.5);
+      if (roll < 0.14) this.addRing(lane + (rng.next() < 0.5 ? 1 : -1), y + gap * 0.72);
+    }
   }
 
   private growTapLog(): void {

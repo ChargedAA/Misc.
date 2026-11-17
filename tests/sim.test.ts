@@ -1,22 +1,26 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HOVER_MID, STEP_MS, TICK_HZ } from '../src/config.ts';
+import { BEAM_HALF, HOVER_MID, LANES, LANE_W, MID_LANE, STEP_MS, SURGE_DIST, TICK_HZ, climbSpeed, laneX } from '../src/config.ts';
 import { ACT_REFLEX, Runner } from '../src/loop.ts';
 import { Rng } from '../src/rng.ts';
-import { BURST_NONE, HOLE_CAP, PHASE_READY, PHASE_RUN, Sim, ZONE_CAP } from '../src/sim.ts';
+import { BURST_ACTIVE, BURST_LEADIN, BURST_NONE, HAZ_BAR, HAZ_CAP, PHASE_FALL, PHASE_OVER, PHASE_READY, PHASE_RUN, Sim } from '../src/sim.ts';
 
-/** A scripted player: jittered taps near the hover rate, plus the odd reflex press. */
+/** A scripted player: random dashes, the odd chord and reflex press. */
 function script(seed: number, seconds: number): { ts: number; act: number }[] {
   const rng = new Rng(seed);
   const events: { ts: number; act: number }[] = [];
-  for (const act of [0, 3]) {
-    let t = 1003.7 + rng.next() * 50;
-    while (t < 1000 + seconds * 1000) {
-      events.push({ ts: t, act });
-      t += (1000 / HOVER_MID) * (0.75 + rng.next() * 0.5);
+  let t = 1003.7;
+  while (t < 1000 + seconds * 1000) {
+    const r = rng.next();
+    if (r < 0.12) {
+      events.push({ ts: t, act: 0 }, { ts: t + 3 + rng.next() * 40, act: 3 });
+    } else if (r < 0.2) {
+      events.push({ ts: t, act: ACT_REFLEX });
+    } else {
+      events.push({ ts: t, act: rng.next() < 0.5 ? 0 : 3 });
     }
+    t += 180 + rng.next() * 900;
   }
-  for (let t = 1500; t < 1000 + seconds * 1000; t += 2100 + rng.next() * 900) events.push({ ts: t, act: ACT_REFLEX });
   return events.sort((a, b) => a.ts - b.ts);
 }
 
@@ -46,12 +50,14 @@ function snapshot(sim: Sim) {
     time: sim.time,
     climb: sim.climb,
     h: [...sim.h],
-    v: [...sim.v],
+    lane: sim.lane,
     ballX: sim.ballX,
-    ballV: sim.ballV,
+    charge: sim.charge,
     score: sim.score,
-    height: sim.height,
-    holes: sim.holeCount,
+    hazards: sim.hazCount,
+    rings: sim.rings,
+    surges: sim.surges,
+    dashes: sim.dashes,
     taps: sim.tapCount,
     cues: sim.cueCount,
     hits: sim.cueHits,
@@ -60,20 +66,47 @@ function snapshot(sim: Sim) {
   };
 }
 
+/** Run a fresh sim, tapping as `act` says, until `stop` or the run ends. */
+function drive(modeId: number, seed: number, seconds: number, act: (sim: Sim, now: number) => void, stop?: (sim: Sim) => boolean): Sim {
+  const sim = new Sim();
+  sim.headless = true;
+  sim.reset(modeId, seed);
+  sim.tap(0, 0, 0);
+  for (let i = 1; i < TICK_HZ * seconds; i++) {
+    const now = i * STEP_MS;
+    if (sim.phase === PHASE_RUN) act(sim, now);
+    sim.step(now);
+    if (sim.phase !== PHASE_RUN || stop?.(sim)) break;
+  }
+  return sim;
+}
+
 test('gameplay is identical at 60, 144 and 240 fps', () => {
+  let taps = 0;
+  let dashes = 0;
+  let surges = 0;
+  let cues = 0;
   for (const [modeId, seed] of [
     [2, 11],
     [3, 4242],
     [5, 99],
+    [6, 7],
+    [4, 31337],
+    [3, 2024],
   ] as const) {
     const a = snapshot(runAt(60, modeId, seed, 30));
     const b = snapshot(runAt(240, modeId, seed, 30));
     const c = snapshot(runAt(144, modeId, seed, 30));
     assert.ok(a.tick > TICK_HZ * 29, 'simulated the whole stretch');
-    assert.ok(a.taps > 20, 'the script actually played');
     assert.deepEqual(b, a);
     assert.deepEqual(c, a);
+    taps += a.taps;
+    dashes += a.dashes;
+    surges += a.surges;
+    cues += a.cues;
   }
+  // The scripted player is blind, so each run is short; together they cover the moves.
+  assert.ok(taps > 40 && dashes > 15 && surges > 2, `script played: ${taps} taps, ${dashes} dashes, ${surges} surges, ${cues} cues`);
 });
 
 test('nothing moves until the first tap', () => {
@@ -82,185 +115,307 @@ test('nothing moves until the first tap', () => {
   for (let i = 0; i < 500; i++) sim.step(i * STEP_MS);
   assert.equal(sim.phase, PHASE_READY);
   assert.equal(sim.climb, 0);
-  assert.equal(sim.h[0], 0.5);
+  assert.equal(sim.lane, MID_LANE);
 });
 
-test('ends sag without taps and hover near the middle at the hover rate', () => {
-  const sag = new Sim();
-  sag.reset(2, 5);
-  sag.tap(0, 0, 0);
-  for (let i = 0; i < TICK_HZ * 4 && sag.phase === PHASE_RUN; i++) sag.step(i * STEP_MS);
-  assert.ok(sag.h[1]! < 0.05, `right end sagged to ${sag.h[1]}`);
-
-  const hover = new Sim();
-  hover.reset(2, 5);
-  const every = Math.round(TICK_HZ / HOVER_MID);
-  let lo = 1;
-  let hi = 0;
-  for (let i = 0; i < TICK_HZ * 5; i++) {
-    if (i % every === 0) {
-      hover.tap(0, 0, i * STEP_MS);
-      hover.tap(1, 0, i * STEP_MS);
-    }
-    hover.step(i * STEP_MS);
-    if (hover.phase !== PHASE_RUN) break;
-    lo = Math.min(lo, hover.h[0]!);
-    hi = Math.max(hi, hover.h[0]!);
-  }
-  assert.ok(lo > 0.3 && hi < 0.7, `hover stayed in ${lo.toFixed(2)}..${hi.toFixed(2)}`);
-});
-
-test('mode 1 keeps the right end fixed', () => {
+test('a tap dashes one lane; outer keys dash further; walls stop it', () => {
   const sim = new Sim();
-  sim.reset(1, 5);
+  sim.reset(2, 5);
   sim.tap(0, 0, 0);
-  for (let i = 0; i < TICK_HZ * 2; i++) sim.step(i * STEP_MS);
-  assert.equal(sim.h[1], 0.5);
-  assert.ok(sim.h[0]! < 0.4);
+  assert.equal(sim.lane, MID_LANE - 1);
+  for (let i = 1; i < 60; i++) sim.step(i * STEP_MS);
+  assert.equal(sim.ballX, laneX(MID_LANE - 1), 'the ball arrives within 60 ticks');
+  assert.ok(sim.grounded);
+  for (let i = 0; i < 10; i++) sim.tap(1, 0, 1000 + i * 200);
+  assert.equal(sim.lane, LANES - 1, 'cannot dash past the last lane');
+
+  const four = new Sim();
+  four.reset(4, 5);
+  four.tap(0, 0, 0); // Z, the outer left key
+  assert.equal(four.lane, MID_LANE - 2);
+  four.tap(1, 0, 500); // N, the inner right key
+  assert.equal(four.lane, MID_LANE - 1);
+  four.tap(1, 1, 1000); // M, the outer right key
+  assert.equal(four.lane, MID_LANE + 1);
 });
 
-test('repeating the same key lifts less than alternating', () => {
-  const alt = new Sim();
-  alt.reset(4, 5);
-  alt.tap(0, 0, 0);
-  const v0 = alt.v[0]!;
-  assert.equal(alt.tap(0, 1, 1), 1);
-  const full = alt.v[0]! - v0;
-  assert.equal(alt.tap(0, 1, 2), 2);
-  const weak = alt.v[0]! - v0 - full;
-  assert.ok(weak < full * 0.5 && weak > 0);
-  assert.equal(alt.repeats, 1);
+test('both sides together surge instead of dashing, and the surge has to recharge', () => {
+  const sim = new Sim();
+  sim.reset(2, 5);
+  sim.tap(0, 0, 0);
+  sim.tap(1, 0, 20);
+  assert.equal(sim.lane, MID_LANE, 'the first dash is taken back');
+  assert.equal(sim.surges, 1);
+  assert.ok(sim.surgeT > 0);
+  assert.equal(sim.charge, 0);
+  const before = sim.climb;
+  let i = 1;
+  for (; i < TICK_HZ; i++) {
+    sim.step(i * STEP_MS);
+    assert.ok(sim.phase !== PHASE_RUN || sim.surgeT <= 0 || !sim.grounded, 'airborne while surging');
+    if (sim.surgeT <= 0) break;
+  }
+  const plain = climbSpeed(0) * (i / TICK_HZ);
+  assert.ok(Math.abs(sim.climb - before - plain - SURGE_DIST) < 0.05, `surged ${(sim.climb - before - plain).toFixed(2)} m`);
+  // Straight away again: no charge, so it is a dud.
+  sim.tap(0, 0, 2000);
+  sim.tap(1, 0, 2010);
+  assert.equal(sim.surges, 1);
+  assert.equal(sim.lane, MID_LANE);
+  // Taps further apart than the chord window are two dashes.
+  sim.tap(0, 0, 3000);
+  sim.tap(1, 0, 3100);
+  assert.equal(sim.surges, 1);
+  assert.equal(sim.dashes, 2);
 });
 
-test('reaction cue: caught inside the window, logged in ms, false start penalised', () => {
+test('one key: a hole swallows a ball that waits, and a timed surge clears it', () => {
+  let cleared = 0;
+  let fell = 0;
+  for (let seed = 1; seed <= 8; seed++) {
+    const idle = drive(1, seed * 31, 40, () => {});
+    assert.equal(idle.phase, PHASE_FALL, 'doing nothing ends in a hole');
+    fell++;
+
+    // Surge whenever something in the lane is about to arrive.
+    const sim = drive(
+      1,
+      seed * 31,
+      25,
+      (s, now) => {
+        if (s.charge < 1 || s.surgeT > 0) return;
+        if (s.burstState === BURST_LEADIN || s.burstState === BURST_ACTIVE || s.cueActive) return;
+        for (let i = 0; i < s.hazCount; i++) {
+          const k = (s.hazStart + i) % HAZ_CAP;
+          if (Math.abs(s.hazX[k]!) - s.hazL[k]! > 0.5) continue;
+          const dy = s.hazY[k]! - s.ballY;
+          if (dy > 0.05 && dy < s.hazR[k]! + 0.3) s.tap(0, 0, now);
+        }
+      },
+      (s) => s.surges >= 3,
+    );
+    if (sim.surges >= 3 && sim.phase === PHASE_RUN) cleared++;
+  }
+  assert.ok(fell === 8 && cleared >= 6, `cleared ${cleared} of 8`);
+});
+
+test('a dashing ball cannot be swallowed, a landed one can', () => {
+  // Find a seed whose first row has a hole next to the middle lane, then dash onto it late.
   let checked = 0;
-  for (let seed = 1; seed <= 12; seed++) {
+  for (let seed = 1; seed <= 60 && checked < 3; seed++) {
+    const probe = new Sim();
+    probe.reset(2, seed);
+    let target = -1;
+    for (let i = 0; i < probe.hazCount; i++) {
+      const k = (probe.hazStart + i) % HAZ_CAP;
+      if (probe.hazY[k]! > 13 || probe.hazType[k] !== 0) continue;
+      const lane = Math.round(probe.hazX[k]! / LANE_W + MID_LANE);
+      if (lane === MID_LANE + 1) target = k;
+    }
+    if (target < 0) continue;
     const sim = new Sim();
-    sim.headless = true;
-    sim.reset(3, seed * 77);
-    const every = Math.round(TICK_HZ / HOVER_MID);
-    let caught = false;
-    for (let i = 0; i < TICK_HZ * 40 && !caught; i++) {
-      const now = i * STEP_MS;
-      if (i % every === 0) {
-        sim.tap(0, 0, now);
+    sim.reset(2, seed);
+    sim.tap(0, 0, 0);
+    sim.tap(1, 0, 400); // back to the middle lane
+    let dashed = false;
+    for (let i = 1; i < TICK_HZ * 12; i++) {
+      const now = 1000 + i * STEP_MS;
+      const dy = sim.hazY[target]! - sim.ballY;
+      if (!dashed && Math.abs(dy) < 0.05) {
         sim.tap(1, 0, now);
+        dashed = true;
       }
-      if (sim.cueActive && sim.cueDrawnAt > 0 && now - sim.cueDrawnAt >= 250) {
-        sim.reflex(now);
-        caught = true;
-      }
+      const was = sim.grounded;
       sim.step(now);
+      if (dashed && sim.phase === PHASE_RUN) assert.ok(!sim.grounded || was === false || sim.ballX !== laneX(MID_LANE + 1));
       if (sim.phase !== PHASE_RUN) break;
     }
-    if (!caught) continue; // fell into a hole before the first cue
+    assert.ok(dashed);
+    assert.equal(sim.phase, PHASE_FALL, 'it fell on landing');
+    assert.equal(sim.fallFromX, laneX(MID_LANE + 1));
     checked++;
-    assert.equal(sim.cueHits, 1);
-    assert.ok(sim.rt[0]! >= 250 && sim.rt[0]! < 255, `rt ${sim.rt[0]}`);
-    assert.equal(sim.falseStarts, 0);
-    // A stutter press right after the catch is forgiven.
-    sim.reflex(sim.cueDrawnAt + 300);
-    assert.equal(sim.falseStarts, 0);
   }
-  assert.ok(checked >= 3, `only ${checked} seeds reached a cue`);
-
-  const fs = new Sim();
-  fs.reset(3, 78);
-  fs.tap(0, 0, 0);
-  fs.step(0);
-  const v = fs.v[0]!;
-  fs.reflex(5);
-  assert.equal(fs.falseStarts, 1);
-  assert.ok(fs.v[0]! < v);
+  assert.ok(checked >= 3, `only ${checked} seeds had a hole beside the start`);
 });
 
-test('a missed cue lurches the cued end', () => {
+test('every static row leaves a lane open', () => {
+  for (const modeId of [2, 4, 6]) {
+    for (let seed = 1; seed <= 12; seed++) {
+      const sim = new Sim();
+      sim.reset(modeId, seed * 977);
+      const g = sim as unknown as { climb: number; time: number; generate(): void };
+      const rows = new Map<number, Uint8Array>();
+      for (let step = 0; step < 60; step++) {
+        g.climb = step * 8;
+        g.time = step * 4;
+        g.generate();
+        for (let i = 0; i < sim.hazCount; i++) {
+          const k = (sim.hazStart + i) % HAZ_CAP;
+          if (sim.hazType[k] === HAZ_BAR || sim.hazV[k] !== 0) continue;
+          // Holes in a row are jittered by at most a quarter of a metre.
+          let key = -1;
+          for (const y of rows.keys()) if (Math.abs(y - sim.hazY[k]!) < 0.6) key = y;
+          if (key < 0) {
+            key = sim.hazY[k]!;
+            rows.set(key, new Uint8Array(LANES));
+          }
+          for (let lane = 0; lane < LANES; lane++) {
+            if (Math.abs(laneX(lane) - sim.hazX[k]!) - sim.hazL[k]! < 0.7) rows.get(key)![lane] = 1;
+          }
+        }
+      }
+      assert.ok(rows.size > 40, 'generated plenty of rows');
+      for (const [y, lanes] of rows) {
+        assert.ok(lanes.includes(0), `keys ${modeId} seed ${seed}: row at ${y.toFixed(1)} m has no open lane`);
+      }
+    }
+  }
+  assert.ok(BEAM_HALF > 0);
+});
+
+test('reaction cue without a reflex key: the tap is used up, logged in ms, and can still be half a surge', () => {
+  let caught = 0;
+  let chorded = 0;
+  for (let seed = 1; seed <= 30; seed++) {
+    for (const chord of [false, true]) {
+      const sim = new Sim();
+      sim.headless = true;
+      sim.reset(2, seed * 77);
+      sim.tap(0, 0, 0);
+      sim.tap(1, 0, 300);
+      for (let i = 1; i < TICK_HZ * 30; i++) {
+        const now = 1000 + i * STEP_MS;
+        if (sim.cueActive && sim.cueDrawnAt > 0 && now - sim.cueDrawnAt >= 250) {
+          const lane = sim.lane;
+          const other = 1 - sim.cueSide;
+          sim.tap(sim.cueSide, 0, now);
+          assert.equal(sim.cueHits, 1);
+          assert.ok(sim.rt[0]! >= 250 && sim.rt[0]! < 255, `rt ${sim.rt[0]}`);
+          assert.equal(sim.lane, lane, 'the catching tap does not dash');
+          if (chord) {
+            sim.tap(other, 0, now + 10);
+            assert.equal(sim.surges, 1, 'cue tap plus the other side is still a surge');
+            assert.equal(sim.lane, lane);
+            chorded++;
+          } else caught++;
+          break;
+        }
+        sim.step(now);
+        if (sim.phase !== PHASE_RUN) break;
+      }
+    }
+  }
+  assert.ok(caught >= 4 && chorded >= 4, `cues reached: ${caught} plain, ${chorded} chorded`);
+});
+
+test('a missed cue slides the ball one lane toward the slipping cable', () => {
   let checked = 0;
-  for (let seed = 1; seed <= 12; seed++) {
+  for (let seed = 1; seed <= 30 && checked < 5; seed++) {
     const sim = new Sim();
     sim.headless = true;
     sim.reset(3, seed * 77);
-    const every = Math.round(TICK_HZ / HOVER_MID);
-    for (let i = 0; i < TICK_HZ * 40; i++) {
-      const now = i * STEP_MS;
-      if (i % every === 0) {
-        sim.tap(0, 0, now);
-        sim.tap(1, 0, now);
-      }
+    sim.tap(0, 0, 0);
+    sim.tap(1, 0, 300);
+    for (let i = 1; i < TICK_HZ * 30; i++) {
+      const now = 1000 + i * STEP_MS;
+      const active = sim.cueActive;
+      const lane = sim.lane;
       const side = sim.cueSide;
-      const before = sim.v[side]!;
-      const wasActive = sim.cueActive;
       sim.step(now);
       if (sim.phase !== PHASE_RUN) break;
-      if (wasActive && !sim.cueActive) {
+      if (active && !sim.cueActive) {
         assert.equal(sim.cueMisses, 1);
-        assert.ok(sim.v[side]! < before - 1.5, 'the missed side drops hard');
+        assert.equal(sim.lane, lane + (side === 0 ? -1 : 1));
+        assert.equal(sim.charge, 0);
         checked++;
         break;
       }
     }
   }
-  assert.ok(checked >= 3, `only ${checked} seeds reached a cue`);
+  assert.ok(checked >= 5, `only ${checked} seeds reached a cue`);
+
+  const fs = new Sim();
+  fs.reset(3, 78);
+  fs.tap(0, 0, 0);
+  fs.step(0);
+  fs.reflex(500);
+  assert.equal(fs.falseStarts, 1, 'reflex with no cue showing is a false start');
+  assert.equal(fs.charge, 0);
 });
 
-test('holes never sit inside a target zone', () => {
-  for (let seed = 1; seed <= 20; seed++) {
-    const sim = new Sim();
-    sim.reset(2, seed * 131);
-    const every = Math.round(TICK_HZ / HOVER_MID);
-    for (let i = 0; i < TICK_HZ * 25; i++) {
-      if (i % every === 0) {
-        sim.tap(0, 0, i * STEP_MS);
-        sim.tap(1, 0, i * STEP_MS);
-      }
-      sim.step(i * STEP_MS);
-      if (sim.phase !== PHASE_RUN) break;
-    }
-    for (let i = 0; i < sim.holeCount; i++) {
-      const h = (sim.holeStart + i) % HOLE_CAP;
-      for (let j = 0; j < sim.zoneCount; j++) {
-        const z = (sim.zoneStart + j) % ZONE_CAP;
-        const inX = Math.abs(sim.hx[h]! - sim.zx[z]!) < sim.zw[z]! / 2 + sim.hr[h]!;
-        const inY = sim.hy[h]! > sim.zy[z]! - sim.hr[h]! && sim.hy[h]! < sim.zy[z]! + sim.zh[z]! + sim.hr[h]!;
-        assert.ok(!(inX && inY), `seed ${seed}: hole overlaps a zone`);
-      }
-    }
-  }
-});
-
-test('a heavy pull is cleared by holding the target and lost by slacking', () => {
+test('a heavy pull is held by tapping above target, lost by slacking, and never moves the ball', () => {
   const attempt = (seed: number, factor: number) => {
-    const sim = new Sim();
-    sim.headless = true;
-    sim.reset(2, seed);
     const last = [-1e9, -1e9];
-    for (let i = 0; i < TICK_HZ * 60; i++) {
-      const now = i * STEP_MS;
-      const rate = sim.burstState !== BURST_NONE ? sim.burstTarget * factor : HOVER_MID;
-      for (let s = 0; s < 2; s++) {
-        if (now - last[s]! >= 1000 / rate) {
-          sim.tap(s, 0, now);
-          last[s] = now;
+    let laneAtStart = -1;
+    let moved = false;
+    const sim = drive(
+      2,
+      seed,
+      90,
+      (s, now) => {
+        if (s.burstState === BURST_NONE) {
+          // Stay alive: sit in whichever lane is free.
+          let danger = false;
+          for (let i = 0; i < s.hazCount; i++) {
+            const k = (s.hazStart + i) % HAZ_CAP;
+            const dy = s.hazY[k]! - s.ballY;
+            if (dy > -0.7 && dy < 2.2 && Math.abs(laneX(s.lane) - s.hazX[k]!) - s.hazL[k]! < 0.7) danger = true;
+          }
+          if (danger && now - Math.max(last[0]!, last[1]!) > 160) {
+            const side = s.lane > MID_LANE ? 0 : 1;
+            s.tap(side, 0, now);
+            last[side] = now;
+          }
+          return;
         }
-      }
-      sim.step(now);
-      if (sim.phase !== PHASE_RUN || sim.burstsWon + sim.burstsLost > 0) break;
-    }
-    return sim;
+        if (laneAtStart < 0) laneAtStart = s.lane;
+        if (s.burstState === BURST_LEADIN || s.burstState === BURST_ACTIVE) {
+          for (let side = 0; side < 2; side++) {
+            if (now - last[side]! >= 1000 / (s.burstTarget * factor)) {
+              s.tap(side, 0, now);
+              last[side] = now;
+            }
+          }
+          if (s.lane !== laneAtStart) moved = true;
+        }
+      },
+      (s) => s.burstsWon + s.burstsLost > 0,
+    );
+    return { sim, moved };
   };
   let won = 0;
   let lost = 0;
-  for (let seed = 1; seed <= 16; seed++) {
+  for (let seed = 1; seed <= 24; seed++) {
     const strong = attempt(seed * 9, 1.2);
-    if (strong.burstsWon + strong.burstsLost > 0) {
-      assert.equal(strong.burstsWon, 1, 'tapping above target holds the pull');
+    if (strong.sim.burstsWon + strong.sim.burstsLost > 0) {
+      assert.equal(strong.sim.burstsWon, 1, 'tapping above target holds the pull');
+      assert.ok(!strong.moved, 'taps in a pull do not dash');
       won++;
     }
     const weak = attempt(seed * 9, 0.7);
-    if (weak.burstsWon + weak.burstsLost > 0) {
-      assert.equal(weak.burstsLost, 1, 'tapping below target slips');
+    if (weak.sim.burstsWon + weak.sim.burstsLost > 0) {
+      assert.equal(weak.sim.burstsLost, 1, 'tapping below target slips');
       lost++;
     }
   }
   assert.ok(won >= 3 && lost >= 3, `pulls reached: ${won} strong, ${lost} weak`);
+  assert.ok(HOVER_MID > 0 && PHASE_OVER > 0);
+});
+
+test('pickups build the chain, which multiplies the score', () => {
+  const sim = new Sim();
+  sim.reset(2, 3);
+  sim.tap(0, 0, 0);
+  sim.tap(1, 0, 400);
+  // Drop three pickups straight ahead of the ball.
+  const g = sim as unknown as { addRing(lane: number, y: number): void };
+  g.addRing(MID_LANE, sim.ballY + 0.8);
+  g.addRing(MID_LANE, sim.ballY + 1.6);
+  g.addRing(MID_LANE, sim.ballY + 2.4);
+  const rings = sim.rings;
+  for (let i = 1; i < TICK_HZ * 3 && sim.phase === PHASE_RUN; i++) sim.step(1000 + i * STEP_MS);
+  assert.equal(sim.rings - rings, 3);
+  assert.equal(sim.chain, 3);
+  assert.equal(sim.mult, 4);
+  assert.equal(sim.bestChain, 3);
 });

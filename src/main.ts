@@ -1,4 +1,4 @@
-// Application shell: screens, input, the rAF loop and persistence.
+// Application shell: screens, keyboard and touch input, the rAF loop and persistence.
 
 import './style.css';
 import {
@@ -7,23 +7,29 @@ import {
   SND_FALL,
   SND_FALSE,
   SND_LURCH,
+  SND_RING,
+  SND_SURGE,
   SND_TAP_L,
   SND_TAP_R,
   SND_TAP_WEAK,
   SND_UI,
-  SND_ZONE,
   Sfx,
 } from './audio.ts';
-import { getMode } from './config.ts';
+import { SLOT_REFLEX, getMode } from './config.ts';
 import { ACT_REFLEX, Runner } from './loop.ts';
+import { OUT_CORRECT, OUT_EARLY, OUT_LATE, OUT_START, OUT_WRONG, ReflexSession } from './reflex.ts';
 import { View, type Hints, type PerfStats } from './render.ts';
 import {
+  BURST_ACTIVE,
+  BURST_LEADIN,
   FX_BURST_OK,
   FX_CATCH,
+  FX_DUD,
   FX_FALL,
   FX_FALSE,
   FX_LURCH,
-  FX_ZONE,
+  FX_RING,
+  FX_SURGE,
   PHASE_OVER,
   PHASE_READY,
   PHASE_RUN,
@@ -39,47 +45,52 @@ import {
   loadHistory,
   loadSettings,
   saveSettings,
+  type GameId,
   type RunRecord,
 } from './storage.ts';
-import { CpsTrainer, RT_EARLY, RT_HIT, RT_LATE, ReactionTrainer } from './trainers.ts';
-import {
-  Ui,
-  cpsResultsHtml,
-  keysHtml,
-  menuHtml,
-  pauseHtml,
-  resultsHtml,
-  rtResultsHtml,
-  statsHtml,
-} from './ui.ts';
+import { HIT_CORNER, TouchLayout } from './touch.ts';
+import { CpsTrainer } from './trainers.ts';
+import { GAMES, Ui, cpsResultsHtml, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
 
-type Screen = 'menu' | 'play' | 'pause' | 'results' | 'rt' | 'cps' | 'rtResults' | 'cpsResults' | 'stats' | 'keys';
+type Screen = 'title' | 'play' | 'pause' | 'results' | 'reflex' | 'reflexResults' | 'burst' | 'burstResults' | 'stats' | 'keys';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const view = new View(canvas);
 const sfx = new Sfx();
 const sim = new Sim();
 const runner = new Runner(sim);
-const rtTrainer = new ReactionTrainer();
+const reflex = new ReflexSession();
 const cpsTrainer = new CpsTrainer();
+const touch = new TouchLayout();
 const ui = new Ui(document.getElementById('ui')!, onAction);
 
 const settings = loadSettings();
 sfx.muted = settings.muted;
 let history = loadHistory();
 
-let screen: Screen = 'menu';
+let screen: Screen = 'title';
+/** Game whose key-count pop-out is open on the title screen. */
+let picked: GameId | null = null;
+let lastGame: GameId = 'climb';
+/** Key count of the session in progress. */
+let activeKeys = settings.keys.climb;
+/** Key count shown on the rebinding screen. */
+let bindKeys = settings.keys.climb;
 let statsFilter = 0;
 let listening = '';
-/** Ignore menu keys until this time, so mashing through a death does not skip the results. */
+/** Ignore menu keys until this time, so mashing through an ending does not skip the results. */
 let inputLockUntil = 0;
 
-/** code -> action: 0..5 lift slot (side * 3 + key), 6 reflex. */
+/** code -> slot: 0..5 lift (side * 3 + key), 6 reflex. */
 const keymap = new Map<string, number>();
-const hints: Hints = { left: '', right: '', reflex: '' };
-let slotLabels: string[] = [];
+/** Label of each slot, indexed by slot. */
+const slotLabels: string[] = ['', '', '', '', '', '', ''];
+/** Labels of the lift keys in play, left hand first (for the stats tables). */
+let liftLabels: string[] = [];
+const hints: Hints = { left: '', right: '', center: '', sub: '' };
 const lastKey = new Int8Array(2);
-const touchKey = new Int8Array(2);
+/** Slot + 1 held by each active pointer, by pointerId. */
+const pointerSlot = new Int8Array(64);
 
 const perf: PerfStats = { show: false, fps: 0, frameMs: 0, maxMs: 0, ticks: 0 };
 let looping = false;
@@ -93,39 +104,62 @@ const MAX = 2;
 const COUNT = 3;
 const SAMPLED_AT = 4;
 
-// --- Mode and bindings ------------------------------------------------------------
+// --- Keys -------------------------------------------------------------------------
 
-function applyMode(): void {
-  const b = settings.bindings[settings.mode]!;
+function applyKeys(count: number): void {
+  activeKeys = count;
+  const mode = getMode(count);
+  const b = settings.bindings[count]!;
   keymap.clear();
-  slotLabels = [];
+  slotLabels.fill('');
+  liftLabels = [];
   b.left.forEach((code, i) => {
     keymap.set(code, i);
-    slotLabels.push(keyLabel(code));
+    slotLabels[i] = keyLabel(code);
+    liftLabels.push(slotLabels[i]!);
   });
   b.right.forEach((code, i) => {
     keymap.set(code, 3 + i);
-    slotLabels.push(keyLabel(code));
+    slotLabels[3 + i] = keyLabel(code);
+    liftLabels.push(slotLabels[3 + i]!);
   });
-  if (b.reflex) keymap.set(b.reflex, ACT_REFLEX);
-  hints.left = b.left.map(keyLabel).join('  ');
-  hints.right = b.right.map(keyLabel).join('  ');
-  hints.reflex = b.reflex ? keyLabel(b.reflex) : '';
-}
-
-function setMode(id: number): void {
-  if (id < 1 || id > 6) return;
-  settings.mode = id;
-  saveSettings(settings);
-  applyMode();
-}
-
-function bestRun(mode: number): RunRecord | null {
-  let best: RunRecord | null = null;
-  for (const r of history) {
-    if (r.kind === 'run' && r.mode === mode && (best === null || (r.score ?? 0) > (best.score ?? 0))) best = r;
+  if (b.reflex) {
+    keymap.set(b.reflex, SLOT_REFLEX);
+    slotLabels[SLOT_REFLEX] = keyLabel(b.reflex);
   }
-  return best;
+  touch.build(mode, slotLabels, view.w, view.h, view.dpr);
+  refreshHints();
+}
+
+/** The how-to lines under the beam before a run starts. */
+function refreshHints(): void {
+  const mode = getMode(activeKeys);
+  const b = settings.bindings[activeKeys]!;
+  const left = b.left.map(keyLabel).join('  ');
+  const right = b.right.map(keyLabel).join('  ');
+  const pads = touch.active;
+  if (mode.right === 0) {
+    hints.left = hints.right = '';
+    hints.center = pads ? 'tap: surge over holes' : `${left}  surge over holes`;
+    hints.sub = 'orange cable: press once';
+  } else {
+    hints.left = pads ? 'dash left' : `${left}  dash left`;
+    hints.right = pads ? 'dash right' : `dash right  ${right}`;
+    hints.center = 'both sides: surge';
+    hints.sub = mode.reflex && b.reflex ? `orange cable: ${keyLabel(b.reflex)}` : 'orange cable: tap that side';
+  }
+}
+
+function best(kind: RunRecord['kind'], keys: number, field: 'score' | 'target'): RunRecord | null {
+  let top: RunRecord | null = null;
+  for (const r of history) {
+    if (r.kind === kind && r.mode === keys && (top === null || (r[field] ?? 0) > (top[field] ?? 0))) top = r;
+  }
+  return top;
+}
+
+function bestFor(game: GameId, keys: number): RunRecord | null {
+  return game === 'climb' ? best('run', keys, 'score') : game === 'reflex' ? best('rt', keys, 'score') : best('cps', keys, 'target');
 }
 
 // --- Loop -------------------------------------------------------------------------
@@ -171,51 +205,66 @@ function frame(now: number): void {
       sim.fx = 0;
       playFx(fx);
     }
-    view.drawGame(sim, runner.alpha, now, hints);
+    view.drawGame(sim, runner.alpha, now, hints, touch);
     view.drawPerf(perf);
     if (sim.phase === PHASE_OVER) finishRun();
-  } else if (screen === 'rt') {
-    rtTrainer.frame(now, view);
+  } else if (screen === 'reflex') {
+    const done = reflex.update(now);
+    reflex.draw(now, view, touch);
     view.drawPerf(perf);
-  } else if (screen === 'cps') {
-    const done = cpsTrainer.frame(now, view);
+    if (done) finishReflex();
+  } else if (screen === 'burst') {
+    const done = cpsTrainer.frame(now, view, touch);
     view.drawPerf(perf);
-    if (done) finishCps();
+    if (done) finishBurst();
   }
 }
 
 function playFx(fx: number): void {
   if (fx & FX_FALL) sfx.play(SND_FALL);
   else if (fx & FX_LURCH) sfx.play(SND_LURCH);
+  if (fx & FX_SURGE) sfx.play(SND_SURGE);
+  if (fx & FX_DUD) sfx.play(SND_TAP_WEAK);
   if (fx & FX_CATCH) sfx.play(SND_CATCH);
   if (fx & FX_FALSE) sfx.play(SND_FALSE);
   if (fx & FX_BURST_OK) sfx.play(SND_BURST_OK);
-  if (fx & FX_ZONE) sfx.play(SND_ZONE);
+  if (fx & FX_RING) sfx.play(SND_RING + Math.max(0, sim.chain - 1));
 }
 
 // --- Screens ----------------------------------------------------------------------
 
-function showMenu(): void {
+function showTitle(slide = false): void {
   stopLoop();
-  screen = 'menu';
+  screen = 'title';
   listening = '';
-  ui.show(menuHtml(settings, bestRun(settings.mode)));
+  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked]) : null, slide));
 }
 
-function startRun(): void {
-  applyMode();
-  sim.reset(settings.mode, (Math.random() * 0x100000000) >>> 0);
-  runner.restart();
-  lastKey[0] = lastKey[1] = -1;
-  screen = 'play';
+function startGame(game: GameId): void {
+  lastGame = game;
+  picked = null;
+  applyKeys(settings.keys[game]);
+  pointerSlot.fill(0);
   ui.hide();
+  if (game === 'climb') {
+    sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);
+    runner.restart();
+    lastKey[0] = lastKey[1] = -1;
+    screen = 'play';
+  } else if (game === 'reflex') {
+    reflex.start(getMode(activeKeys), slotLabels, performance.now());
+    screen = 'reflex';
+  } else {
+    cpsTrainer.start(getMode(activeKeys), liftLabels, performance.now());
+    screen = 'burst';
+  }
   startLoop();
 }
 
 function pause(): void {
   if (screen !== 'play') return;
   if (sim.phase === PHASE_READY) {
-    showMenu();
+    showTitle();
     return;
   }
   if (sim.phase !== PHASE_RUN) return;
@@ -233,22 +282,33 @@ function resume(): void {
   startLoop();
 }
 
-function finishRun(): void {
-  stopLoop();
-  const mode = getMode(sim.mode.id);
+/** The corner button, or Escape: pause a run, end a training session. */
+function leave(): void {
+  if (screen === 'play') pause();
+  else if (screen === 'reflex') finishReflex();
+  else if (screen === 'burst') finishBurst();
+}
+
+function liftSlots(): number[] {
+  const mode = getMode(activeKeys);
   const slots: number[] = [];
   for (let i = 0; i < mode.left; i++) slots.push(i);
   for (let i = 0; i < mode.right; i++) slots.push(3 + i);
+  return slots;
+}
+
+function finishRun(): void {
+  stopLoop();
   const rt = rtStats(sim.rt, sim.rtCount);
-  const cps = cpsStats(sim.tapT, sim.tapKey, sim.tapCount, slots, false);
-  const prev = bestRun(mode.id);
+  const cps = cpsStats(sim.tapT, sim.tapKey, sim.tapCount, liftSlots(), false);
+  const prev = best('run', activeKeys, 'score');
   const score = Math.floor(sim.score);
-  const best = score > 0 && (prev === null || score > (prev.score ?? 0));
+  const isBest = score > 0 && (prev === null || score > (prev.score ?? 0));
   if (sim.time >= 3) {
     history = addRecord({
       kind: 'run',
       at: Date.now(),
-      mode: mode.id,
+      mode: activeKeys,
       time: sim.time,
       score,
       height: sim.height,
@@ -260,7 +320,6 @@ function finishRun(): void {
   inputLockUntil = performance.now() + 450;
   ui.show(
     resultsHtml({
-      mode: mode.id,
       score,
       height: sim.height,
       time: sim.time,
@@ -271,62 +330,64 @@ function finishRun(): void {
       falseStarts: sim.falseStarts,
       pullsWon: sim.burstsWon,
       pulls: sim.burstsWon + sim.burstsLost,
+      rings: sim.rings,
+      bestChain: sim.bestChain,
+      surges: sim.surges,
       cps,
-      labels: slotLabels,
-      best,
+      labels: liftLabels,
+      best: isBest,
     }),
   );
 }
 
-function startRt(): void {
-  screen = 'rt';
-  ui.hide();
-  rtTrainer.start(performance.now());
-  startLoop();
-}
-
-function finishRt(): void {
+function finishReflex(): void {
   stopLoop();
-  const t = rtTrainer;
+  const t = reflex;
   const rt = rtStats(t.rts, t.n);
   const time = (performance.now() - t.startedAt) / 1000;
-  const saved = t.n >= 5;
+  const saved = t.trials >= 5;
+  const prev = best('rt', activeKeys, 'score');
+  const isBest = saved && t.score > 0 && (prev === null || t.score > (prev.score ?? 0));
   if (saved) {
     history = addRecord({
       kind: 'rt',
       at: Date.now(),
-      mode: 0,
+      mode: activeKeys,
       time,
-      rt: { ...rt, miss: t.late + t.misses, early: t.early },
+      score: t.score,
+      rt: { ...rt, miss: t.wrong + t.late, early: t.early },
       window: t.windowMs,
+      rounds: t.roundsCleared,
+      accuracy: t.correct / t.trials,
     });
   }
-  screen = 'rtResults';
-  inputLockUntil = performance.now() + 300;
+  screen = 'reflexResults';
+  inputLockUntil = performance.now() + 450;
   ui.show(
-    rtResultsHtml({
+    reflexResultsHtml({
       rt,
-      hist: histogram(t.rts, t.n, 20),
-      hits: t.hits,
+      hist: histogram(t.rts, t.n, 25),
+      score: t.score,
+      rounds: t.roundsCleared,
+      trials: t.trials,
+      correct: t.correct,
+      wrong: t.wrong,
       late: t.late,
       early: t.early,
-      misses: t.misses,
       window: t.windowMs,
-      time,
+      games: t.games.map((g, i) => ({
+        name: g.name,
+        tried: t.gTried[i]!,
+        correct: t.gCorrect[i]!,
+        avg: t.gRtN[i]! ? t.gRtSum[i]! / t.gRtN[i]! : 0,
+      })),
       saved,
+      best: isBest,
     }),
   );
 }
 
-function startCps(): void {
-  applyMode();
-  screen = 'cps';
-  ui.hide();
-  cpsTrainer.start(getMode(settings.mode), slotLabels, performance.now());
-  startLoop();
-}
-
-function finishCps(): void {
+function finishBurst(): void {
   stopLoop();
   const t = cpsTrainer;
   const cps = cpsStats(t.tapT, t.tapKey, t.tapCount, t.slots, t.crossHand);
@@ -336,13 +397,13 @@ function finishCps(): void {
     history = addRecord({
       kind: 'cps',
       at: Date.now(),
-      mode: settings.mode,
+      mode: activeKeys,
       time,
       target: t.cleared,
       cps: { peak: cps.peak, s5: cps.s5, s10: cps.s10, handEven: cps.handEvenness, repeatRate: cps.repeatRate },
     });
   }
-  screen = 'cpsResults';
+  screen = 'burstResults';
   inputLockUntil = performance.now() + 450;
   ui.show(cpsResultsHtml({ cps, labels: t.labels, cleared: t.cleared, time, saved }));
 }
@@ -350,13 +411,13 @@ function finishCps(): void {
 function showStats(): void {
   stopLoop();
   screen = 'stats';
-  ui.show(statsHtml(history, statsFilter));
+  ui.show(statsHtml(history, statsFilter, perf.show));
 }
 
 function showKeys(): void {
   stopLoop();
   screen = 'keys';
-  ui.show(keysHtml(settings, listening));
+  ui.show(keysHtml(settings, bindKeys, listening));
 }
 
 function toggleMute(): void {
@@ -364,7 +425,7 @@ function toggleMute(): void {
   sfx.setMuted(settings.muted);
   saveSettings(settings);
   sfx.play(SND_UI);
-  if (screen === 'menu') showMenu();
+  if (screen === 'title') showTitle();
   else if (screen === 'pause') ui.show(pauseHtml(settings.muted), true);
 }
 
@@ -378,7 +439,7 @@ function exportHistory(): void {
 }
 
 function assignKey(code: string): void {
-  const b = settings.bindings[settings.mode]!;
+  const b = settings.bindings[bindKeys]!;
   const get = (id: string): string | null => {
     if (id === 'reflex') return b.reflex;
     const [side, i] = id.split(':');
@@ -391,7 +452,7 @@ function assignKey(code: string): void {
       (side === 'left' ? b.left : b.right)[Number(i)] = c;
     }
   };
-  // If another slot of this mode already uses the key, swap the two.
+  // If another slot of this key count already uses the key, swap the two.
   const ids = [...b.left.map((_, i) => `left:${i}`), ...b.right.map((_, i) => `right:${i}`), ...(b.reflex ? ['reflex'] : [])];
   const previous = get(listening);
   for (const id of ids) {
@@ -400,48 +461,67 @@ function assignKey(code: string): void {
   set(listening, code);
   listening = '';
   saveSettings(settings);
-  applyMode();
   showKeys();
+}
+
+function setKeyCount(n: number): void {
+  if (!picked || n < 1 || n > 6) return;
+  settings.keys[picked] = n;
+  saveSettings(settings);
+  showTitle();
 }
 
 function onAction(action: string, arg: string): void {
   sfx.unlock();
   switch (action) {
-    case 'mode':
-      setMode(Number(arg));
-      listening = '';
-      if (screen === 'keys') showKeys();
-      else showMenu();
+    case 'pick':
+      picked = arg as GameId;
+      showTitle(true);
       break;
-    case 'play':
-      startRun();
+    case 'closepop':
+      picked = null;
+      showTitle();
       break;
-    case 'rt':
-      startRt();
+    case 'keycount':
+      setKeyCount(Number(arg));
       break;
-    case 'cps':
-      startCps();
+    case 'start':
+      if (picked) startGame(picked);
+      break;
+    case 'again':
+      startGame(lastGame);
+      break;
+    case 'restart':
+      startGame('climb');
       break;
     case 'stats':
       showStats();
       break;
     case 'keys':
+      bindKeys = settings.keys[lastGame];
+      showKeys();
+      break;
+    case 'bindmode':
+      bindKeys = Math.min(6, Math.max(1, Number(arg) | 0));
+      listening = '';
       showKeys();
       break;
     case 'mute':
       toggleMute();
       break;
     case 'menu':
-      showMenu();
+      picked = null;
+      showTitle();
       break;
     case 'resume':
       resume();
       break;
-    case 'restart':
-      startRun();
-      break;
     case 'filter':
       statsFilter = Number(arg) | 0;
+      showStats();
+      break;
+    case 'perf':
+      perf.show = !perf.show;
       showStats();
       break;
     case 'export':
@@ -459,10 +539,9 @@ function onAction(action: string, arg: string): void {
       showKeys();
       break;
     case 'resetkeys':
-      settings.bindings[settings.mode] = defaultBindings(settings.mode);
+      settings.bindings[bindKeys] = defaultBindings(bindKeys);
       listening = '';
       saveSettings(settings);
-      applyMode();
       showKeys();
       break;
   }
@@ -474,14 +553,39 @@ function stamp(e: Event): number {
   return e.timeStamp > 0 ? e.timeStamp : performance.now();
 }
 
-function lift(slot: number, ts: number): void {
-  const side = slot >= 3 ? 1 : 0;
-  const idx = slot - side * 3;
-  const keys = side === 0 ? sim.mode.left : sim.mode.right;
-  const weak = keys > 1 && lastKey[side] === idx;
-  lastKey[side] = idx;
-  runner.push(slot, ts);
-  if (sim.phase <= PHASE_RUN) sfx.play(weak ? SND_TAP_WEAK : side === 0 ? SND_TAP_L : SND_TAP_R);
+/** A key or pad went down during a session. */
+function press(slot: number, ts: number): void {
+  if (screen === 'play') {
+    if (slot === SLOT_REFLEX) {
+      runner.push(ACT_REFLEX, ts);
+      return;
+    }
+    const side = slot >= 3 ? 1 : 0;
+    const idx = slot - side * 3;
+    runner.push(slot, ts);
+    if (sim.phase > PHASE_RUN) return;
+    // In a heavy pull a repeated key lifts less, and sounds like it.
+    const pulling = sim.burstState === BURST_LEADIN || sim.burstState === BURST_ACTIVE;
+    const keys = side === 0 ? sim.mode.left : sim.mode.right;
+    const weak = pulling && keys > 1 && lastKey[side] === idx;
+    lastKey[side] = idx;
+    sfx.play(weak ? SND_TAP_WEAK : side === 0 ? SND_TAP_L : SND_TAP_R);
+  } else if (screen === 'reflex') {
+    const out = reflex.onPress(slot, ts);
+    if (out === OUT_CORRECT) sfx.play(SND_CATCH);
+    else if (out === OUT_WRONG || out === OUT_EARLY || out === OUT_LATE) sfx.play(SND_FALSE);
+    else if (out === OUT_START) sfx.play(SND_UI);
+    else sfx.play(slot >= 3 ? SND_TAP_R : SND_TAP_L);
+  } else if (screen === 'burst') {
+    if (slot === SLOT_REFLEX) return;
+    const repeat = cpsTrainer.onTap(slot, ts);
+    sfx.play(repeat ? SND_TAP_WEAK : slot >= 3 ? SND_TAP_R : SND_TAP_L);
+  }
+}
+
+function release(slot: number): void {
+  if (screen === 'reflex') reflex.onRelease(slot);
+  else if (screen === 'burst') cpsTrainer.onRelease(slot);
 }
 
 function onKeyDown(e: KeyboardEvent): void {
@@ -501,71 +605,46 @@ function onKeyDown(e: KeyboardEvent): void {
 
   if (code === 'Backquote') {
     e.preventDefault();
-    if (!e.repeat) perf.show = !perf.show;
+    if (!e.repeat) {
+      perf.show = !perf.show;
+      if (screen === 'stats') showStats();
+    }
     return;
   }
 
-  const act = keymap.get(code);
-
-  if (screen === 'play') {
-    if (act !== undefined) {
+  if (screen === 'play' || screen === 'reflex' || screen === 'burst') {
+    const slot = keymap.get(code);
+    if (slot !== undefined) {
       e.preventDefault();
       if (e.repeat) return;
       sfx.unlock();
-      if (act === ACT_REFLEX) runner.push(ACT_REFLEX, stamp(e));
-      else lift(act, stamp(e));
+      press(slot, stamp(e));
       return;
     }
     if (code === 'Escape') {
       e.preventDefault();
-      if (!e.repeat) pause();
-    } else if (code === 'Space' || code === 'Tab' || code.startsWith('Arrow')) {
+      if (!e.repeat) leave();
+    } else if (code === 'Space' || code === 'Tab' || code === 'Enter' || code.startsWith('Arrow')) {
       e.preventDefault();
+      // Any of these also dismisses a Reflex briefing card.
+      if (!e.repeat && screen === 'reflex' && reflex.ready(stamp(e))) sfx.play(SND_UI);
     }
-    return;
-  }
-
-  if (screen === 'cps') {
-    if (act !== undefined) {
-      e.preventDefault();
-      if (e.repeat || act === ACT_REFLEX) return;
-      sfx.unlock();
-      const repeat = cpsTrainer.onTap(act, stamp(e));
-      sfx.play(repeat ? SND_TAP_WEAK : act >= 3 ? SND_TAP_R : SND_TAP_L);
-      return;
-    }
-    if (code === 'Escape') {
-      e.preventDefault();
-      if (!e.repeat) finishCps();
-    } else if (code === 'Space') {
-      e.preventDefault();
-    }
-    return;
-  }
-
-  if (screen === 'rt') {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    e.preventDefault();
-    if (e.repeat) return;
-    if (code === 'Escape') {
-      finishRt();
-      return;
-    }
-    sfx.unlock();
-    reactionKey(stamp(e));
     return;
   }
 
   if (screen === 'pause') {
     if (e.repeat) return;
-    if (act !== undefined && act !== ACT_REFLEX) {
+    const slot = keymap.get(code);
+    if (slot !== undefined && slot !== SLOT_REFLEX) {
       e.preventDefault();
       resume();
-      lift(act, stamp(e));
+      press(slot, stamp(e));
     } else if (code === 'Enter') resume();
-    else if (code === 'KeyR') startRun();
-    else if (code === 'Escape') showMenu();
-    else if (code === 'Digit0') toggleMute();
+    else if (code === 'KeyR') startGame('climb');
+    else if (code === 'Escape') {
+      picked = null;
+      showTitle();
+    } else if (code === 'Digit0') toggleMute();
     return;
   }
 
@@ -575,90 +654,109 @@ function onKeyDown(e: KeyboardEvent): void {
   // A button reached with Tab keeps its own Enter / Space activation.
   if ((code === 'Enter' || code === 'Space') && document.activeElement instanceof HTMLButtonElement) return;
   sfx.unlock();
+  const enter = code === 'Enter' || code === 'NumpadEnter';
   const digit = code.startsWith('Digit') ? Number(code.slice(5)) : code.startsWith('Numpad') ? Number(code.slice(6)) : NaN;
   switch (screen) {
-    case 'menu':
-      if (digit >= 1 && digit <= 6) onAction('mode', String(digit));
-      else if (code === 'Enter' || code === 'NumpadEnter') startRun();
-      else if (code === 'KeyR') startRt();
-      else if (code === 'KeyC') startCps();
+    case 'title':
+      if (picked) {
+        if (digit >= 1 && digit <= 6) setKeyCount(digit);
+        else if (code === 'ArrowLeft') setKeyCount(settings.keys[picked] - 1);
+        else if (code === 'ArrowRight') setKeyCount(settings.keys[picked] + 1);
+        else if (enter) startGame(picked);
+        else if (code === 'Escape') onAction('closepop', '');
+        break;
+      }
+      for (const g of GAMES) if (code === 'Key' + g.key.toUpperCase()) onAction('pick', g.id);
+      if (enter) onAction('pick', lastGame);
       else if (code === 'KeyS') showStats();
-      else if (code === 'KeyK') showKeys();
+      else if (code === 'KeyK') onAction('keys', '');
       else if (digit === 0) toggleMute();
       break;
     case 'results':
-      if (code === 'Enter' || code === 'NumpadEnter') startRun();
+    case 'reflexResults':
+    case 'burstResults':
+      if (enter) startGame(lastGame);
       else if (code === 'KeyS') showStats();
-      else if (code === 'Escape') showMenu();
-      break;
-    case 'rtResults':
-      if (code === 'Enter' || code === 'NumpadEnter') startRt();
-      else if (code === 'KeyS') showStats();
-      else if (code === 'Escape') showMenu();
-      break;
-    case 'cpsResults':
-      if (code === 'Enter' || code === 'NumpadEnter') startCps();
-      else if (code === 'KeyS') showStats();
-      else if (code === 'Escape') showMenu();
+      else if (code === 'Escape') onAction('menu', '');
       break;
     case 'stats':
-      if (code === 'Escape') showMenu();
+      if (code === 'Escape') onAction('menu', '');
       else if (digit >= 0 && digit <= 6) onAction('filter', String(digit));
       break;
     case 'keys':
-      if (code === 'Escape') showMenu();
-      else if (digit >= 1 && digit <= 6) onAction('mode', String(digit));
+      if (code === 'Escape') onAction('menu', '');
+      else if (digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
       break;
   }
 }
 
-function reactionKey(ts: number): void {
-  const kind = rtTrainer.onKey(ts);
-  if (kind === RT_HIT) sfx.play(SND_CATCH);
-  else if (kind === RT_LATE) sfx.play(SND_TAP_WEAK);
-  else if (kind === RT_EARLY) sfx.play(SND_FALSE);
+function onKeyUp(e: KeyboardEvent): void {
+  const slot = keymap.get(e.code);
+  if (slot !== undefined) release(slot);
 }
 
-/** Touch and mouse: the left / right half of the screen lifts that end. */
+/** Touch, pen and mouse: pads in the corners, and a corner button for Escape. */
 function onPointerDown(e: PointerEvent): void {
-  if (screen !== 'play' && screen !== 'cps' && screen !== 'rt') return;
+  if (screen !== 'play' && screen !== 'reflex' && screen !== 'burst') return;
   e.preventDefault();
   sfx.unlock();
-  const ts = stamp(e);
-  if (screen === 'rt') {
-    reactionKey(ts);
+  if (e.pointerType !== 'mouse' && !touch.active) {
+    touch.active = true;
+    refreshHints();
+  }
+  const rect = canvas.getBoundingClientRect();
+  const hit = touch.hit((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr);
+  if (hit === HIT_CORNER) {
+    if (touch.active) leave();
     return;
   }
-  const mode = getMode(settings.mode);
-  const side = mode.right > 0 && e.clientX > window.innerWidth / 2 ? 1 : 0;
-  const keys = side === 0 ? mode.left : mode.right;
-  touchKey[side] = (touchKey[side]! + 1) % keys;
-  const slot = side * 3 + touchKey[side]!;
-  if (screen === 'play') lift(slot, ts);
-  else {
-    const repeat = cpsTrainer.onTap(slot, ts);
-    sfx.play(repeat ? SND_TAP_WEAK : side === 1 ? SND_TAP_R : SND_TAP_L);
+  if (hit < 0) return;
+  pointerSlot[e.pointerId & 63] = hit + 1;
+  press(hit, stamp(e));
+}
+
+function onPointerUp(e: PointerEvent): void {
+  const held = pointerSlot[e.pointerId & 63]!;
+  if (held > 0) {
+    pointerSlot[e.pointerId & 63] = 0;
+    release(held - 1);
   }
+  // Browsers that only unlock audio on a finished gesture get their chance here.
+  sfx.unlock();
 }
 
 function onResize(): void {
   view.resize();
-  if (screen === 'pause') view.drawGame(sim, 1, performance.now(), hints);
+  touch.build(getMode(activeKeys), slotLabels, view.w, view.h, view.dpr);
+  if (screen === 'pause') view.drawGame(sim, 1, performance.now(), hints, touch);
+}
+
+function swallow(e: Event): void {
+  e.preventDefault();
 }
 
 window.addEventListener('keydown', onKeyDown, { passive: false });
+window.addEventListener('keyup', onKeyUp);
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
-canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('pointerup', onPointerUp);
+canvas.addEventListener('pointercancel', onPointerUp);
+// Keep the browser from scrolling, zooming or selecting while fingers are on the board.
+canvas.addEventListener('touchstart', swallow, { passive: false });
+canvas.addEventListener('touchmove', swallow, { passive: false });
+canvas.addEventListener('touchend', swallow, { passive: false });
+canvas.addEventListener('contextmenu', swallow);
+document.addEventListener('gesturestart', swallow, { passive: false });
 window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', onResize);
 window.addEventListener('blur', pause);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
 
-applyMode();
-showMenu();
+applyKeys(activeKeys);
+showTitle();
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__tension = { sim, runner, rtTrainer, cpsTrainer, perf, view };
+  (window as unknown as Record<string, unknown>).__tension = { sim, runner, reflex, cpsTrainer, perf, view, touch };
 }

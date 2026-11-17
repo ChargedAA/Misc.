@@ -4,6 +4,7 @@
 
 import {
   BALL_R,
+  BASE_Y,
   BEAM_HALF,
   BOARD_W,
   COL_ACCENT,
@@ -15,37 +16,52 @@ import {
   COL_MID,
   COL_TICK,
   FONT,
+  LANES,
   TRAVEL,
-  BASE_Y,
   VIEW_H,
-  ZONE_MULT,
+  laneX,
 } from './config.ts';
 import {
   BURST_ACTIVE,
   BURST_LEADIN,
   BURST_NONE,
-  HOLE_CAP,
+  HAZ_BAR,
+  HAZ_CAP,
+  MARK_CAP,
   PHASE_FALL,
   PHASE_OVER,
   PHASE_READY,
+  RING_CAP,
+  SECTION_NAMES,
   TRAIL_CAP,
-  ZONE_CAP,
   type Sim,
 } from './sim.ts';
+import type { TouchLayout } from './touch.ts';
 
 const DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] as const;
+const MULT_LABELS = ['', '×2', '×3', '×4', '×5', '×6'] as const;
 const COL_CABLE = '#63636a';
 const NO_DASH: number[] = [];
 const TAU = Math.PI * 2;
-const MULT_LABEL = '×' + ZONE_MULT;
+const HALF_PI = Math.PI / 2;
 const TICK_LABELS: string[] = [];
 const TRAIL_BANDS = 6;
 const HEIGHT_ZERO = BASE_Y + 0.5 * TRAVEL;
 
+export const SHAPE_SQUARE = 0;
+export const SHAPE_CIRCLE = 1;
+export const SHAPE_TRIANGLE = 2;
+export const SHAPE_DIAMOND = 3;
+export const SHAPE_CROSS = 4;
+
+export const ICON_PAUSE = 0;
+export const ICON_CLOSE = 1;
+
 export interface Hints {
   left: string;
   right: string;
-  reflex: string;
+  center: string;
+  sub: string;
 }
 
 export interface PerfStats {
@@ -74,11 +90,12 @@ export class View {
   fontTiny = '';
   fontBig = '';
   fontMono = '';
+  fontPad = '';
   private advHud = 0;
   private advTiny = 0;
   private advBig = 0;
   private advMono = 0;
-  private readonly dashZone: number[] = [4, 6];
+  private readonly dashMark: number[] = [2, 7];
   private readonly dashSlack: number[] = [3, 5];
 
   constructor(canvas: HTMLCanvasElement) {
@@ -109,6 +126,7 @@ export class View {
     this.fontHud = `500 ${Math.round(14 * dpr)}px ${FONT}`;
     this.fontTiny = `500 ${Math.round(10.5 * dpr)}px ${FONT}`;
     this.fontBig = `300 ${Math.round(44 * dpr)}px ${FONT}`;
+    this.fontPad = `500 ${Math.round(12 * dpr)}px ${FONT}`;
     this.fontMono = `${Math.round(11 * dpr)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     this.advHud = this.measureDigits(this.fontHud);
     this.advTiny = this.measureDigits(this.fontTiny);
@@ -124,10 +142,6 @@ export class View {
     let w = 0;
     for (const d of DIGITS) w = Math.max(w, ctx.measureText(d).width);
     return Math.ceil(w);
-  }
-
-  px(n: number): number {
-    return n * this.dpr;
   }
 
   advance(font: string): number {
@@ -194,13 +208,128 @@ export class View {
     const ctx = this.ctx;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
+    ctx.setLineDash(NO_DASH);
     ctx.fillStyle = COL_BG;
     ctx.fillRect(0, 0, this.w, this.h);
   }
 
-  // --- Game -----------------------------------------------------------------
+  /**
+   * One of the trainer shapes, centred on (x, y) with "radius" r. The caller
+   * sets fillStyle / strokeStyle / lineWidth; `solid` fills, otherwise outlines.
+   */
+  shape(kind: number, x: number, y: number, r: number, solid: boolean): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    if (kind === SHAPE_CIRCLE) {
+      ctx.arc(x, y, r, 0, TAU);
+    } else if (kind === SHAPE_SQUARE) {
+      const q = r * 0.88;
+      ctx.rect(x - q, y - q, q * 2, q * 2);
+    } else if (kind === SHAPE_TRIANGLE) {
+      ctx.moveTo(x, y - r * 1.08);
+      ctx.lineTo(x + r * 1.02, y + r * 0.78);
+      ctx.lineTo(x - r * 1.02, y + r * 0.78);
+      ctx.closePath();
+    } else if (kind === SHAPE_DIAMOND) {
+      ctx.moveTo(x, y - r * 1.15);
+      ctx.lineTo(x + r * 0.95, y);
+      ctx.lineTo(x, y + r * 1.15);
+      ctx.lineTo(x - r * 0.95, y);
+      ctx.closePath();
+    } else {
+      // A plus sign, as one outline so it can be filled or stroked like the rest.
+      const a = r * 0.36;
+      ctx.moveTo(x - a, y - r);
+      ctx.lineTo(x + a, y - r);
+      ctx.lineTo(x + a, y - a);
+      ctx.lineTo(x + r, y - a);
+      ctx.lineTo(x + r, y + a);
+      ctx.lineTo(x + a, y + a);
+      ctx.lineTo(x + a, y + r);
+      ctx.lineTo(x - a, y + r);
+      ctx.lineTo(x - a, y + a);
+      ctx.lineTo(x - r, y + a);
+      ctx.lineTo(x - r, y - a);
+      ctx.lineTo(x - a, y - a);
+      ctx.closePath();
+    }
+    if (solid) ctx.fill();
+    else ctx.stroke();
+  }
 
-  drawGame(sim: Sim, alpha: number, now: number, hints: Hints): void {
+  /** A chevron pointing left (dir < 0) or right. */
+  arrow(x: number, y: number, r: number, dir: number): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(x - dir * r * 0.9, y);
+    ctx.lineTo(x + dir * r * 0.9, y);
+    ctx.moveTo(x + dir * r * 0.15, y - r * 0.7);
+    ctx.lineTo(x + dir * r * 0.9, y);
+    ctx.lineTo(x + dir * r * 0.15, y + r * 0.7);
+    ctx.stroke();
+  }
+
+  /** Touch pads and the corner button. Drawn only once a touch has been seen. */
+  drawTouch(touch: TouchLayout, icon: number, held: number): void {
+    if (!touch.active) return;
+    const ctx = this.ctx;
+    const dpr = this.dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.setLineDash(NO_DASH);
+    ctx.lineWidth = dpr;
+    const pads = touch.pads;
+    for (let i = 0; i < pads.length; i++) {
+      const p = pads[i]!;
+      const on = (held & (1 << p.slot)) !== 0;
+      ctx.strokeStyle = on ? COL_LINE : COL_DIM;
+      this.roundRect(p.x, p.y, p.w, p.h, 10 * dpr);
+      ctx.stroke();
+      ctx.fillStyle = on ? COL_LINE : COL_MID;
+      this.text(p.label, p.x + p.w / 2, p.y + p.h / 2 + 4 * dpr, this.fontPad, 'center');
+    }
+    const c = touch.corner;
+    ctx.strokeStyle = COL_DIM;
+    this.roundRect(c.x, c.y, c.w, c.h, 10 * dpr);
+    ctx.stroke();
+    ctx.strokeStyle = COL_MID;
+    ctx.lineWidth = 1.5 * dpr;
+    const cx = c.x + c.w / 2;
+    const cy = c.y + c.h / 2;
+    const q = c.w * 0.17;
+    ctx.beginPath();
+    if (icon === ICON_PAUSE) {
+      ctx.moveTo(cx - q * 0.7, cy - q);
+      ctx.lineTo(cx - q * 0.7, cy + q);
+      ctx.moveTo(cx + q * 0.7, cy - q);
+      ctx.lineTo(cx + q * 0.7, cy + q);
+    } else {
+      ctx.moveTo(cx - q, cy - q);
+      ctx.lineTo(cx + q, cy + q);
+      ctx.moveTo(cx + q, cy - q);
+      ctx.lineTo(cx - q, cy + q);
+    }
+    ctx.stroke();
+  }
+
+  private roundRect(x: number, y: number, w: number, h: number, r: number): void {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.arc(x + w - r, y + r, r, -HALF_PI, 0);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.arc(x + w - r, y + h - r, r, 0, HALF_PI);
+    ctx.lineTo(x + r, y + h);
+    ctx.arc(x + r, y + h - r, r, HALF_PI, Math.PI);
+    ctx.lineTo(x, y + r);
+    ctx.arc(x + r, y + r, r, Math.PI, Math.PI + HALF_PI);
+    ctx.closePath();
+  }
+
+  // --- Climb ------------------------------------------------------------------
+
+  drawGame(sim: Sim, alpha: number, now: number, hints: Hints, touch: TouchLayout): void {
     const ctx = this.ctx;
     const s = this.scale;
     const dpr = this.dpr;
@@ -218,10 +347,9 @@ export class View {
     const left = this.left;
     const right = this.right;
 
-    // Rails and height ticks. One tick per metre of gained height.
+    // Rails and height ticks. One tick per metre climbed.
     ctx.lineWidth = dpr;
     ctx.strokeStyle = COL_TICK;
-    ctx.setLineDash(NO_DASH);
     ctx.beginPath();
     const first = Math.ceil(cam - HEIGHT_ZERO);
     const lastTick = Math.floor(cam + VIEW_H - HEIGHT_ZERO);
@@ -241,45 +369,97 @@ export class View {
     ctx.moveTo(Math.round(right) - 0.5, top);
     ctx.lineTo(Math.round(right) - 0.5, bottom);
     ctx.stroke();
-    ctx.fillStyle = COL_DIM;
-    for (let m = Math.ceil(first / 10) * 10; m <= lastTick; m += 10) {
-      if (m <= 0) continue;
-      const idx = m / 10;
-      let label = TICK_LABELS[idx];
-      if (label === undefined) label = TICK_LABELS[idx] = String(m);
-      // Just inside the left cable, so the label never sits on the line.
-      this.text(label, ox - BEAM_HALF * s + 9 * dpr, bottom - (m + HEIGHT_ZERO - cam) * s + 3.5 * dpr, this.fontTiny, 'left');
+    // Height labels sit in the margin outside the left rail, when there is one.
+    if (left > 44 * dpr) {
+      ctx.fillStyle = COL_DIM;
+      for (let m = Math.ceil(first / 10) * 10; m <= lastTick; m += 10) {
+        if (m <= 0) continue;
+        const idx = m / 10;
+        let label = TICK_LABELS[idx];
+        if (label === undefined) label = TICK_LABELS[idx] = String(m);
+        this.text(label, left - 9 * dpr, bottom - (m + HEIGHT_ZERO - cam) * s + 3.5 * dpr, this.fontTiny, 'right');
+      }
     }
 
-    // Target zones.
+    // Section markers: a dotted line and the name of what comes next.
+    if (sim.markCount > 0) {
+      ctx.strokeStyle = COL_DIM;
+      ctx.setLineDash(this.dashMark);
+      ctx.beginPath();
+      for (let i = 0; i < sim.markCount; i++) {
+        const k = (sim.markStart + i) % MARK_CAP;
+        const y = Math.round(bottom - (sim.markY[k]! - cam) * s) + 0.5;
+        ctx.moveTo(ox - BEAM_HALF * s, y);
+        ctx.lineTo(ox + BEAM_HALF * s, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash(NO_DASH);
+      ctx.fillStyle = COL_MID;
+      for (let i = 0; i < sim.markCount; i++) {
+        const k = (sim.markStart + i) % MARK_CAP;
+        this.text(SECTION_NAMES[sim.markType[k]!]!, ox + BEAM_HALF * s - 9 * dpr, bottom - (sim.markY[k]! - cam) * s - 6 * dpr, this.fontTiny, 'right');
+      }
+    }
+
+    // Slider tracks: where a moving hole can go.
+    ctx.strokeStyle = COL_TICK;
     ctx.lineWidth = dpr;
-    for (let i = 0; i < sim.zoneCount; i++) {
-      const k = (sim.zoneStart + i) % ZONE_CAP;
-      const active = sim.zoneIn === k;
-      const zx = ox + (sim.zx[k]! - sim.zw[k]! * 0.5) * s;
-      const zyTop = bottom - (sim.zy[k]! + sim.zh[k]! - cam) * s;
-      ctx.strokeStyle = active ? COL_LINE : COL_MID;
-      ctx.setLineDash(active ? NO_DASH : this.dashZone);
-      ctx.strokeRect(Math.round(zx) + 0.5, Math.round(zyTop) + 0.5, Math.round(sim.zw[k]! * s), Math.round(sim.zh[k]! * s));
-      ctx.fillStyle = active ? COL_LINE : COL_MID;
-      this.text(MULT_LABEL, zx + 7 * dpr, zyTop + 15 * dpr, this.fontTiny, 'left');
-    }
-    ctx.setLineDash(NO_DASH);
-
-    // Hazard holes, one batched path.
     ctx.beginPath();
-    for (let i = 0; i < sim.holeCount; i++) {
-      const k = (sim.holeStart + i) % HOLE_CAP;
-      const x = ox + sim.hx[k]! * s;
-      const y = bottom - (sim.hy[k]! - cam) * s;
-      const r = sim.hr[k]! * s;
-      ctx.moveTo(x + r, y);
-      ctx.arc(x, y, r, 0, TAU);
+    for (let i = 0; i < sim.hazCount; i++) {
+      const k = (sim.hazStart + i) % HAZ_CAP;
+      if (sim.hazV[k] === 0) continue;
+      const y = Math.round(bottom - (sim.hazY[k]! - cam) * s) + 0.5;
+      ctx.moveTo(ox + sim.hazMin[k]! * s, y);
+      ctx.lineTo(ox + sim.hazMax[k]! * s, y);
+    }
+    ctx.stroke();
+
+    // Hazards, one batched path. Each is a horizontal capsule.
+    ctx.beginPath();
+    for (let i = 0; i < sim.hazCount; i++) {
+      const k = (sim.hazStart + i) % HAZ_CAP;
+      const y = bottom - (sim.hazY[k]! - cam) * s;
+      const r = sim.hazR[k]! * s;
+      if (sim.hazType[k] === HAZ_BAR) {
+        const x0 = ox - BEAM_HALF * s;
+        ctx.rect(x0, y - r, BEAM_HALF * 2 * s, r * 2);
+        continue;
+      }
+      const x = ox + sim.hazX[k]! * s;
+      const len = sim.hazL[k]! * s;
+      if (len === 0) {
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, TAU);
+      } else {
+        ctx.moveTo(x - len, y - r);
+        ctx.lineTo(x + len, y - r);
+        ctx.arc(x + len, y, r, -HALF_PI, HALF_PI);
+        ctx.lineTo(x - len, y + r);
+        ctx.arc(x - len, y, r, HALF_PI, Math.PI + HALF_PI);
+      }
     }
     ctx.fillStyle = COL_HOLE;
     ctx.fill();
     ctx.lineWidth = 1.25 * dpr;
     ctx.strokeStyle = COL_MID;
+    ctx.stroke();
+
+    // Pickups.
+    ctx.strokeStyle = COL_LINE;
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.beginPath();
+    const rr = 0.2 * s;
+    for (let i = 0; i < sim.ringCount; i++) {
+      const k = (sim.ringStart + i) % RING_CAP;
+      if (sim.ringLive[k] === 0) continue;
+      const x = ox + sim.ringX[k]! * s;
+      const y = bottom - (sim.ringY[k]! - cam) * s;
+      ctx.moveTo(x, y - rr);
+      ctx.lineTo(x + rr, y);
+      ctx.lineTo(x, y + rr);
+      ctx.lineTo(x - rr, y);
+      ctx.closePath();
+    }
     ctx.stroke();
 
     // Beam geometry (interpolated).
@@ -290,7 +470,7 @@ export class View {
     const yL = bottom - (yLw - cam) * s;
     const yR = bottom - (yRw - cam) * s;
     let bx = sim.ballXPrev + (sim.ballX - sim.ballXPrev) * alpha;
-    let byW = yLw + ((yRw - yLw) * (bx + BEAM_HALF)) / (BEAM_HALF * 2) + BALL_R;
+    let byW = yLw + ((yRw - yLw) * (bx + BEAM_HALF)) / (BEAM_HALF * 2) + BALL_R + sim.hopPrev + (sim.hop - sim.hopPrev) * alpha;
     let ballR = BALL_R;
     const falling = sim.phase === PHASE_FALL || sim.phase === PHASE_OVER;
     if (falling) {
@@ -333,7 +513,6 @@ export class View {
     const cueSide = sim.cueActive ? sim.cueSide : -1;
     if (sim.cueActive) sim.markCueDrawn(performance.now());
     for (let side = 0; side < 2; side++) {
-      if (side === 1 && sim.fixedRight) continue; // pinned to the rail, no cable
       const x = side === 0 ? xL : xR;
       const y = side === 0 ? yL : yR;
       if (side === cueSide) {
@@ -370,7 +549,18 @@ export class View {
       }
     }
 
-    // Beam. It thickens with the load during a heavy pull.
+    // Beam, with a notch under each lane. It thickens with the load in a heavy pull.
+    ctx.strokeStyle = COL_DIM;
+    ctx.lineWidth = dpr;
+    ctx.beginPath();
+    for (let lane = 0; lane < LANES; lane++) {
+      const lx = laneX(lane);
+      const px = Math.round(ox + lx * s) + 0.5;
+      const py = yL + ((yR - yL) * (lx + BEAM_HALF)) / (BEAM_HALF * 2);
+      ctx.moveTo(px, py + 4 * dpr);
+      ctx.lineTo(px, py + 9 * dpr);
+    }
+    ctx.stroke();
     ctx.strokeStyle = COL_LINE;
     ctx.lineWidth = (2.5 + (sim.heavy - 1) * 3.5) * dpr;
     ctx.beginPath();
@@ -381,22 +571,27 @@ export class View {
     const j = 3 * dpr;
     if (cueSide !== 0) ctx.fillRect(xL - j, yL - j, j * 2, j * 2);
     if (cueSide !== 1) ctx.fillRect(xR - j, yR - j, j * 2, j * 2);
-    if (sim.fixedRight) {
-      // The fixed end is pinned to the rail.
-      ctx.strokeStyle = COL_MID;
-      ctx.lineWidth = dpr;
-      ctx.beginPath();
-      ctx.moveTo(xR, Math.round(yR) + 0.5);
-      ctx.lineTo(right, Math.round(yR) + 0.5);
-      ctx.stroke();
-    }
 
-    // Ball.
+    // Ball. Solid when the surge is ready; a ring that fills back up while it recharges.
     if (ballR > 0.004) {
+      const pr = ballR * s;
       ctx.fillStyle = COL_ACCENT;
-      ctx.beginPath();
-      ctx.arc(ballPx, ballPy, ballR * s, 0, TAU);
-      ctx.fill();
+      if (sim.charge >= 1 || falling) {
+        ctx.beginPath();
+        ctx.arc(ballPx, ballPy, pr, 0, TAU);
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = COL_ACCENT;
+        ctx.lineWidth = 1.75 * dpr;
+        ctx.beginPath();
+        ctx.arc(ballPx, ballPy, pr - 0.875 * dpr, 0, TAU);
+        ctx.stroke();
+        if (sim.charge > 0.02) {
+          ctx.beginPath();
+          ctx.arc(ballPx, ballPy, pr * Math.sqrt(sim.charge) * 0.8, 0, TAU);
+          ctx.fill();
+        }
+      }
     }
 
     // Reaction time readout, briefly, next to the cable that was caught.
@@ -411,14 +606,14 @@ export class View {
       ctx.globalAlpha = 1;
     }
 
-    // Key hints until the first tap.
+    // How to play, until the first tap.
     if (sim.phase === PHASE_READY) {
       ctx.fillStyle = COL_MID;
-      const hy = Math.max(yL, yR) + 30 * dpr;
-      this.text(hints.left, xL, hy, this.fontHud, 'left');
+      const hy = Math.max(yL, yR) + 34 * dpr;
+      if (hints.left) this.text(hints.left, xL, hy, this.fontHud, 'left');
       if (hints.right) this.text(hints.right, xR, hy, this.fontHud, 'right');
-      this.text(hints.reflex || 'tap to lift', ox, hy, hints.reflex ? this.fontHud : this.fontTiny, 'center');
-      if (hints.reflex) this.text('reflex', ox, hy + 16 * dpr, this.fontTiny, 'center');
+      this.text(hints.center, ox, hy, this.fontHud, 'center');
+      if (hints.sub) this.text(hints.sub, ox, hy + 20 * dpr, this.fontTiny, 'center');
     }
 
     // Letterbox bars when the window is taller than the fixed view.
@@ -430,6 +625,7 @@ export class View {
     }
 
     this.drawHud(sim);
+    this.drawTouch(touch, ICON_PAUSE, 0);
   }
 
   private drawHud(sim: Sim): void {
@@ -438,14 +634,14 @@ export class View {
     const y = this.top + 30 * dpr;
     const padX = 34 * dpr;
 
-    // Score, top left.
+    // Score, top left, with the chain multiplier when there is one.
     ctx.fillStyle = COL_LINE;
     const score = Math.floor(sim.score);
     const sw = this.numberWidth(score, 0, this.fontHud);
     this.number(score, 0, this.left + padX + sw, y, this.fontHud);
-    if (sim.mult > 1) {
+    if (sim.chain > 0) {
       ctx.fillStyle = COL_MID;
-      this.text(MULT_LABEL, this.left + padX + sw + 8 * dpr, y, this.fontTiny, 'left');
+      this.text(MULT_LABELS[sim.chain]!, this.left + padX + sw + 8 * dpr, y, this.fontTiny, 'left');
     }
 
     // Height, top right.
@@ -474,12 +670,13 @@ export class View {
         ctx.stroke();
       }
       if (grow >= 1) {
-        const slow = sim.fixedRight ? sim.burstRate[0]! : Math.min(sim.burstRate[0]!, sim.burstRate[1]!);
+        const slow = Math.min(sim.burstRate[0]!, sim.burstRate[1]!);
         ctx.fillStyle = slow >= sim.burstTarget ? COL_LINE : COL_MID;
         this.number(slow, 1, this.ox - half - 10 * dpr, y - 1.5 * dpr, this.fontTiny);
         ctx.fillStyle = COL_MID;
         const tw = this.numberWidth(sim.burstTarget, 1, this.fontTiny);
         this.number(sim.burstTarget, 1, this.ox + half + 10 * dpr + tw, y - 1.5 * dpr, this.fontTiny);
+        this.text(sim.oneKey ? 'HEAVY · TAP FAST' : 'HEAVY · TAP BOTH SIDES FAST', this.ox, y + 16 * dpr, this.fontTiny, 'center');
       }
     }
   }
@@ -490,12 +687,12 @@ export class View {
     const dpr = this.dpr;
     const f = this.fontMono;
     const adv = this.advance(f);
-    const y = this.h - 12 * dpr;
+    const y = 22 * dpr;
     let x = 12 * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = COL_BG;
-    ctx.fillRect(0, this.h - 28 * dpr, 330 * dpr, 28 * dpr);
+    ctx.fillRect(0, 0, 330 * dpr, 32 * dpr);
     ctx.fillStyle = COL_MID;
     x += adv * 4;
     this.number(perf.fps, 0, x, y, f);
