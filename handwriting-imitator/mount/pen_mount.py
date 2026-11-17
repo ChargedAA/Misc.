@@ -8,8 +8,9 @@ Three printed parts:
            both sides locate it, two pads take double-sided foam tape, and the
            middle is relieved so it clears the lens dome. A dovetail rail runs
            down its front.
-  carrier  slides on the rail and grips the pen in a split ring closed by one
-           M3 screw. It hangs from the top of the rail by its own weight.
+  carrier  slides on the rail and holds any barrel up to 15 mm: two M3 screws
+           press the pen back into a V, which centres it whatever its size.
+           It hangs from the top of the rail by its own weight.
   gauge    sets how far the pen tip hangs below the saddle, so every pen is
            loaded to the same height.
 
@@ -26,9 +27,11 @@ assembly comes off the printer in one piece for homing.
 Dimensions are millimetres. Axes: X across the toolhead, Z up, and Y towards
 the printer, with Y = 0 on the front face of the cover (the pen is at -Y).
 
-Measured on the owner's A1 mini: cover width 53.21, cover rim depth 3.93.
-Estimated from photos and still to be confirmed: cover height, lens position
-and how far the lens dome stands proud. Print the saddle alone first to check.
+Measured on the owner's A1 mini: cover 53.21 wide, 74.18 tall, rim 3.93 deep,
+10.97 thick at the lens (so the dome stands 7.0 proud of the face). The lens
+position is read off a photo against the caliper scale: centre about 31 below
+the top edge, raised area about 30 across. Print the saddle alone first to
+check it against the cover.
 """
 
 import argparse
@@ -44,12 +47,12 @@ class Design:
     # The printer's front cover
     cover_width: float = 53.2          # measured
     cover_grip: float = 3.0            # how far the lips reach back along the cover's 3.93 deep rim
-    lens_clearance: float = 5.0        # ESTIMATE: must exceed how far the lens dome stands proud
+    lens_clearance: float = 8.0        # the lens dome stands 7.0 proud of the cover face (measured)
     fit: float = 0.3                   # gap per side between lips and cover
 
     # Saddle
     saddle_height: float = 68.0        # top edge sits level with the top of the cover
-    pad_top: float = 20.0              # height of the upper tape pad
+    pad_top: float = 14.0              # height of the upper tape pad; must stop above the lens
     pad_bottom: float = 15.0           # height of the lower tape pad
     lip_start: float = 20.0            # side lips stop this far above the bottom, clear of the fan grille
     plate: float = 3.0
@@ -61,10 +64,10 @@ class Design:
     clearance: float = 0.25            # gap per side between rail and carrier; tune with the fit test
 
     # Carrier
-    pen_diameter: float = 10.0
-    bore_fit: float = 0.4              # bore is this much larger than the pen before the screw closes it
-    ring_wall: float = 3.0
-    carrier_width: float = 22.0
+    max_pen: float = 15.0              # largest barrel the clamp accepts
+    pen_diameter: float = 10.0         # the pen shown in pictures and used to size the gauge
+    side_wall: float = 3.6
+    front_wall: float = 5.0            # holds the two captive nuts
     carrier_height: float = 40.0
     cap: float = 3.0                   # closed top of the slot; this is what rests on the rail
     float_travel: float = 12.0
@@ -81,14 +84,27 @@ class Design:
         return (self.rail_top - self.rail_base) / 2 * math.tan(math.radians(60))
 
     @property
-    def bore(self):
-        return self.pen_diameter + self.bore_fit
+    def channel(self):
+        """Width of the pen cavity."""
+        return self.max_pen + 0.6
+
+    @property
+    def carrier_width(self):
+        return self.channel + 2 * self.side_wall
+
+    @property
+    def v_apex(self):
+        """Y of the bottom of the V the pen is pressed into."""
+        return self.plate_front - self.rail_height - self.clearance - 2.5
+
+    def axis(self, diameter):
+        """Y of the centre line of a pen of this diameter once clamped."""
+        return self.v_apex - diameter / math.sqrt(2)
 
     @property
     def pen_y(self):
-        """Y of the pen's centre line: how far in front of the cover's face the tip lands."""
-        slot_end = self.plate_front - self.rail_height - self.clearance
-        return slot_end - 2.5 - self.bore / 2
+        """Y of the pictured pen's centre line: how far in front of the cover's face its tip lands."""
+        return self.axis(self.pen_diameter)
 
     @property
     def rest(self):
@@ -137,28 +153,27 @@ def saddle(d, height=None):
 def carrier(d, height=None):
     h = height or d.carrier_height
     back = d.plate_front - 0.4                           # small gap to the saddle
-    ring = d.bore / 2 + d.ring_wall
-    ring_front = d.pen_y - ring
-    slit, ear, ear_len, ear_h = 2.4, 4.0, 9.0, 14.0
-    mid = h / 2
+    half, ch = d.carrier_width / 2, d.channel / 2
+    cavity_front = d.axis(d.max_pen) - d.max_pen / 2 - 0.5
+    front = cavity_front - d.front_wall
 
-    part = box(-d.carrier_width / 2, d.carrier_width / 2, d.pen_y, back, 0, h)
-    part = part.union(cq.Workplane("XY").center(0, d.pen_y).circle(ring).extrude(h))
-    part = part.union(box(-slit / 2 - ear, slit / 2 + ear, ring_front - ear_len, d.pen_y, mid - ear_h / 2, mid + ear_h / 2))
-
+    part = box(-half, half, front, back, 0, h)
     # Dovetail slot, open at the bottom and closed by the cap at the top.
     part = part.cut(cq.Workplane("XY").polyline(dovetail(d, grow=d.clearance)).close().extrude(h - d.cap))
-    # Bore for the pen and the slit that lets the ring close on it.
-    part = part.cut(cq.Workplane("XY").center(0, d.pen_y).circle(d.bore / 2).extrude(h))
-    part = part.cut(box(-slit / 2, slit / 2, ring_front - ear_len - 1, d.pen_y, 0, h))
-    # M3 clamp screw across the ears, with a hexagonal pocket for the nut.
-    screw_y = ring_front - ear_len / 2
-    part = part.cut(cq.Workplane("YZ", origin=(-20, screw_y, mid)).circle(1.7).extrude(40))
-    part = part.cut(cq.Workplane("YZ", origin=(slit / 2 + ear - 2.2, screw_y, mid)).polygon(6, 6.5).extrude(4))
+    # Pen cavity: a 90 degree V at the back opening into a straight channel.
+    cavity = [(0, d.v_apex), (ch, d.v_apex - ch), (ch, cavity_front), (-ch, cavity_front), (-ch, d.v_apex - ch)]
+    part = part.cut(cq.Workplane("XY").polyline(cavity).close().extrude(h))
+
+    # Two M3 screws through the front wall push the pen into the V. Their nuts
+    # drop into slots open to one side, so the screws have something to turn in.
+    nut_y = cavity_front - d.front_wall / 2
+    for z in (h * 0.28, h * 0.72):
+        part = part.cut(cq.Workplane("XZ", origin=(0, cavity_front + 1, z)).circle(1.7).extrude(d.front_wall + 2))
+        part = part.cut(box(-3.0, half + 1, nut_y - 1.4, nut_y + 1.4, z - 2.9, z + 2.9))
 
     # Side lugs for the rubber band; wedge-shaped so they print without support.
     for side in (-1, 1):
-        x = side * d.carrier_width / 2
+        x = side * half
         lug = (
             cq.Workplane("XZ", origin=(0, back - 2.0, 0))
             .polyline([(x, h - 7), (x + side * 4, h - 3), (x + side * 4, h - 1.5), (x, h - 1.5)])
@@ -171,7 +186,7 @@ def carrier(d, height=None):
 
 def gauge(d):
     """Hook the notch under the saddle's bottom edge and let the pen drop onto the shelf, then tighten."""
-    reach = -d.pen_y + d.pen_diameter
+    reach = -d.axis(d.max_pen) + d.max_pen
     half = d.rail_top / 2 + 5
     part = box(-half, half, d.plate_front, -d.lens_clearance + 3.0, -d.tip_drop - 3, 0)           # upright below the saddle
     part = part.union(box(-half, half, -reach, -d.lens_clearance + 3.0, -d.tip_drop - 3, -d.tip_drop))  # shelf under the tip
@@ -201,11 +216,18 @@ def check(d):
     """Geometry checks that would catch a mis-built model. Returns a list of (description, ok)."""
     s, c = saddle(d), carrier(d).translate((0, 0, d.rest))
     lifted = carrier(d).translate((0, 0, d.rest + d.float_travel))
-    solid = cq.Workplane("XY").center(0, d.pen_y).circle(d.bore / 2 - 0.05).extrude(d.carrier_height).translate((0, 0, d.rest))
+    def barrel(diameter):
+        return (cq.Workplane("XY").center(0, d.axis(diameter)).circle(diameter / 2 - 0.05)
+                .extrude(d.carrier_height).translate((0, 0, d.rest)))
+
+    lens = cq.Workplane("XZ", origin=(0, 0, d.saddle_height - 31.0)).circle(16.0).extrude(7.2)
     return [
         ("carrier does not collide with the saddle at rest", volume(s.intersect(c)) < 0.01),
         ("carrier does not collide with the saddle when floated up", volume(s.intersect(lifted)) < 0.01),
-        ("bore is open the full height of the carrier", volume(c.intersect(solid)) < 0.01),
+        ("a 6 mm barrel fits the clamp", volume(c.intersect(barrel(6.0))) < 0.01),
+        ("a 15 mm barrel fits the clamp", volume(c.intersect(barrel(d.max_pen))) < 0.01),
+        ("a 15 mm barrel clears the saddle", volume(s.intersect(barrel(d.max_pen))) < 0.01),
+        ("saddle clears the lens dome (7.0 proud, about 32 across)", volume(s.intersect(lens)) < 0.01),
         ("pen clears the saddle", volume(s.intersect(pen(d).translate((0, 0, d.rest)))) < 0.01),
         ("gauge fits against the saddle without collision", volume(s.intersect(gauge(d))) < 0.01),
         ("gauge shelf sits exactly under the pen tip",
@@ -237,7 +259,8 @@ def main():
         b = part.val().BoundingBox()
         print(f"{name:9s} {b.xlen:5.1f} x {b.ylen:5.1f} x {b.zlen:5.1f} mm   {volume(part) / 1000:5.1f} cm3")
 
-    print(f"pen centre line is {-d.pen_y:.1f} mm in front of the cover face")
+    for diameter in (7.0, 10.0, d.max_pen):
+        print(f"{diameter:4.1f} mm barrel: centre line {-d.axis(diameter):.1f} mm in front of the cover face")
     failed = False
     for description, ok in check(d):
         print(("  ok    " if ok else "  FAIL  ") + description)

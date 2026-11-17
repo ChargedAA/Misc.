@@ -84,7 +84,7 @@ def main(path):
         ("Setting tip height with the gauge (green)", render(assembled(0, True), -75, 12, span=175)),
         ("Saddle, front: rail, band pegs", render([(triangles(saddle(d)), GREY)], -55, 25)),
         ("Saddle, back: tape pads, lips that grip the cover", render([(triangles(saddle(d)), GREY)], 125, 25)),
-        ("Carrier: split ring, M3 clamp screw, slot closed at the top", render([(triangles(carrier(d)), BLUE)], -120, 30)),
+        ("Carrier: V at the back, two screws through the front, nut slots", render([(triangles(carrier(d)), BLUE)], -55, 40)),
     ]
     tile, label = panels[0][1].width, 28
     sheet = Image.new("RGB", (3 * tile, 2 * (tile + label)), "white")

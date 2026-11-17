@@ -5,10 +5,10 @@ rest on the paper under its own weight.
 
 ![The three parts and how they go together](mount.png)
 
-**Status: designed, not yet printed or fitted.** The cover width and rim depth
-are measured from the owner's printer. Four dimensions are still estimates,
-listed below. Print the saddle alone first and check it against the cover
-before printing the rest.
+**Status: designed, not yet printed or fitted.** The cover's width, height, rim
+depth and lens dome height are measured from the owner's printer. Two things
+are still estimates, listed below. Print the saddle alone first and check it
+against the cover before printing the rest.
 
 ## Parts
 
@@ -17,12 +17,12 @@ Ready-to-print files are in `build/` (STL for the slicer, STEP for editing).
 | Part | What it does |
 | --- | --- |
 | `saddle` | Sits on the front cover. Lips on the top and sides locate it, two pads take foam tape, the middle clears the lens dome. A rail runs down the front. |
-| `carrier` | Slides on the rail and grips the pen in a split ring closed by one screw. |
+| `carrier` | Slides on the rail and holds any barrel from about 6 to 15 mm. Two screws press the pen back into a V, which centres it whatever its size. |
 | `gauge` | Sets how far the pen tip hangs down, so every pen loads to the same height. |
 | `fit_test` | A short slice of rail and slot, to tune the sliding fit before the long print. |
 
-You also need one M3 x 16 screw with a nut, double-sided foam tape, and
-optionally a small rubber band.
+You also need two M3 x 16 screws with nuts (M3 x 20 for barrels under 7 mm),
+double-sided foam tape, and optionally a small rubber band.
 
 ## Why the pen floats
 
@@ -54,12 +54,14 @@ carrier's side lugs down to the two pegs on the saddle.
 1. Unclip the front cover. Press the saddle onto its front, top edges level,
    and check the side lips straddle the cover and the lens dome is not touching.
 2. If it fits, stick it down with foam tape on the two pads.
-3. Slide the carrier onto the rail from the top. It should drop freely and stop
+3. Push the two nuts into the slots in the side of the carrier and start the
+   screws into them from the front.
+4. Slide the carrier onto the rail from the top. It should drop freely and stop
    on the top of the rail.
-4. Put the pen through the ring. Hook the gauge under the saddle with its fence
-   around the rail, let the pen drop until the tip touches the shelf, and
-   tighten the screw.
-5. Clip the cover back on the printer after homing.
+5. Put the pen through the carrier. Hook the gauge under the saddle with its
+   fence around the rail, let the pen drop until the tip touches the shelf, and
+   tighten both screws evenly. A wrap of tape protects a soft barrel.
+6. Clip the cover back on the printer after homing.
 
 ## Pencils
 
@@ -75,18 +77,18 @@ round that:
 
 ## Still to confirm on the printer
 
-Set these on the command line once measured; the defaults are estimates.
-
-| What | Default | Option |
+| What | Current value | How to change it |
 | --- | --- | --- |
-| How far the lens dome stands proud of the cover | 5.0 mm allowed | `--lens-clearance` |
-| Pen or pencil barrel diameter | 10.0 mm | `--pen-diameter` |
-| Tip distance below the saddle's bottom edge (about 3 mm below the nozzle) | 28.0 mm | `--tip-drop` |
-| Cover height | about 73 mm | saddle is 68 mm tall, top-aligned |
+| Tip distance below the saddle's bottom edge. Aim for about 3 mm below the nozzle. | 28.0 mm, a guess | `--tip-drop` |
+| Where the lens sits on the cover | centre 31 mm below the top edge, read off a photo | the saddle's two pads leave 39 mm clear between them |
 
 Also unchecked: whether the grey fan ducts at the bottom of the toolhead reach
-far enough forward to touch the pen. The pen's centre line is 21 mm in front of
-the cover face.
+far enough forward to touch the pen. The pen's centre line is 24 to 30 mm in
+front of the cover face, further out for thicker barrels.
+
+Because a thicker barrel sits further forward, the pen's offset from the nozzle
+changes with the pen. Re-measure `--pen-offset` when you change to a pen of a
+different diameter.
 
 ## Regenerating
 
@@ -95,7 +97,7 @@ pip install cadquery
 ```
 
 ```bash
-python pen_mount.py --out build --pen-diameter 9.5 --lens-clearance 4
+python pen_mount.py --out build --tip-drop 26 --clearance 0.3
 ```
 
 ```bash
