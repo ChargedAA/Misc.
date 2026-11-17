@@ -47,7 +47,7 @@ class Design:
     # The printer's front cover
     cover_width: float = 53.2          # measured
     cover_grip: float = 3.0            # how far the lips reach back along the cover's 3.93 deep rim
-    lens_clearance: float = 8.0        # the lens dome stands 7.0 proud of the cover face (measured)
+    lens_clearance: float = 10.0       # the lens dome measured about 7.0 proud; the measurement was rough, so 3 spare
     fit: float = 0.3                   # gap per side between lips and cover
 
     # Saddle
@@ -220,14 +220,14 @@ def check(d):
         return (cq.Workplane("XY").center(0, d.axis(diameter)).circle(diameter / 2 - 0.05)
                 .extrude(d.carrier_height).translate((0, 0, d.rest)))
 
-    lens = cq.Workplane("XZ", origin=(0, 0, d.saddle_height - 31.0)).circle(16.0).extrude(7.2)
+    lens = cq.Workplane("XZ", origin=(0, 0, d.saddle_height - 31.0)).circle(16.0).extrude(9.5)
     return [
         ("carrier does not collide with the saddle at rest", volume(s.intersect(c)) < 0.01),
         ("carrier does not collide with the saddle when floated up", volume(s.intersect(lifted)) < 0.01),
         ("a 6 mm barrel fits the clamp", volume(c.intersect(barrel(6.0))) < 0.01),
         ("a 15 mm barrel fits the clamp", volume(c.intersect(barrel(d.max_pen))) < 0.01),
         ("a 15 mm barrel clears the saddle", volume(s.intersect(barrel(d.max_pen))) < 0.01),
-        ("saddle clears the lens dome (7.0 proud, about 32 across)", volume(s.intersect(lens)) < 0.01),
+        ("saddle clears a lens dome up to 9.5 proud and 32 across", volume(s.intersect(lens)) < 0.01),
         ("pen clears the saddle", volume(s.intersect(pen(d).translate((0, 0, d.rest)))) < 0.01),
         ("gauge fits against the saddle without collision", volume(s.intersect(gauge(d))) < 0.01),
         ("gauge shelf sits exactly under the pen tip",

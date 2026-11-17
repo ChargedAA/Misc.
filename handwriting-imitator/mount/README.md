@@ -81,9 +81,10 @@ round that:
 | --- | --- | --- |
 | Tip distance below the saddle's bottom edge. Aim for about 3 mm below the nozzle. | 28.0 mm, a guess | `--tip-drop` |
 | Where the lens sits on the cover | centre 31 mm below the top edge, read off a photo | the saddle's two pads leave 39 mm clear between them |
+| How far the lens dome stands proud | measured roughly at 7 mm; the saddle allows 10 mm | `--lens-clearance` |
 
 Also unchecked: whether the grey fan ducts at the bottom of the toolhead reach
-far enough forward to touch the pen. The pen's centre line is 24 to 30 mm in
+far enough forward to touch the pen. The pen's centre line is 26 to 32 mm in
 front of the cover face, further out for thicker barrels.
 
 Because a thicker barrel sits further forward, the pen's offset from the nozzle
