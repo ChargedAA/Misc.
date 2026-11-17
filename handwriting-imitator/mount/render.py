@@ -8,9 +8,9 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw
 
-from pen_mount import Design, body, carrier, pen
+from pen_mount import Design, carrier, gauge, pen, saddle
 
-GREY, BLUE, ORANGE = (0.74, 0.76, 0.80), (0.27, 0.52, 0.92), (0.96, 0.62, 0.22)
+GREY, BLUE, ORANGE, GREEN = (0.74, 0.76, 0.80), (0.27, 0.52, 0.92), (0.96, 0.62, 0.22), (0.35, 0.75, 0.45)
 
 
 def triangles(shape):
@@ -70,20 +70,21 @@ def render(parts, azimuth, elevation, size=520, span=None):
 
 def main(path):
     d = Design()
-    rest = d.plate_height - (d.carrier_height - d.cap)
+    rest = d.rest
 
-    def assembled(lift):
-        return [(triangles(body(d)), GREY),
-                (triangles(carrier(d).translate((0, 0, rest + lift))), BLUE),
-                (triangles(pen(d).translate((0, 0, rest + lift))), ORANGE)]
+    def assembled(lift, with_gauge=False):
+        parts = [(triangles(saddle(d)), GREY),
+                 (triangles(carrier(d).translate((0, 0, rest + lift))), BLUE),
+                 (triangles(pen(d).translate((0, 0, rest + lift))), ORANGE)]
+        return parts + ([(triangles(gauge(d)), GREEN)] if with_gauge else [])
 
     panels = [
         ("Pen up: carrier hangs from the rail", render(assembled(0), -55, 20, span=175)),
         ("Pen down: toolhead 8 mm lower, pen rests on the paper", render(assembled(8), -55, 20, span=175)),
-        ("From the side (printer to the right)", render(assembled(0), 180, 0, span=175)),
-        ("Body: plate and dovetail rail", render([(triangles(body(d)), GREY)], -55, 25)),
-        ("Carrier, front: V-groove, tie tunnels, band lugs", render([(triangles(carrier(d)), BLUE)], -60, 25)),
-        ("Carrier, back: slot closed at the top", render([(triangles(carrier(d)), BLUE)], 120, 25)),
+        ("Setting tip height with the gauge (green)", render(assembled(0, True), -75, 12, span=175)),
+        ("Saddle, front: rail, band pegs", render([(triangles(saddle(d)), GREY)], -55, 25)),
+        ("Saddle, back: tape pads, lips that grip the cover", render([(triangles(saddle(d)), GREY)], 125, 25)),
+        ("Carrier: split ring, M3 clamp screw, slot closed at the top", render([(triangles(carrier(d)), BLUE)], -120, 30)),
     ]
     tile, label = panels[0][1].width, 28
     sheet = Image.new("RGB", (3 * tile, 2 * (tile + label)), "white")
