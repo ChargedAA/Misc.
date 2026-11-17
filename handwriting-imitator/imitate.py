@@ -15,8 +15,14 @@ import textwrap
 import numpy as np
 from PIL import Image
 
+from hwsynth import gcode
 from hwsynth.eruku import LINE_HEIGHT, Eruku
 from hwsynth.preprocess import clean_line
+from hwsynth.vectorize import centerlines
+
+MARGIN = 40          # pixels of white around the page
+PITCH = 0.85         # line spacing as a fraction of the 64 px line height
+PARAGRAPH_GAP = 0.6  # extra spacing between paragraphs, in lines
 
 
 def wrap_balanced(paragraph, max_chars):
@@ -34,22 +40,34 @@ def wrap_balanced(paragraph, max_chars):
     return lines
 
 
-def compose_page(lines, margin=40, pitch=0.85, paragraph_gap=0.6):
-    """Stack line images (None = paragraph break) on a white page."""
-    step = round(LINE_HEIGHT * pitch)
-    width = max(im.width for im in lines if im is not None) + 2 * margin
-    height = 2 * margin + LINE_HEIGHT + sum(step if im is not None else round(step * paragraph_gap) for im in lines)
-    page = np.full((height, width), 255, dtype=np.uint8)
-    y = margin
+def place_lines(lines):
+    """Yield (line image, y of its top edge on the page); None entries are paragraph breaks."""
+    step = round(LINE_HEIGHT * PITCH)
+    y = MARGIN
     for im in lines:
         if im is None:
-            y += round(step * paragraph_gap)
-            continue
+            y += round(step * PARAGRAPH_GAP)
+        else:
+            yield im, y
+            y += step
+
+
+def compose_page(lines):
+    """Stack line images on a white page."""
+    placed = list(place_lines(lines))
+    width = max(im.width for im, _ in placed) + 2 * MARGIN
+    page = np.full((placed[-1][1] + LINE_HEIGHT + MARGIN, width), 255, dtype=np.uint8)
+    for im, y in placed:
         # Darkest-pixel-wins, so a line's white box cannot erase its neighbour's descenders.
-        region = page[y : y + LINE_HEIGHT, margin : margin + im.width]
+        region = page[y : y + LINE_HEIGHT, MARGIN : MARGIN + im.width]
         np.minimum(region, np.asarray(im), out=region)
-        y += step
-    return Image.fromarray(page[: y + LINE_HEIGHT - step + margin], mode="L")
+    return Image.fromarray(page, mode="L")
+
+
+def page_strokes(lines, line_pitch_mm):
+    """Trace every line's ink into pen paths, laid out like compose_page, in millimetres."""
+    mm_per_pixel = line_pitch_mm / round(LINE_HEIGHT * PITCH)
+    return [(path + [MARGIN, y]) * mm_per_pixel for im, y in place_lines(lines) for path in centerlines(im)]
 
 
 def main():
@@ -64,7 +82,9 @@ def main():
                         help="how hard to push towards the requested text; 1.0 = off and twice as fast, above 1.5 distorts")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--no-clean", action="store_true", help="skip background removal and cropping of the style image")
+    gcode.add_arguments(parser)
     args = parser.parse_args()
+    plotter = gcode.plotter_from_arguments(parser, args) if args.gcode else None
 
     if (args.text is None) == (args.text_file is None):
         parser.error("give the text either as an argument or with --text-file")
@@ -86,6 +106,8 @@ def main():
 
     compose_page(lines).save(args.out)
     print("wrote", args.out)
+    if plotter:
+        gcode.write(args.gcode, page_strokes(lines, args.line_pitch), plotter, args.air, title=text.strip()[:60])
 
 
 if __name__ == "__main__":

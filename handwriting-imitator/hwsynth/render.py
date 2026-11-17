@@ -12,18 +12,27 @@ def to_polylines(sample):
     return [s for s in np.split(xy, ends) if len(s)]
 
 
-def layout_lines(lines, line_gap=0.35, margin=40.0):
-    """Stack several lines of polylines into one page. Returns (polylines, width, height)."""
-    page, y_cursor, width = [], margin, 0.0
-    for polylines in lines:
+# Distance between lines of writing, in the stroke model's coordinate units.
+# Its characters average about 140 units wide and a line with tall letters and
+# tails spans up to 900, so this is the tightest pitch at which neighbouring
+# lines rarely touch.
+LINE_PITCH = 520.0
+
+
+def layout_lines(lines, pitch=LINE_PITCH, margin=40.0):
+    """Stack lines of polylines at a fixed pitch. Returns (polylines, width, height).
+
+    Lines are aligned on the median height of their points, which sits inside
+    the band of small letters whatever ascenders or descenders the line has.
+    """
+    page, width = [], 0.0
+    first = margin + 0.6 * pitch
+    for i, polylines in enumerate(lines):
         pts = np.concatenate(polylines)
-        x0, y0 = pts.min(axis=0)
-        x1, y1 = pts.max(axis=0)
-        for stroke in polylines:
-            page.append(stroke - [x0 - margin, y0 - y_cursor])
-        width = max(width, x1 - x0)
-        y_cursor += (y1 - y0) * (1 + line_gap)
-    return page, width + 2 * margin, y_cursor + margin
+        shift = [pts[:, 0].min() - margin, np.median(pts[:, 1]) - (first + i * pitch)]
+        page += [stroke - shift for stroke in polylines]
+        width = max(width, np.ptp(pts[:, 0]))
+    return page, width + 2 * margin, first + (len(lines) - 1) * pitch + 0.6 * pitch + margin
 
 
 def to_svg(polylines, width, height, stroke_width=9.0, colour="#1a237e"):
