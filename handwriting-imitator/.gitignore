@@ -1,0 +1,4 @@
+__pycache__/
+eval_data/
+eval_out/
+*.pt

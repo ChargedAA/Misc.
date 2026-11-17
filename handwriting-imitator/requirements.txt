@@ -1,0 +1,9 @@
+torch>=2.6
+transformers>=5.0
+diffusers>=0.30
+huggingface_hub
+numpy
+pillow
+opencv-python-headless
+scikit-image
+scipy
