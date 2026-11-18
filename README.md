@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 61 small games for reaction, speed, timing, memory,
+A minimal training suite: 65 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -69,6 +69,7 @@ the same set for everyone on a given day.
 | Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
 | Digits | Remember a number. Type it back, sometimes backwards. | tap or click |
 | Where | Shapes scatter and vanish. Tap where one of them was. | tap or click |
+| Running | Digits stream by and stop without warning. Type the last few. | tap or click |
 
 ### Attention
 
@@ -116,6 +117,9 @@ the same set for everyone on a given day.
 | Sum | True or false, as fast as you can. | keys or tap, 2+ keys |
 | Compare | Two expressions. Which is bigger? | keys or tap, 2+ keys |
 | Series | Five numbers. What comes next? | tap or click |
+| Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap, 2+ keys |
+| Matrix | A three-by-three pattern with a gap. Which piece fits? | tap or click |
+| Balance | The scales balance. How many triangles weigh the same as a square? | tap or click |
 
 ## Why these games
 
@@ -146,7 +150,11 @@ The suite leans on established tasks and on what is known about training:
 - **Reasoning under time.** Sum and Compare are speeded arithmetic
   verification and comparison, scored as right minus wrong so guessing does
   not pay. Series is number-series completion, a classic inductive reasoning
-  item.
+  item. Matrix is a procedurally generated progressive-matrices puzzle, Relate
+  is transitive inference (the premises vanish later, adding a memory load),
+  and Balance is algebra in pictures.
+- **Updating, not just holding.** Running is running memory span: the list
+  stops without warning, so you must keep replacing what you hold.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
   they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
   Burst train held and controlled rates; Sprint measures the peak.
