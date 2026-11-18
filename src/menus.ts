@@ -24,8 +24,8 @@ import {
   type Metric,
 } from './ui.ts';
 
-export const MENU_KEYS = ['KeyZ', 'KeyX', 'KeyC', 'KeyB', 'KeyN', 'KeyM'] as const;
-const KEY_NAMES = ['Z', 'X', 'C', 'B', 'N', 'M'];
+export const MENU_KEYS = ['KeyZ', 'KeyX', 'KeyC', 'KeyB', 'KeyN', 'KeyM', 'Space'] as const;
+const KEY_NAMES = ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'];
 const PER_PAGE = 6;
 
 export interface Item {
@@ -35,37 +35,51 @@ export interface Item {
   act: string;
   arg?: string;
   disabled?: boolean;
-  /** Which of the six keys, if not the item's position. */
+  /** Which key (0-5 for Z to M, 6 for Space), if not the item's position. */
   slot?: number;
+  /** Marked as the current choice (the last key count used, say). */
+  current?: boolean;
 }
 
 export interface Menu {
   title: string;
   sub?: string;
-  /** Html above the list. */
+  /** Html above the list, shown while the column is the active one. */
   extra?: string;
   items: Item[];
   page?: number;
-  /** Html below the list. */
+  /** Html below the list, shown while the column is the active one. */
   after?: string;
   /** Enter: the screen's default action. */
   enter?: { label: string; act: string; arg?: string };
-  back?: boolean;
   wide?: boolean;
 }
 
-/** 1 = reached going forward, -1 = going back, 0 = same screen redrawn. */
-export function menuHtml(m: Menu, dir: number): string {
-  const pages = Math.max(1, Math.ceil(m.items.length / PER_PAGE));
+/** One column of the menu: a menu and, if a deeper column is open, the item chosen in it. */
+export interface Col {
+  menu: Menu;
+  sel?: string;
+}
+
+function itemsOf(m: Menu): { shown: Item[]; page: number; pages: number } {
+  // A list longer than six pages with Space, unless Space is one of its options.
+  const spaceTaken = m.items.some((it) => it.slot === 6);
+  if (spaceTaken || m.items.length <= PER_PAGE) return { shown: m.items, page: 0, pages: 1 };
+  const pages = Math.ceil(m.items.length / PER_PAGE);
   const page = Math.min(m.page ?? 0, pages - 1);
-  const shown = m.items.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
-  const cls = dir > 0 ? 'fwd' : dir < 0 ? 'bwd' : 'same';
+  return { shown: m.items.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE), page, pages };
+}
+
+/** The open column: full detail, and it owns the keys. */
+function activeCol(m: Menu, dir: number, canBack: boolean): string {
+  const { shown, page, pages } = itemsOf(m);
   // An Enter default that is also one of the items rides on that item instead of a separate button.
   const twin = m.enter ? shown.find((it) => it.act === m.enter!.act && (it.arg ?? '') === (m.enter!.arg ?? '')) : undefined;
   const enter = twin ? undefined : m.enter;
-  return `<section class="screen menu ${cls}${m.wide ? ' wide' : ''}">
+  const cls = dir > 0 ? ' fwd' : dir < 0 ? ' bwd' : '';
+  return `<section class="col active${m.wide ? ' wide' : ''}${cls}">
   <header class="mhead">
-    ${m.back ? '<button class="mback" data-act="back" data-key="Escape Backspace">←<span class="k">esc</span></button>' : ''}
+    ${canBack ? '<button class="mback" data-act="back" data-key="Escape Backspace">\u2190<span class="k">esc</span></button>' : ''}
     <h1>${m.title}</h1>
     ${m.sub ? `<p class="msub">${m.sub}</p>` : ''}
   </header>
@@ -73,7 +87,8 @@ export function menuHtml(m: Menu, dir: number): string {
   <div class="items">${shown
     .map((it, i) => {
       const k = it.slot ?? i;
-      return `<button class="item" data-act="${it.act}" data-arg="${it.arg ?? ''}" data-key="${MENU_KEYS[k]}${it === twin ? ' Enter' : ''}"${it.disabled ? ' disabled' : ''}><span class="kb">${KEY_NAMES[k]}</span><span class="n">${it.label}</span>${it.meta ? `<span class="m">${it.meta}</span>` : ''}${it.desc ? `<span class="d">${it.desc}</span>` : ''}</button>`;
+      const codes = `${MENU_KEYS[k]}${it === twin ? ' Enter' : ''}`;
+      return `<button class="item${it.current ? ' cur' : ''}" data-act="${it.act}" data-arg="${it.arg ?? ''}" data-key="${codes}"${it.disabled ? ' disabled' : ''}><span class="kb${k === 6 ? ' wide' : ''}">${KEY_NAMES[k]}</span><span class="n">${it.label}</span>${it.meta ? `<span class="m">${it.meta}</span>` : ''}${it.desc ? `<span class="d">${it.desc}</span>` : ''}</button>`;
     })
     .join('')}</div>
   ${
@@ -85,6 +100,41 @@ export function menuHtml(m: Menu, dir: number): string {
   }
   ${m.after ?? ''}
 </section>`;
+}
+
+/** A column further up the path: compact, with the chosen item lit. Clicking an item re-opens from there. */
+function parentCol(c: Col, level: number, old: boolean): string {
+  const { shown } = itemsOf(c.menu);
+  return `<section class="col parent${old ? ' old' : ''}">
+  <h2 class="ctitle"><button data-act="crumb" data-arg="${level}">${c.menu.title}</button></h2>
+  <div class="citems">${shown
+    .map((it, i) => {
+      const k = it.slot ?? i;
+      const on = c.sel !== undefined && it.arg === c.sel;
+      return `<button class="citem${on ? ' on' : ''}" data-act="pick" data-arg="${level}|${it.act}|${it.arg ?? ''}"${it.disabled ? ' disabled' : ''}><span class="kb${k === 6 ? ' wide' : ''}">${KEY_NAMES[k]}</span>${it.label}</button>`;
+    })
+    .join('')}</div>
+</section>`;
+}
+
+/**
+ * The whole menu: the path so far as columns, the newest one open. Desktop shows the
+ * last three; a phone shows only the open one, with a breadcrumb back up the path.
+ * `dir`: 1 a column was opened, -1 one was closed, 0 redrawn in place.
+ */
+export function columnsHtml(cols: Col[], dir: number): string {
+  const n = cols.length;
+  const crumbs =
+    n > 1
+      ? `<nav class="crumbs">${cols
+          .slice(0, -1)
+          .map((c, i) => `<button data-act="crumb" data-arg="${i}">${c.menu.title}</button>`)
+          .join('<span>\u203a</span>')}<span>\u203a</span><b>${cols[n - 1]!.menu.title}</b></nav>`
+      : '';
+  return `<div class="cols${n > 3 ? ' deep' : ''}">
+  ${crumbs}
+  <div class="colrow">${cols.map((c, i) => (i === n - 1 ? activeCol(c.menu, dir, n > 1) : parentCol(c, i, i < n - 3))).join('')}</div>
+</div>`;
 }
 
 // --- Content ----------------------------------------------------------------------
@@ -120,17 +170,38 @@ export function startMenu(c: MenuCtx): Menu {
     title: 'TENSION',
     sub: `${ENTRIES.length} games${DOT}${SKILLS.length} skills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     items: [
-      {
-        label: 'Daily',
-        desc: c.daily.map((id) => entry(id)?.name ?? id).join(DOT),
-        meta: c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : `${c.daily.length} games`,
-        act: 'daily',
-      },
+      { label: 'Daily', desc: `${c.daily.length} games, one per skill`, meta: c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : 'today', act: 'go', arg: 'daily' },
       ...GROUPS.map((g) => ({ label: g.name, desc: g.desc, meta: `${gamesOf(g.skills).length} games`, act: 'go', arg: `group:${g.id}` })),
-      { label: 'Quick', desc: 'Three random games from anywhere', meta: '3 games', act: 'quick', arg: 'all' },
+      { label: 'Random', desc: 'A run of random games, short or long', act: 'go', arg: 'random' },
       { label: 'Stats', desc: sessions ? `${sessions} sessions${c.streak ? `${DOT}${c.streak} day streak` : ''}` : 'Nothing yet', act: 'go', arg: 'stats' },
       { label: 'Settings', desc: `Keys${DOT}sound ${c.settings.muted ? 'off' : 'on'}${DOT}history`, act: 'go', arg: 'settings' },
     ],
+  };
+}
+
+export function dailyMenu(c: MenuCtx): Menu {
+  return {
+    title: 'DAILY',
+    sub: 'The same set for everyone today',
+    items: [{ label: c.dailyDone !== null ? 'Play it again' : 'Play the set', desc: `${c.daily.length} games back to back`, meta: c.dailyDone !== null ? `today ${fmtInt(c.dailyDone)}` : '', act: 'daily' }],
+    enter: { label: 'Play', act: 'daily' },
+    after: `<ol class="dlist">${c.daily.map((id) => `<li>${entry(id)?.name ?? id}<span>${SKILLS.find((k) => k.id === entry(id)?.skill)?.name ?? ''}</span></li>`).join('')}</ol>`,
+  };
+}
+
+export function randomMenu(): Menu {
+  return {
+    title: 'RANDOM',
+    sub: 'Random games back to back, each about a minute',
+    items: [
+      { label: 'Three games', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
+      { label: 'Five games', desc: 'About five minutes', act: 'quick', arg: 'all:5' },
+      { label: 'Ten games', desc: 'About ten minutes', act: 'quick', arg: 'all:10' },
+      { label: 'Three reflex games', desc: 'Reaction, speed, timing, coordination', act: 'quick', arg: 'body:3' },
+      { label: 'Three mind games', desc: 'Memory, attention, judgement, reasoning', act: 'quick', arg: 'mind:3' },
+      { label: 'One of each skill', desc: `Eight games, a fresh draw each time`, act: 'quick', arg: 'each:8' },
+    ],
+    enter: { label: 'Three games', act: 'quick', arg: 'all:3' },
   };
 }
 
@@ -139,7 +210,6 @@ export function groupMenu(c: MenuCtx, id: string): Menu {
   return {
     title: g.name.toUpperCase(),
     sub: g.desc,
-    back: true,
     items: [
       ...g.skills.map((sk) => {
         const def = SKILLS.find((k) => k.id === sk)!;
@@ -147,7 +217,7 @@ export function groupMenu(c: MenuCtx, id: string): Menu {
         const tried = games.filter((e) => c.bests[e.id]).length;
         return { label: def.name, desc: def.blurb, meta: `${games.length} games${tried ? `${DOT}${tried} played` : ''}`, act: 'go', arg: `skill:${sk}` };
       }),
-      { label: 'Three at random', desc: `From all ${g.name.toLowerCase()} games`, act: 'quick', arg: g.id, slot: 5 },
+      { label: 'Three at random', desc: `From all ${g.name.toLowerCase()} games`, act: 'quick', arg: `${g.id}:3`, slot: 6 },
     ],
   };
 }
@@ -157,7 +227,6 @@ export function skillMenu(c: MenuCtx, sk: string, page: number): Menu {
   return {
     title: def.name.toUpperCase(),
     sub: def.blurb,
-    back: true,
     page,
     items: gamesOf([sk]).map((e) => ({
       label: e.name,
@@ -166,7 +235,7 @@ export function skillMenu(c: MenuCtx, sk: string, page: number): Menu {
       act: 'go',
       arg: `game:${e.id}`,
     })),
-    enter: { label: 'Three at random', act: 'quick', arg: sk },
+    enter: { label: 'Three at random', act: 'quick', arg: `${sk}:3` },
   };
 }
 
@@ -178,24 +247,26 @@ export function gameMenu(c: MenuCtx, id: string): Menu {
   const how = e.def ? `${e.def.how}${usesKeys ? `<br>Keys: ${keysLine(keys, c.settings.bindings[keys]!)}` : ''}` : controlsHint(id, keys, c.settings.bindings[keys]!);
   const best = c.bestFor(id, keys);
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
-  const extra = `<p class="mblurb">${e.blurb}</p>
-  ${
-    usesKeys
-      ? `<div class="counts" aria-label="How many keys">${MODES.map(
-          (m) => `<button data-act="keycount" data-arg="${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
-        ).join('')}<span class="lbl">keys${DOT}1–6 to pick</span></div>`
-      : ''
-  }
-`;
-  const after = `<p class="hint">${how}</p>
-  ${best ? `<p class="best">${bestLine(id, best)}</p>` : ''}`;
-  const items: Item[] = [{ label: 'Start', act: 'start', arg: id, slot: 0 }];
-  if (usesKeys) {
-    items.push({ label: 'Fewer keys', act: 'keycount', arg: String(keys - 1), disabled: keys - 1 < min, slot: 1 });
-    items.push({ label: 'More keys', act: 'keycount', arg: String(keys + 1), disabled: keys >= 6, slot: 2 });
-  }
-  items.push({ label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, slot: 3 });
-  return { title: e.name.toUpperCase(), sub: SKILLS.find((k) => k.id === e.skill)?.name, back: true, extra, items, after, enter: { label: 'Start', act: 'start', arg: id } };
+  // With keys, each option is a key count and starts the game at once; the last one used is marked.
+  const items: Item[] = usesKeys
+    ? MODES.map((m) => ({
+        label: `${m.id} key${m.id === 1 ? '' : 's'}`,
+        desc: keysLine(m.id, c.settings.bindings[m.id]!).replace(/&nbsp;/g, ' '),
+        meta: m.id === keys ? 'last used' : '',
+        act: 'play',
+        arg: `${id}:${m.id}`,
+        disabled: m.id < min,
+        current: m.id === keys,
+      }))
+    : [{ label: 'Start', desc: e.input === 'type' ? 'Needs a keyboard' : 'Click or tap', act: 'play', arg: `${id}:${keys}` }];
+  items.push({ label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, slot: 6 });
+  return {
+    title: e.name.toUpperCase(),
+    sub: `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
+    items,
+    enter: { label: `Start${usesKeys ? ` with ${keys} key${keys === 1 ? '' : 's'}` : ''}`, act: 'play', arg: `${id}:${keys}` },
+    after: `<p class="hint">${how}</p>${best ? `<p class="best">${bestLine(id, best)}</p>` : ''}`,
+  };
 }
 
 /** The game id a history record belongs to. */
@@ -217,7 +288,6 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
   const played = [...seen.entries()].sort((a, b) => b[1].at - a[1].at);
   return {
     title: 'STATS',
-    back: true,
     wide: true,
     page,
     extra: `${overview(c.history)}<h2>Your games <span>most recent first${DOT}pick one for its stats</span></h2>`,
@@ -229,7 +299,6 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
 export function settingsMenu(c: MenuCtx): Menu {
   return {
     title: 'SETTINGS',
-    back: true,
     items: [
       { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
       { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
@@ -298,9 +367,8 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
         .join('')}</table>`
     : '';
   return {
-    title: e.name.toUpperCase(),
-    sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
-    back: true,
+    title: 'STATS',
+    sub: `${e.name}${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
     extra: `${seg}${body}${table}`,
     items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}` }],

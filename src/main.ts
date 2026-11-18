@@ -54,7 +54,7 @@ import { ENTRIES, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, gameMenu, gameStatsMenu, groupMenu, menuHtml, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -90,6 +90,8 @@ interface NavEntry {
   kind: string;
   arg: string;
   page: number;
+  /** The item chosen in this column when a deeper one is open. */
+  sel?: string;
 }
 let nav: NavEntry[] = [{ kind: 'start', arg: '', page: 0 }];
 let lastGame: GameId = 'climb';
@@ -311,6 +313,10 @@ function buildMenu(n: NavEntry): Menu {
       return gameStatsMenu(c, n.arg, gsFilter);
     case 'settings':
       return settingsMenu(c);
+    case 'daily':
+      return dailyMenu(c);
+    case 'random':
+      return randomMenu();
     default:
       return startMenu(c);
   }
@@ -321,7 +327,7 @@ function showMenu(dir = 0): void {
   stopLoop();
   screen = 'menu';
   listening = '';
-  ui.show(menuHtml(buildMenu(nav[nav.length - 1]!), dir));
+  ui.show(columnsHtml(nav.map((n) => ({ menu: buildMenu(n), sel: n.sel })), dir));
 }
 
 function go(target: string): void {
@@ -329,19 +335,21 @@ function go(target: string): void {
   const kind = i < 0 ? target : target.slice(0, i);
   const arg = i < 0 ? '' : target.slice(i + 1);
   if (kind === 'gamestats') gsFilter = 0;
+  nav[nav.length - 1]!.sel = target;
   nav.push({ kind, arg, page: 0 });
   showMenu(1);
 }
 
 function back(): void {
   if (nav.length > 1) nav.pop();
+  nav[nav.length - 1]!.sel = undefined;
   showMenu(-1);
 }
 
-/** The game whose page is on top of the stack, if any. */
-function navGame(): GameId | null {
-  const top = nav[nav.length - 1]!;
-  return top.kind === 'game' ? (top.arg as GameId) : null;
+/** Close the columns deeper than `level`. */
+function truncate(level: number): void {
+  nav.length = Math.max(1, Math.min(nav.length, level + 1));
+  nav[nav.length - 1]!.sel = undefined;
 }
 
 function startDaily(): void {
@@ -371,18 +379,31 @@ function nextDaily(): void {
   ui.show(dailySummaryHtml(dailyRows, total, Math.max(bestTotal, total), queueLabel));
 }
 
-/** Three random games from a skill, a group, or everything, back to back like the daily set. */
-function startQuick(scope: string): void {
+/**
+ * Random games back to back, like the daily set. `spec` is "scope:count": scope is
+ * 'all', a group, a skill, or 'each' (one from every skill).
+ */
+function startQuick(spec: string): void {
+  const [scope = 'all', countText = '3'] = spec.split(':');
+  const count = Math.max(1, Number(countText) || 3);
+  const shuffled = <T,>(list: T[]): T[] => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j]!, list[i]!];
+    }
+    return list;
+  };
   const group = GROUPS.find((g) => g.id === scope);
   const skill = SKILLS.find((k) => k.id === scope);
-  const pool = ENTRIES.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
-  if (!pool.length) return;
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+  let queue: string[];
+  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(ENTRIES.filter((e) => e.skill === k.id))[0]!.id));
+  else {
+    const pool = ENTRIES.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
+    queue = shuffled(pool).slice(0, count);
   }
-  dailyQueue = pool.slice(0, 3);
-  queueLabel = `${group ? group.name : skill ? skill.name : 'Quick'} set`;
+  if (!queue.length) return;
+  dailyQueue = queue;
+  queueLabel = `${group ? group.name : skill ? skill.name : scope === 'each' ? 'Mixed' : 'Random'} set`;
   dailyIdx = 0;
   dailyRows = [];
   startGame(dailyQueue[0]!);
@@ -661,13 +682,16 @@ function assignKey(code: string): void {
   showKeys();
 }
 
-function setKeyCount(n: number): void {
-  const game = navGame();
-  if (!game || !usesKeyCount(entry(game)?.input ?? 'keys') || n < 1 || n > 6 || n < (entry(game)?.minKeys ?? 1)) return;
-  settings.keys[game] = n;
-  saveSettings(settings);
-  sfx.play(SND_UI);
-  showMenu();
+/** Start a game with a key count, remembering the count for next time. */
+function playWith(game: GameId, n: number): void {
+  const e = entry(game);
+  if (!e) return;
+  if (usesKeyCount(e.input)) {
+    if (n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
+    settings.keys[game] = n;
+    saveSettings(settings);
+  }
+  startGame(game);
 }
 
 function onAction(action: string, arg: string): void {
@@ -685,12 +709,25 @@ function onAction(action: string, arg: string): void {
       nav[nav.length - 1]!.page = Number(arg) | 0;
       showMenu(1);
       break;
-    case 'keycount':
-      setKeyCount(Number(arg));
+    case 'play': {
+      const [id, n] = arg.split(':');
+      playWith(id as GameId, Number(n));
       break;
-    case 'start':
-      startGame((arg || navGame() || lastGame) as GameId);
+    }
+    case 'crumb':
+      // Re-open from a column further up the path.
+      sfx.play(SND_UI);
+      truncate(Number(arg) | 0);
+      showMenu(-1);
       break;
+    case 'pick': {
+      // An item in a column further up: close the deeper columns, then act as if chosen there.
+      const [level, act, ...rest] = arg.split('|');
+      truncate(Number(level) | 0);
+      if (act === 'go') onAction('go', rest.join('|'));
+      else onAction(act ?? '', rest.join('|'));
+      break;
+    }
     case 'again':
       startGame(lastGame);
       break;
@@ -698,7 +735,7 @@ function onAction(action: string, arg: string): void {
       startDaily();
       break;
     case 'quick':
-      startQuick(arg || 'all');
+      startQuick(arg || 'all:3');
       break;
     case 'dailynext':
       nextDaily();
@@ -709,6 +746,7 @@ function onAction(action: string, arg: string): void {
     case 'gamestats':
       // From a results screen: the game's stats, over its page.
       gsFilter = 0;
+      nav[nav.length - 1]!.sel = `gamestats:${arg || lastGame}`;
       nav.push({ kind: 'gamestats', arg: arg || lastGame, page: 0 });
       showMenu(1);
       break;
@@ -878,7 +916,7 @@ function onKeyDown(e: KeyboardEvent): void {
   // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
   if (!Number.isNaN(digit)) {
     const top = nav[nav.length - 1]!;
-    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6) setKeyCount(digit);
+    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6) playWith(top.arg as GameId, digit);
     else if (screen === 'menu' && top.kind === 'gamestats' && digit >= 0 && digit <= 6) onAction('gsfilter', String(digit));
     else if (screen === 'keys' && digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
     else if (digit === 0) toggleMute();

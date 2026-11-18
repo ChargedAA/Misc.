@@ -9,23 +9,24 @@ npm install
 npm run dev
 ```
 
-Everything outside a game is a short menu of at most six options, each on a
-key your hands already rest on: `Z` `X` `C` `B` `N` `M`, top to bottom. `Space`
-shows the next page of a longer list, `Esc` goes back, `Enter` does the
-obvious thing (start, again, next).
+Menus are a path of short lists, each option on a key your hands already
+rest on: `Z` `X` `C` `B` `N` `M`, top to bottom, and `Space` for a seventh.
+Choosing opens the next list beside the last one, so the path stays in view
+(on a phone, only the open list shows, with the path above it). `Esc` goes back
+one list; clicking an earlier list re-opens from there. When a list is longer
+than six, `Space` turns the page.
 
-| Key | Start screen |
-| --- | --- |
-| `Z` | **Daily**: one game from each skill, the same set for everyone that day |
-| `X` | **Reflexes**: reaction, speed, timing, coordination |
-| `C` | **Mind**: memory, attention, judgement, reasoning |
-| `B` | **Quick**: three random games from anywhere |
-| `N` | **Stats**: streak, skills this week, and every game you have played |
-| `M` | **Settings**: keys, sound, FPS overlay, history |
+```
+Z  Daily       Z  Play the set
+X  Reflexes    Z  Reaction     Z..M  games     Z..M  play with 1..6 keys
+C  Mind        X  Speed                         SPACE stats for this game
+B  Random      C  Timing
+N  Stats       B  Coordination
+M  Settings    SPACE  Three at random
+```
 
-Pick a group, then a skill, then a game. A game's page sets how many keys to
-play with (`1` to `6`, or `X` / `C`), starts it with `Z`, and opens its stats
-with `B`. After a game: `Z` again, `X` its stats, `C` back.
+**Random** offers three, five or ten games, three from Reflexes or Mind, or one
+from each skill. After a game: `Z` again, `X` its stats, `C` back.
 
 ## Games
 
@@ -212,11 +213,11 @@ physical key position, not the printed letter.
 
 | Key | Action |
 | --- | --- |
-| `Z` `X` `C` `B` `N` `M` | The six options of any menu |
-| `Space` | Next page of a long list |
+| `Z` `X` `C` `B` `N` `M` | The options of the open list |
+| `Space` | Seventh option, or the next page of a long list |
 | `Enter` | Start, again, next |
 | `Esc` | Pause, finish, back |
-| `1`-`6` | Key count on a game's page; key filter on its stats |
+| `1`-`6` | On a game's list: play with that many keys; on its stats: key filter |
 | `0` | Sound on or off |
 | `` ` `` | FPS and frame-time overlay |
 
