@@ -5,6 +5,8 @@
 import { MODES, getMode } from './config.ts';
 import { histogramSvg, trendSvg } from './charts.ts';
 import type { CpsStats, Histogram, RtStats } from './stats.ts';
+import { ENTRIES, entry } from './minis/index.ts';
+import { SKILLS, type MiniResult } from './minis/kit.ts';
 import { keyLabel, type Bindings, type GameId, type RunRecord, type Settings } from './storage.ts';
 
 export class Ui {
@@ -85,19 +87,6 @@ function keySeg(current: number, act: string, withAll = false): string {
 
 // --- Title and pop-out ------------------------------------------------------------
 
-interface GameInfo {
-  id: GameId;
-  name: string;
-  blurb: string;
-  key: string;
-}
-
-export const GAMES: readonly GameInfo[] = [
-  { id: 'climb', name: 'Climb', blurb: 'Dash between lanes and surge over what you cannot dodge. Endless.', key: 'c' },
-  { id: 'reflex', name: 'Reflex', blurb: 'A reaction test that changes its rules every round.', key: 'r' },
-  { id: 'burst', name: 'Burst', blurb: 'Hold a rising tap rate. Tracks evenness and repeated keys.', key: 'b' },
-];
-
 /** What the keys of a key count do in a given game. */
 export function controlsHint(game: GameId, keys: number, b: Bindings): string {
   const m = getMode(keys);
@@ -133,21 +122,42 @@ function bestLine(game: GameId, best: RunRecord | null): string {
   if (!best) return '';
   if (game === 'climb') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}${fmtInt(best.height ?? 0)} m`;
   if (game === 'reflex') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}round ${best.rounds ?? 0}`;
-  return `<span class="l">best</span>${(best.target ?? 0).toFixed(1)} taps/s held`;
+  if (game === 'burst') return `<span class="l">best</span>${(best.target ?? 0).toFixed(1)} taps/s held`;
+  const v = best.value;
+  return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${v !== undefined && best.vlabel ? `${DOT}${best.vlabel} ${fmtPrimary(v, { label: best.vlabel, value: v, unit: best.unit ?? '', decimals: best.decimals })}` : ''}`;
+}
+
+function fmtPrimary(v: number, p: MiniResult['primary']): string {
+  const n = p.decimals ? v.toFixed(p.decimals) : fmtInt(v);
+  return p.unit ? `${n}${p.unit === '%' ? '' : ' '}${p.unit}` : n;
+}
+
+function keysLine(keys: number, b: Bindings): string {
+  const m = getMode(keys);
+  let h = `${b.left.map(kbd).join('')}${m.right ? ' &nbsp; ' + b.right.map(kbd).join('') : ''}`;
+  if (m.reflex && b.reflex) h += ` &nbsp; ${kbd(b.reflex)}`;
+  return h;
 }
 
 /**
- * The title screen. With `picked` set, the key-count pop-out is open over it;
- * `slide` plays its entrance (only the first time, not on each re-render).
+ * The title screen: every game, grouped by skill. With `picked` set, the
+ * pop-out for that game is open over it; `slide` plays its entrance.
  */
 export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean): string {
   let h = `<section class="screen title"${picked ? ' aria-hidden="true"' : ''}>
   <h1 class="logo">TENSION</h1>
-  <div class="modes">
-    ${GAMES.map(
-      (g) =>
-        `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.key}</span></button>`,
-    ).join('')}
+  <p class="tag">A minimal training suite. ${ENTRIES.length} games, six skills.</p>
+  <div class="skills">
+    ${SKILLS.map((sk) => {
+      const games = ENTRIES.filter((e) => e.skill === sk.id);
+      if (!games.length) return '';
+      return `<section class="skill"><h2>${sk.name}<span>${sk.blurb}</span></h2><div class="modes">${games
+        .map(
+          (g) =>
+            `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.input === 'pointer' ? 'tap' : g.input === 'both' ? 'key or tap' : 'keys'}</span></button>`,
+        )
+        .join('')}</div></section>`;
+    }).join('')}
   </div>
   ${foot([
     ['Stats', 'stats', 's'],
@@ -156,21 +166,28 @@ export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | 
   ])}
 </section>`;
   if (picked) {
-    const g = GAMES.find((x) => x.id === picked)!;
-    const keys = s.keys[picked];
+    const g = entry(picked)!;
+    const keys = s.keys[picked] ?? 2;
+    const min = g.minKeys ?? 1;
+    const usesKeys = g.input !== 'pointer';
+    const how = g.def ? `${g.def.how}${usesKeys ? `<br>Keys: ${keysLine(keys, s.bindings[keys]!)}` : ''}` : controlsHint(picked, keys, s.bindings[keys]!);
     h += `<div class="scrim" data-act="closepop"></div>
 <aside class="pop${slide ? ' slide' : ''}" role="dialog" aria-label="${g.name}">
   <button class="back" data-act="closepop">Back<span class="k">esc</span></button>
   <h1>${g.name.toUpperCase()}</h1>
   <p class="d">${g.blurb}</p>
-  <h2>How many keys</h2>
+  ${
+    usesKeys
+      ? `<h2>How many keys</h2>
   <div class="counts">${MODES.map(
-    (m) => `<button data-act="keycount" data-arg="${m.id}" aria-pressed="${m.id === keys}">${m.id}</button>`,
-  ).join('')}</div>
-  <p class="hint">${controlsHint(picked, keys, s.bindings[keys]!)}</p>
+    (m) => `<button data-act="keycount" data-arg="${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
+  ).join('')}</div>`
+      : '<h2>Click or tap</h2>'
+  }
+  <p class="hint">${how}</p>
   <p class="best">${bestLine(picked, best)}</p>
   <button class="go" data-act="start">Start<span class="k">enter</span></button>
-  <p class="muted">On a touch screen the keys are pads in the bottom corners.</p>
+  ${usesKeys ? '<p class="muted">On a touch screen the keys are pads in the bottom corners.</p>' : ''}
 </aside>`;
   }
   return h;
@@ -330,6 +347,21 @@ export function reflexResultsHtml(r: ReflexSummary): string {
       : ''
   }
   ${r.saved ? '' : '<p class="muted">Sessions under 5 answers are not saved.</p>'}
+  ${foot(AGAIN)}
+</section>`;
+}
+
+export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | null, rtMedian: number, best: boolean): string {
+  const p = r.primary;
+  return `<section class="screen">
+  <div class="big">
+    <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
+    <div class="stat"><div class="v">${fmtPrimary(p.value, p)}</div><div class="l">${p.label}</div></div>
+    <div class="stat"><div class="v">${name}</div><div class="l">game</div></div>
+  </div>
+  <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
+  ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
+  ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
   ${foot(AGAIN)}
 </section>`;
 }

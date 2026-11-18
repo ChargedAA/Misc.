@@ -15,7 +15,12 @@ export const SND_UI = 8;
 export const SND_SURGE = 9;
 /** Five pickup ticks, rising with the chain: SND_RING + 0..4. */
 export const SND_RING = 10;
-const SOUND_COUNT = 15;
+/** Seven plucked tones on a pentatonic scale, low to high: SND_TONE + 0..6. */
+export const SND_TONE = 15;
+/** Metronome: SND_BEAT, and a brighter SND_BEAT_UP for the first beat of a bar. */
+export const SND_BEAT = 22;
+export const SND_BEAT_UP = 23;
+const SOUND_COUNT = 24;
 
 type Synth = (t: number, i: number) => number;
 
@@ -105,6 +110,25 @@ export class Sfx {
     this.make(ctx, SND_TAP_WEAK, 0.02, 0, tick(820, 0.1));
     this.make(ctx, SND_UI, 0.018, 0, tick(1300, 0.08));
     for (let i = 0; i < 5; i++) this.make(ctx, SND_RING + i, 0.03, 0, tick(2300 * Math.pow(1.122, i), 0.085));
+
+    // Plucked tones (Karplus-Strong): a noise burst through a damped delay line.
+    const scale = [0, 2, 4, 7, 9, 12, 14];
+    for (let i = 0; i < 7; i++) {
+      const f = 330 * Math.pow(2, scale[i]! / 12);
+      const period = Math.max(2, Math.round(ctx.sampleRate / f));
+      const line = new Float32Array(period);
+      for (let j = 0; j < period; j++) line[j] = this.noise() * 0.5;
+      let idx = 0;
+      this.make(ctx, SND_TONE + i, 0.5, 0, (t) => {
+        const a = line[idx]!;
+        const next = (idx + 1) % period;
+        line[idx] = (a + line[next]!) * 0.5 * 0.996;
+        idx = next;
+        return a * 0.32 * Math.min(1, (0.5 - t) / 0.05);
+      });
+    }
+    this.make(ctx, SND_BEAT, 0.03, 0, tick(1000, 0.2));
+    this.make(ctx, SND_BEAT_UP, 0.03, 0, tick(1500, 0.24));
 
     // Surge: a short upward whip.
     let ph = 0;

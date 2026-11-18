@@ -29,12 +29,12 @@ export function defaultBindings(modeId: number): Bindings {
 /** Keys the game keeps for itself; they cannot be bound. */
 export const RESERVED = new Set(['Escape', 'Enter', 'Backquote', 'Tab']);
 
-export type GameId = 'climb' | 'reflex' | 'burst';
-export const GAME_IDS: readonly GameId[] = ['climb', 'reflex', 'burst'];
+/** 'climb', 'reflex', 'burst', or a mini-game id. */
+export type GameId = string;
 
 export interface Settings {
   /** Number of keys last chosen for each game. */
-  keys: Record<GameId, number>;
+  keys: Record<string, number>;
   muted: boolean;
   bindings: Record<number, Bindings>;
 }
@@ -58,8 +58,16 @@ export interface CpsSummary {
 }
 
 export interface RunRecord {
-  /** 'run' is Climb, 'rt' is Reflex, 'cps' is Burst. */
-  kind: 'run' | 'rt' | 'cps';
+  /** 'run' is Climb, 'rt' is Reflex, 'cps' is Burst, 'mini' is any other game. */
+  kind: 'run' | 'rt' | 'cps' | 'mini';
+  /** Mini-games: which one, and its tracked number. */
+  game?: string;
+  value?: number;
+  /** How to show `value`: its label, unit, decimals, and whether lower is better. */
+  vlabel?: string;
+  unit?: string;
+  decimals?: number;
+  lower?: boolean;
   at: number;
   /** Number of keys used. */
   mode: number;
@@ -108,7 +116,7 @@ function validBindings(b: unknown, mode: ModeDef): b is Bindings {
 }
 
 interface SavedSettings {
-  keys?: Partial<Record<GameId, number>>;
+  keys?: Record<string, number>;
   /** Before the title screen there was one key count for everything. */
   mode?: number;
   muted?: boolean;
@@ -127,12 +135,10 @@ export function loadSettings(): Settings {
     return n >= 1 && n <= 6 ? n | 0 : fallback;
   };
   const old = count(saved?.mode, 2);
+  const keys: Record<string, number> = { climb: old, reflex: old, burst: old === 1 ? 2 : old };
+  for (const [id, n] of Object.entries(saved?.keys ?? {})) keys[id] = count(n, keys[id] ?? 2);
   return {
-    keys: {
-      climb: count(saved?.keys?.climb, old),
-      reflex: count(saved?.keys?.reflex, old),
-      burst: count(saved?.keys?.burst, old === 1 ? 2 : old),
-    },
+    keys,
     muted: saved?.muted === true,
     bindings,
   };

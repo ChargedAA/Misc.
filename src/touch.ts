@@ -68,6 +68,11 @@ export class TouchLayout {
     this.corner.h = c;
   }
 
+  /** Drop the pads but keep the corner button (games played by tapping the board). */
+  padsOff(): void {
+    this.pads.length = 0;
+  }
+
   /** Slot under a touch: the nearest pad on that half of the screen. */
   hit(px: number, py: number): number {
     const c = this.corner;

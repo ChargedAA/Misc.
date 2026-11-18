@@ -515,3 +515,58 @@ td:first-child {
     font-size: 22px;
   }
 }
+
+/* Suite title: games grouped by skill */
+.screen.title {
+  max-width: 1040px;
+}
+
+.title .logo {
+  margin-bottom: 10px;
+}
+
+.tag {
+  color: var(--mid);
+  font-size: 12.5px;
+  margin: 0 0 30px;
+}
+
+.skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 6px 40px;
+}
+
+.skill h2 {
+  margin: 22px 0 6px;
+}
+
+.skill .modes {
+  border-top: 1px solid var(--faint);
+}
+
+.skill .mode {
+  padding: 11px 0;
+}
+
+.skill .mode .n {
+  font-size: 15.5px;
+}
+
+.skill .mode .d {
+  font-size: 12px;
+}
+
+.mode:focus-visible {
+  outline: none;
+  background: var(--faint);
+}
+
+.counts button:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+table td + td {
+  font-variant-numeric: tabular-nums;
+}

@@ -50,9 +50,23 @@ import {
 } from './storage.ts';
 import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
-import { GAMES, Ui, cpsResultsHtml, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
+import { entry } from './minis/index.ts';
+import type { Mini, MiniDef } from './minis/kit.ts';
+import { Ui, cpsResultsHtml, miniResultsHtml, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
 
-type Screen = 'title' | 'play' | 'pause' | 'results' | 'reflex' | 'reflexResults' | 'burst' | 'burstResults' | 'stats' | 'keys';
+type Screen =
+  | 'title'
+  | 'play'
+  | 'pause'
+  | 'results'
+  | 'reflex'
+  | 'reflexResults'
+  | 'burst'
+  | 'burstResults'
+  | 'mini'
+  | 'miniResults'
+  | 'stats'
+  | 'keys';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const view = new View(canvas);
@@ -72,10 +86,13 @@ let screen: Screen = 'title';
 /** Game whose key-count pop-out is open on the title screen. */
 let picked: GameId | null = null;
 let lastGame: GameId = 'climb';
+/** The mini-game in progress, if any. */
+let mini: Mini | null = null;
+let miniDef: MiniDef | null = null;
 /** Key count of the session in progress. */
-let activeKeys = settings.keys.climb;
+let activeKeys = settings.keys.climb ?? 2;
 /** Key count shown on the rebinding screen. */
-let bindKeys = settings.keys.climb;
+let bindKeys = settings.keys.climb ?? 2;
 let statsFilter = 0;
 let listening = '';
 /** Ignore menu keys until this time, so mashing through an ending does not skip the results. */
@@ -159,7 +176,15 @@ function best(kind: RunRecord['kind'], keys: number, field: 'score' | 'target'):
 }
 
 function bestFor(game: GameId, keys: number): RunRecord | null {
-  return game === 'climb' ? best('run', keys, 'score') : game === 'reflex' ? best('rt', keys, 'score') : best('cps', keys, 'target');
+  if (game === 'climb') return best('run', keys, 'score');
+  if (game === 'reflex') return best('rt', keys, 'score');
+  if (game === 'burst') return best('cps', keys, 'target');
+  const anyKeys = entry(game)?.input === 'pointer';
+  let top: RunRecord | null = null;
+  for (const r of history) {
+    if (r.kind === 'mini' && r.game === game && (anyKeys || r.mode === keys) && (top === null || (r.score ?? 0) > (top.score ?? 0))) top = r;
+  }
+  return top;
 }
 
 // --- Loop -------------------------------------------------------------------------
@@ -217,6 +242,10 @@ function frame(now: number): void {
     const done = cpsTrainer.frame(now, view, touch);
     view.drawPerf(perf);
     if (done) finishBurst();
+  } else if (screen === 'mini' && mini) {
+    const done = mini.frame(now, view, touch);
+    view.drawPerf(perf);
+    if (done) finishMini();
   }
 }
 
@@ -237,16 +266,24 @@ function showTitle(slide = false): void {
   stopLoop();
   screen = 'title';
   listening = '';
-  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked]) : null, slide));
+  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked] ?? 2) : null, slide));
 }
 
 function startGame(game: GameId): void {
   lastGame = game;
   picked = null;
-  applyKeys(settings.keys[game]);
+  const e = entry(game);
+  applyKeys(settings.keys[game] ?? 2);
   pointerSlot.fill(0);
   ui.hide();
-  if (game === 'climb') {
+  if (e?.def) {
+    // Pointer games take taps anywhere, so they show no pads.
+    if (e.input !== 'keys') touch.padsOff();
+    miniDef = e.def;
+    mini = e.def.make();
+    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id) }, performance.now());
+    screen = 'mini';
+  } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);
     runner.restart();
     lastKey[0] = lastKey[1] = -1;
@@ -287,6 +324,7 @@ function leave(): void {
   if (screen === 'play') pause();
   else if (screen === 'reflex') finishReflex();
   else if (screen === 'burst') finishBurst();
+  else if (screen === 'mini') finishMini();
 }
 
 function liftSlots(): number[] {
@@ -410,6 +448,36 @@ function finishBurst(): void {
   ui.show(cpsResultsHtml({ cps, labels: t.labels, cleared: t.cleared, time, saved }));
 }
 
+function finishMini(): void {
+  stopLoop();
+  if (!mini || !miniDef) return;
+  const r = mini.result();
+  const pointerOnly = miniDef.input === 'pointer';
+  const keys = pointerOnly ? 0 : activeKeys;
+  const prev = bestFor(miniDef.id, activeKeys);
+  const isBest = r.saved && r.score > 0 && (prev === null || r.score > (prev.score ?? 0));
+  if (r.saved) {
+    history = addRecord({
+      kind: 'mini',
+      game: miniDef.id,
+      at: Date.now(),
+      mode: keys,
+      time: 0,
+      score: r.score,
+      value: r.primary.value,
+      vlabel: r.primary.label,
+      unit: r.primary.unit,
+      decimals: r.primary.decimals,
+      lower: r.primary.lower,
+    });
+  }
+  const rts = r.rts ?? [];
+  const st = rtStats(rts, rts.length);
+  screen = 'miniResults';
+  inputLockUntil = performance.now() + 450;
+  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest));
+}
+
 function showStats(): void {
   stopLoop();
   screen = 'stats';
@@ -467,7 +535,7 @@ function assignKey(code: string): void {
 }
 
 function setKeyCount(n: number): void {
-  if (!picked || n < 1 || n > 6) return;
+  if (!picked || n < 1 || n > 6 || n < (entry(picked)?.minKeys ?? 1)) return;
   settings.keys[picked] = n;
   saveSettings(settings);
   showTitle();
@@ -500,7 +568,7 @@ function onAction(action: string, arg: string): void {
       showStats();
       break;
     case 'keys':
-      bindKeys = settings.keys[lastGame];
+      bindKeys = settings.keys[lastGame] ?? 2;
       showKeys();
       break;
     case 'bindmode':
@@ -578,6 +646,8 @@ function press(slot: number, ts: number): void {
     else if (out === OUT_WRONG || out === OUT_EARLY || out === OUT_LATE) sfx.play(SND_FALSE);
     else if (out === OUT_START) sfx.play(SND_UI);
     else sfx.play(slot >= 3 ? SND_TAP_R : SND_TAP_L);
+  } else if (screen === 'mini' && mini) {
+    mini.press(slot, ts);
   } else if (screen === 'burst') {
     if (slot === SLOT_REFLEX) return;
     const repeat = cpsTrainer.onTap(slot, ts);
@@ -588,6 +658,7 @@ function press(slot: number, ts: number): void {
 function release(slot: number): void {
   if (screen === 'reflex') reflex.onRelease(slot);
   else if (screen === 'burst') cpsTrainer.onRelease(slot);
+  else if (screen === 'mini') mini?.release?.(slot);
 }
 
 function onKeyDown(e: KeyboardEvent): void {
@@ -614,7 +685,7 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  if (screen === 'play' || screen === 'reflex' || screen === 'burst') {
+  if (screen === 'play' || screen === 'reflex' || screen === 'burst' || screen === 'mini') {
     const slot = keymap.get(code);
     if (slot !== undefined) {
       e.preventDefault();
@@ -662,13 +733,21 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'title':
       if (picked) {
         if (digit >= 1 && digit <= 6) setKeyCount(digit);
-        else if (code === 'ArrowLeft') setKeyCount(settings.keys[picked] - 1);
-        else if (code === 'ArrowRight') setKeyCount(settings.keys[picked] + 1);
+        else if (code === 'ArrowLeft') setKeyCount((settings.keys[picked] ?? 2) - 1);
+        else if (code === 'ArrowRight') setKeyCount((settings.keys[picked] ?? 2) + 1);
         else if (enter) startGame(picked);
         else if (code === 'Escape') onAction('closepop', '');
         break;
       }
-      for (const g of GAMES) if (code === 'Key' + g.key.toUpperCase()) onAction('pick', g.id);
+      if (code === 'ArrowDown' || code === 'ArrowUp' || code === 'ArrowLeft' || code === 'ArrowRight') {
+        // Walk the game list with the arrow keys; Enter on a focused game opens it.
+        const list = [...document.querySelectorAll<HTMLButtonElement>('.mode')];
+        const at = list.indexOf(document.activeElement as HTMLButtonElement);
+        const step = code === 'ArrowDown' || code === 'ArrowRight' ? 1 : -1;
+        list[at < 0 ? 0 : (at + step + list.length) % list.length]?.focus();
+        e.preventDefault();
+        break;
+      }
       if (enter) onAction('pick', lastGame);
       else if (code === 'KeyS') showStats();
       else if (code === 'KeyK') onAction('keys', '');
@@ -677,6 +756,7 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'results':
     case 'reflexResults':
     case 'burstResults':
+    case 'miniResults':
       if (enter) startGame(lastGame);
       else if (code === 'KeyS') showStats();
       else if (code === 'Escape') onAction('menu', '');
@@ -699,7 +779,7 @@ function onKeyUp(e: KeyboardEvent): void {
 
 /** Touch, pen and mouse: pads in the corners, and a corner button for Escape. */
 function onPointerDown(e: PointerEvent): void {
-  if (screen !== 'play' && screen !== 'reflex' && screen !== 'burst') return;
+  if (screen !== 'play' && screen !== 'reflex' && screen !== 'burst' && screen !== 'mini') return;
   e.preventDefault();
   sfx.unlock();
   if (e.pointerType !== 'mouse' && !touch.active) {
@@ -710,6 +790,10 @@ function onPointerDown(e: PointerEvent): void {
   const hit = touch.hit((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr);
   if (hit === HIT_CORNER) {
     if (touch.active) leave();
+    return;
+  }
+  if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
+    mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e));
     return;
   }
   if (hit < 0) return;
@@ -730,6 +814,7 @@ function onPointerUp(e: PointerEvent): void {
 function onResize(): void {
   view.resize();
   touch.build(getMode(activeKeys), slotLabels, view.w, view.h, view.dpr);
+  if (screen === 'mini' && miniDef && miniDef.input !== 'keys') touch.padsOff();
   if (screen === 'pause') view.drawGame(sim, 1, performance.now(), hints, touch);
 }
 
@@ -760,5 +845,5 @@ showTitle();
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__tension = { sim, runner, reflex, cpsTrainer, perf, view, touch };
+  (window as unknown as Record<string, unknown>).__tension = { sim, runner, reflex, cpsTrainer, perf, view, touch, mini: () => mini };
 }
