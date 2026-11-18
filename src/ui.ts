@@ -149,6 +149,8 @@ export interface TitleExtras {
   daily: string[];
   /** Today's daily total, if the set was finished today. */
   dailyDone: number | null;
+  /** The skill being shown, or 'all'. */
+  filter: string;
 }
 
 export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean, extras: TitleExtras): string {
@@ -160,8 +162,12 @@ export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | 
     <span class="d">${extras.daily.map((id) => entry(id)?.name ?? id).join(DOT)}</span>
     <span class="k">${extras.dailyDone !== null ? `done${DOT}${fmtInt(extras.dailyDone)}` : 'd'}</span>
   </button>
-  <div class="skills">
+  <nav class="filter" aria-label="Skills">${[{ id: 'all', name: 'All' }, ...SKILLS]
+    .map((sk) => `<button data-act="filter" data-arg="${sk.id}" aria-pressed="${extras.filter === sk.id}">${sk.name}<span>${sk.id === 'all' ? ENTRIES.length : ENTRIES.filter((e) => e.skill === sk.id).length}</span></button>`)
+    .join('')}</nav>
+  <div class="skills${extras.filter === 'all' ? '' : ' one'}">
     ${SKILLS.map((sk) => {
+      if (extras.filter !== 'all' && extras.filter !== sk.id) return '';
       const games = ENTRIES.filter((e) => e.skill === sk.id);
       if (!games.length) return '';
       return `<section class="skill"><h2>${sk.name}<span>${sk.blurb}</span></h2><div class="modes">${games

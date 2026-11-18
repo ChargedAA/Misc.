@@ -266,6 +266,24 @@ function playFx(fx: number): void {
 
 // --- Screens ----------------------------------------------------------------------
 
+let skillFilter = (() => {
+  try {
+    return localStorage.getItem('tension.filter') ?? 'all';
+  } catch {
+    return 'all';
+  }
+})();
+
+function setFilter(f: string): void {
+  skillFilter = f;
+  try {
+    localStorage.setItem('tension.filter', f);
+  } catch {
+    // Private mode: the filter just is not remembered.
+  }
+  showTitle();
+}
+
 function showTitle(slide = false): void {
   stopLoop();
   screen = 'title';
@@ -289,7 +307,7 @@ function titleExtras() {
   const now = Date.now();
   let dailyDone: number | null = null;
   for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
-  return { bests, daily: dailySet(), dailyDone };
+  return { bests, daily: dailySet(), dailyDone, filter: skillFilter };
 }
 
 function startDaily(): void {
@@ -625,6 +643,9 @@ function onAction(action: string, arg: string): void {
       break;
     case 'daily':
       startDaily();
+      break;
+    case 'filter':
+      setFilter(arg);
       break;
     case 'dailynext':
       nextDaily();
