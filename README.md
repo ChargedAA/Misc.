@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 42 small games for reaction, speed, timing, memory,
+A minimal training suite: 48 small games for reaction, speed, timing, memory,
 attention and coordination. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -24,9 +24,10 @@ the same set for everyone on a given day.
 | Snap | Pure reaction time. One disc, one press. | keys or tap |
 | Stop | Press fast, unless it gets struck out. | keys |
 | Flank | Answer the middle arrow. Ignore the crowd. | keys |
-| Choice | Press whichever string lights. More strings, more thinking. | 2+ keys |
+| Choice | Press whichever string lights. More strings, more thinking. | keys, 2+ keys |
 | Aim | Tap each target the moment it appears. They shrink. | tap or click |
 | Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
+| Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
 
 ### Speed
 
@@ -49,19 +50,21 @@ the same set for everyone on a given day.
 | Echo | Hear a rhythm. Tap it back. It gets longer. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Second | Hold a key for exactly the time shown. No clock. | keys |
+| Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
 
 ### Memory
 
 | Game | What it is | Input |
 | --- | --- | --- |
-| Sequence | A pattern plays across your strings. Play it back. | 2+ keys |
+| Sequence | A pattern plays across your strings. Play it back. | keys, 2+ keys |
 | Grid | Tiles flash. Tap every one once they hide. | tap or click |
 | Order | Numbers flash. Tap them in order, blind. | tap or click |
 | Back | Does it match the one n steps ago? Two streams at once. | keys |
 | Pairs | Turn tiles two at a time. Remember where everything was. | tap or click |
 | Path | Blocks light up in order. Tap the same path, sometimes backwards. | tap or click |
-| Spot | Look, look away, look again. Did anything change? | 2+ keys |
+| Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
 | Digits | Remember a number. Type it back, sometimes backwards. | tap or click |
+| Where | Shapes scatter and vanish. Tap where one of them was. | tap or click |
 
 ### Attention
 
@@ -69,13 +72,14 @@ the same set for everyone on a given day.
 | --- | --- | --- |
 | Track | Follow a few dots among identical ones. | tap or click |
 | Find | Spot the one that matches, among look-alikes. | keys or tap |
-| Switch | The rule depends on where the number lands. | 2+ keys |
-| Shape | The word says square. The outline is a circle. | 2+ keys |
-| Rotate | Same shape, turned, or its mirror image? | 2+ keys |
+| Switch | The rule depends on where the number lands. | keys, 2+ keys |
+| Shape | The word says square. The outline is a circle. | keys, 2+ keys |
+| Rotate | Same shape, turned, or its mirror image? | keys, 2+ keys |
 | Count | How many dots were there, in that blink? | tap or click |
 | Glance | A shape in the middle, a dot out wide. One blink to see both. | tap or click |
 | Stream | Letters fly past. Press for the X. | keys or tap |
-| Side | Shade picks the hand. Where it appears pulls the other way. | 2+ keys |
+| Side | Shade picks the hand. Where it appears pulls the other way. | keys, 2+ keys |
+| Flicker | Two versions flicker back and forth. Find what changes. | tap or click |
 
 ### Coordination
 
@@ -83,10 +87,12 @@ the same set for everyone on a given day.
 | --- | --- | --- |
 | Climb | Dash between lanes, surge over holes, catch the cables. Endless. | keys |
 | Strings | Pluck notes on time: streams, chords, holds. Endless. | keys |
-| Split | Each hand steers its own dot. Dodge on both sides at once. | 2+ keys |
+| Split | Each hand steers its own dot. Dodge on both sides at once. | keys, 2+ keys |
 | Juggle | Every key keeps its own ball in the air. | keys |
-| Poly | Two hands, two tempos at once. Two against three, and up. | 2+ keys |
+| Poly | Two hands, two tempos at once. Two against three, and up. | keys, 2+ keys |
 | Zigzag | Hold to rise, let go to fall. The corridor narrows. | keys |
+| Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
+| Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 
 ## Why these games
 
