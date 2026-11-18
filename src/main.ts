@@ -503,6 +503,15 @@ function finishMini(): void {
   const keys = pointerOnly ? 0 : activeKeys;
   const prev = bestFor(miniDef.id, activeKeys);
   const isBest = r.saved && r.score > 0 && (prev === null || r.score > (prev.score ?? 0));
+  // Compare the tracked number with the last session and the best one (same key count).
+  const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.value !== undefined);
+  const vals = earlier.map((h) => h.value!);
+  const cmp = {
+    last: vals.length ? vals[vals.length - 1]! : null,
+    best: vals.length ? (r.primary.lower ? Math.min(...vals.filter((x) => x > 0)) : Math.max(...vals)) : null,
+  };
+  if (cmp.best !== null && !Number.isFinite(cmp.best)) cmp.best = null;
+  if (isBest) sfx.play(SND_BURST_OK);
   if (r.saved) {
     history = addRecord({
       kind: 'mini',
@@ -528,7 +537,7 @@ function finishMini(): void {
     const next = dailyQueue[dailyIdx + 1];
     step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null };
   }
-  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step));
+  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
 }
 
 function showStats(): void {

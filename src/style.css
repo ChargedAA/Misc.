@@ -620,3 +620,10 @@ table td + td {
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+.cmp {
+  color: var(--mid);
+  font-size: 12.5px;
+  margin: 16px 0 6px;
+  font-variant-numeric: tabular-nums;
+}

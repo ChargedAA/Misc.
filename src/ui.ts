@@ -371,7 +371,40 @@ export interface DailyStep {
   nextName: string | null;
 }
 
-export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | null, rtMedian: number, best: boolean, daily: DailyStep | null = null): string {
+export interface Compare {
+  /** The tracked number last time and at its best, if there were earlier sessions. */
+  last: number | null;
+  best: number | null;
+}
+
+/** "12 ms better than last time" style comparison for the tracked number. */
+function compareLine(p: MiniResult['primary'], c: Compare | null): string {
+  if (!c || (c.last === null && c.best === null)) return '<p class="cmp">first session: this sets your baseline</p>';
+  const fmt = (v: number) => fmtPrimary(Math.abs(v), { ...p, value: Math.abs(v) });
+  const vs = (other: number, label: string) => {
+    const d = p.value - other;
+    if (Math.abs(d) < 1e-9) return `same as ${label}`;
+    const better = p.lower ? d < 0 : d > 0;
+    return `${fmt(d)} ${better ? 'better' : 'worse'} than ${label}`;
+  };
+  const parts: string[] = [];
+  if (c.last !== null) parts.push(vs(c.last, 'last time'));
+  if (c.best !== null) {
+    const beat = p.lower ? p.value < c.best : p.value > c.best;
+    parts.push(beat ? `new best (was ${fmtPrimary(c.best, { ...p, value: c.best })})` : `best ${fmtPrimary(c.best, { ...p, value: c.best })}`);
+  }
+  return `<p class="cmp">${parts.join(DOT)}</p>`;
+}
+
+export function miniResultsHtml(
+  name: string,
+  r: MiniResult,
+  hist: Histogram | null,
+  rtMedian: number,
+  best: boolean,
+  daily: DailyStep | null = null,
+  cmp: Compare | null = null,
+): string {
   const p = r.primary;
   const actions: [string, string, string][] = daily
     ? daily.nextName
@@ -390,6 +423,7 @@ export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | n
     <div class="stat"><div class="v">${fmtPrimary(p.value, p)}</div><div class="l">${p.label}</div></div>
     <div class="stat"><div class="v">${name}</div><div class="l">game</div></div>
   </div>
+  ${r.saved ? compareLine(p, cmp) : ''}
   <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
