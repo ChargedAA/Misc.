@@ -1,0 +1,110 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { MODES, SLOT_REFLEX } from '../src/config.ts';
+import { MINIS } from '../src/minis/index.ts';
+import type { View } from '../src/render.ts';
+import type { TouchLayout } from '../src/touch.ts';
+
+/** A canvas context that accepts every call and property and draws nothing. */
+function nullCtx(): CanvasRenderingContext2D {
+  const fn = () => undefined;
+  return new Proxy({} as Record<string | symbol, unknown>, {
+    get: (t, k) => (k === 'measureText' ? () => ({ width: 10 }) : k in t ? t[k] : fn),
+    set: (t, k, v) => ((t[k] = v), true),
+  }) as unknown as CanvasRenderingContext2D;
+}
+
+function fakeView(): View {
+  const v = {
+    ctx: nullCtx(),
+    w: 1280,
+    h: 800,
+    dpr: 1,
+    ox: 640,
+    scale: 50,
+    fontHud: 'a',
+    fontTiny: 'b',
+    fontBig: 'c',
+    fontMono: 'd',
+    fontPad: 'e',
+    text: () => {},
+    number: () => 0,
+    numberWidth: () => 10,
+    clear: () => {},
+    shape: () => {},
+    arrow: () => {},
+    drawTouch: () => {},
+  };
+  return v as unknown as View;
+}
+
+const touch = { active: false, pads: [], corner: { x: 0, y: 0, w: 0, h: 0 } } as unknown as TouchLayout;
+
+/** Drive time by hand so games that read performance.now() see the same clock. */
+let clock = 0;
+const realNow = performance.now.bind(performance);
+function useClock(): void {
+  performance.now = () => clock;
+}
+function restoreClock(): void {
+  performance.now = realNow;
+}
+
+function slots(id: number): number[] {
+  const m = MODES[id - 1]!;
+  const out: number[] = [];
+  for (let i = 0; i < m.left; i++) out.push(i);
+  for (let i = 0; i < m.right; i++) out.push(3 + i);
+  if (m.reflex) out.push(SLOT_REFLEX);
+  return out;
+}
+
+test('every mini-game survives random play in every key mode it allows', () => {
+  const view = fakeView();
+  useClock();
+  try {
+    for (const def of MINIS) {
+      const modes = def.input === 'pointer' ? [2] : MODES.map((m) => m.id).filter((id) => id >= (def.minKeys ?? 1));
+      for (const modeId of modes) {
+        for (let seed = 0; seed < 3; seed++) {
+          clock = 1000;
+          const game = def.make();
+          game.start({ mode: MODES[modeId - 1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: seed === 2 }, clock);
+          const ks = slots(modeId);
+          let done = false;
+          let presses = 0;
+          // Up to ten simulated minutes; mash keys and click about.
+          for (let f = 0; f < 36000 && !done; f++) {
+            clock += 16.7;
+            if (Math.random() < 0.06) {
+              const k = ks[Math.floor(Math.random() * ks.length)]!;
+              game.press(k, clock);
+              game.release?.(k);
+              presses++;
+            }
+            if (Math.random() < 0.05) game.pointer?.(Math.random() * 1280, Math.random() * 800, clock);
+            done = game.frame(clock, view, touch);
+          }
+          const r = game.result();
+          assert.ok(Number.isFinite(r.score) && r.score >= 0, `${def.id}: score ${r.score}`);
+          assert.ok(Number.isFinite(r.primary.value), `${def.id}: primary ${r.primary.value}`);
+          assert.ok(r.lines.length > 0, `${def.id}: result lines`);
+          for (const l of r.lines) assert.ok(l.value !== undefined && !String(l.value).includes('NaN'), `${def.id}: ${l.label} = ${l.value}`);
+          assert.ok(done, `${def.id} with ${modeId} keys never ended (presses: ${presses})`);
+        }
+      }
+    }
+  } finally {
+    restoreClock();
+  }
+});
+
+test('mini-game ids are unique and every game explains itself', () => {
+  const ids = new Set<string>();
+  for (const d of MINIS) {
+    assert.ok(!ids.has(d.id), `duplicate id ${d.id}`);
+    ids.add(d.id);
+    assert.ok(d.how.length > 40, `${d.id} needs a how-to`);
+    assert.ok(d.blurb.length > 10);
+  }
+});

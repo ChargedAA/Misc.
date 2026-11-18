@@ -281,7 +281,7 @@ function startGame(game: GameId): void {
     if (e.input !== 'keys') touch.padsOff();
     miniDef = e.def;
     mini = e.def.make();
-    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id) }, performance.now());
+    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), muted: settings.muted }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);

@@ -1,6 +1,7 @@
 // The game registry: every game in the suite, grouped by the skill it trains.
 
 import type { InputKind, MiniDef, Skill } from './kit.ts';
+import { MEMORY } from './memory.ts';
 import { REACTION } from './reaction.ts';
 
 export interface Entry {
@@ -20,7 +21,7 @@ const BUILT_IN: Entry[] = [
   { id: 'burst', name: 'Burst', skill: 'speed', blurb: 'Hold a rising tap rate for five seconds.', input: 'keys', minKeys: 1 },
 ];
 
-export const MINIS: MiniDef[] = [...REACTION];
+export const MINIS: MiniDef[] = [...REACTION, ...MEMORY];
 
 export const ENTRIES: Entry[] = [
   ...BUILT_IN,

@@ -129,7 +129,7 @@ function bestLine(game: GameId, best: RunRecord | null): string {
 
 function fmtPrimary(v: number, p: MiniResult['primary']): string {
   const n = p.decimals ? v.toFixed(p.decimals) : fmtInt(v);
-  return p.unit ? `${n}${p.unit === '%' ? '' : ' '}${p.unit}` : n;
+  return p.unit ? `${n}${p.unit === '%' || p.unit.startsWith('-') ? '' : ' '}${p.unit}` : n;
 }
 
 function keysLine(keys: number, b: Bindings): string {

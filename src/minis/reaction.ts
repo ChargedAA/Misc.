@@ -99,7 +99,7 @@ class Snap implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now >= this.goAt) this.state = 1;
     if (this.state === 2 && now >= this.until) {
-      if (this.rts.length >= SNAP_TRIALS) return true;
+      if (this.rts.length >= SNAP_TRIALS || this.early >= 25) return true;
       this.arm(now);
     }
     if (this.state === 1 && this.drawnAt > 0 && now - this.drawnAt > 2000) {

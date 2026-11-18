@@ -41,6 +41,8 @@ export interface MiniEnv {
   /** Label of each slot (0..5 lift keys, 6 reflex). */
   labels: readonly string[];
   sound(id: number): void;
+  /** True when sound is off (games that need audio fall back). */
+  muted: boolean;
 }
 
 export interface Mini {
