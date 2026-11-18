@@ -152,6 +152,9 @@ export interface MenuCtx {
   dailyDone: number | null;
   streak: number;
   perf: boolean;
+  /** Last difficulty played and custom difficulty, per game. */
+  levels: Record<string, number>;
+  custom: Record<string, number>;
   /** Best record for a game at a key count. */
   bestFor: (id: string, keys: number) => RunRecord | null;
 }
@@ -175,7 +178,17 @@ export function startMenu(c: MenuCtx): Menu {
       { label: 'Random', desc: 'A run of random games, short or long', act: 'go', arg: 'random' },
       { label: 'Stats', desc: sessions ? `${sessions} sessions${c.streak ? `${DOT}${c.streak} day streak` : ''}` : 'Nothing yet', act: 'go', arg: 'stats' },
       { label: 'Settings', desc: `Keys${DOT}sound ${c.settings.muted ? 'off' : 'on'}${DOT}history`, act: 'go', arg: 'settings' },
+      { label: 'Endless', desc: 'Reaction runs with a set difficulty, until three hits', act: 'go', arg: 'endless', slot: 6 },
     ],
+  };
+}
+
+/** Games with difficulty levels, gathered in one list. */
+export function endlessMenu(c: MenuCtx): Menu {
+  return {
+    title: 'ENDLESS',
+    sub: 'Pick a run, then a difficulty, then your keys',
+    items: ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : '', act: 'go', arg: `game:${e.id}` })),
   };
 }
 
@@ -239,8 +252,46 @@ export function skillMenu(c: MenuCtx, sk: string, page: number): Menu {
   };
 }
 
-export function gameMenu(c: MenuCtx, id: string): Menu {
+/** A game with difficulty levels: pick one first. */
+function levelMenu(c: MenuCtx, e: Entry): Menu {
+  const def = e.def!;
+  const last = c.levels[e.id] ?? 0;
+  const custom = c.custom[e.id] ?? def.custom?.def ?? 0;
+  const items: Item[] = def.levels!.map((l) => ({ label: l.label, desc: l.desc, meta: l.value === last ? 'last used' : '', act: 'go', arg: `gamekeys:${e.id}:${l.value}`, current: l.value === last }));
+  if (def.custom) items.push({ label: 'Custom', desc: `Your own window, now ${custom} ${def.custom.unit}`, meta: last === custom && !def.levels!.some((l) => l.value === last) ? 'last used' : '', act: 'go', arg: `custom:${e.id}`, slot: 6 });
+  return {
+    title: e.name.toUpperCase(),
+    sub: `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
+    items,
+    enter: { label: 'Last difficulty', act: 'go', arg: `gamekeys:${e.id}:${last}` },
+    after: `<p class="hint">${def.how}</p>`,
+  };
+}
+
+/** A custom difficulty: nudge it, then go on to the keys. */
+export function customMenu(c: MenuCtx, id: string): Menu {
   const e = entry(id)!;
+  const cu = e.def!.custom!;
+  const v = c.custom[id] ?? cu.def;
+  return {
+    title: 'CUSTOM',
+    sub: `${e.name}${DOT}${cu.min} to ${cu.max} ${cu.unit}`,
+    extra: `<p class="bigval">${v}<small>${cu.unit}</small></p>`,
+    items: [
+      { label: `Play at ${v} ${cu.unit}`, act: 'go', arg: `gamekeys:${id}:${v}` },
+      { label: `\u2212 25 ${cu.unit}`, act: 'custom', arg: `${id}:-25`, disabled: v <= cu.min },
+      { label: `+ 25 ${cu.unit}`, act: 'custom', arg: `${id}:25`, disabled: v >= cu.max },
+      { label: `\u2212 100 ${cu.unit}`, act: 'custom', arg: `${id}:-100`, disabled: v <= cu.min },
+      { label: `+ 100 ${cu.unit}`, act: 'custom', arg: `${id}:100`, disabled: v >= cu.max },
+    ],
+  };
+}
+
+export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
+  const e = entry(id)!;
+  if (e.def?.levels && level === undefined) return levelMenu(c, e);
+  const lv = level === undefined ? '' : `:${level}`;
+  const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
   const keys = c.settings.keys[id] ?? 2;
   const min = e.minKeys ?? 1;
   const usesKeys = usesKeyCount(e.input);
@@ -254,17 +305,17 @@ export function gameMenu(c: MenuCtx, id: string): Menu {
         desc: keysLine(m.id, c.settings.bindings[m.id]!).replace(/&nbsp;/g, ' '),
         meta: m.id === keys ? 'last used' : '',
         act: 'play',
-        arg: `${id}:${m.id}`,
+        arg: `${id}:${m.id}${lv}`,
         disabled: m.id < min,
         current: m.id === keys,
       }))
-    : [{ label: 'Start', desc: e.input === 'type' ? 'Needs a keyboard' : 'Click or tap', act: 'play', arg: `${id}:${keys}` }];
+    : [{ label: 'Start', desc: e.input === 'type' ? 'Needs a keyboard' : 'Click or tap', act: 'play', arg: `${id}:${keys}${lv}` }];
   items.push({ label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, slot: 6 });
   return {
-    title: e.name.toUpperCase(),
-    sub: `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
+    title: lvName ? lvName.toUpperCase() : e.name.toUpperCase(),
+    sub: lvName ? `${e.name}${DOT}how many keys?` : `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
     items,
-    enter: { label: `Start${usesKeys ? ` with ${keys} key${keys === 1 ? '' : 's'}` : ''}`, act: 'play', arg: `${id}:${keys}` },
+    enter: { label: `Start${usesKeys ? ` with ${keys} key${keys === 1 ? '' : 's'}` : ''}`, act: 'play', arg: `${id}:${keys}${lv}` },
     after: `<p class="hint">${how}</p>${best ? `<p class="best">${bestLine(id, best)}</p>` : ''}`,
   };
 }
@@ -357,7 +408,7 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
     </div>`;
   }
   const table = recs.length
-    ? `<h2>Recent sessions</h2><table><tr><th>when</th>${usesKeys ? '<th>keys</th>' : ''}<th>${e.def ? (recs[recs.length - 1]!.vlabel ?? 'result') : 'score'}</th><th>score</th></tr>${recs
+    ? `<h2>Recent sessions</h2><table><tr><th>when</th>${usesKeys ? '<th>keys</th>' : ''}${e.def?.levels ? '<th>window</th>' : ''}<th>${e.def ? (recs[recs.length - 1]!.vlabel ?? 'result') : 'score'}</th><th>score</th></tr>${recs
         .slice(-10)
         .reverse()
         .map((r) => {

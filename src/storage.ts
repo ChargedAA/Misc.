@@ -83,6 +83,8 @@ export interface RunRecord {
   accuracy?: number;
   /** Burst: highest target cleared. */
   target?: number;
+  /** Games with difficulty levels: the level played (0 = progressing). */
+  level?: number;
 }
 
 const SETTINGS_KEY = 'tension.settings.v1';

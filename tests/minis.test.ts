@@ -83,7 +83,10 @@ test('every mini-game survives random play in every key mode it allows', () => {
           const rng = new Rng(hash(def.id) * 31 + modeId * 7 + seed);
           Math.random = () => rng.next();
           const game = def.make();
-          game.start({ mode: MODES[modeId - 1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: seed === 2 }, clock);
+          game.start(
+            { mode: MODES[modeId - 1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: seed === 2, level: def.levels ? def.levels[(seed * 2 + modeId) % def.levels.length]!.value : undefined },
+            clock,
+          );
           const ks = slots(modeId);
           let done = false;
           let presses = 0;

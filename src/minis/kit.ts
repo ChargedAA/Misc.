@@ -50,6 +50,8 @@ export interface MiniEnv {
   sound(id: number): void;
   /** True when sound is off (games that need audio fall back). */
   muted: boolean;
+  /** For games with difficulty levels: the chosen one (0 = progressing). */
+  level?: number;
 }
 
 export interface Mini {
@@ -78,6 +80,10 @@ export interface MiniDef {
   input: InputKind;
   /** Fewest keys the game makes sense with. */
   minKeys?: number;
+  /** Fixed difficulty levels offered before the key count; value 0 means progressing. Space then offers a custom one. */
+  levels?: { label: string; desc: string; value: number }[];
+  /** Unit and range of a custom level. */
+  custom?: { unit: string; min: number; max: number; def: number };
   make(): Mini;
 }
 

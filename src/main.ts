@@ -52,9 +52,9 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { ENTRIES, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
+import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -285,6 +285,26 @@ function sameDay(a: number, b: number): boolean {
   return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
 }
 
+/** Per game: the difficulty last played, and the custom difficulty. Kept in this browser. */
+function loadMap(key: string): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+function saveMap(key: string, m: Record<string, number>): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(m));
+  } catch {
+    // Private mode: not remembered.
+  }
+}
+const levels = loadMap('tension.levels');
+const customLevels = loadMap('tension.custom');
+/** Difficulty for the game being started (0 = progressing). */
+let currentLevel = 0;
+
 function menuCtx(): MenuCtx {
   const bests: Record<string, number> = {};
   for (const r of history) {
@@ -295,7 +315,7 @@ function menuCtx(): MenuCtx {
   const now = Date.now();
   let dailyDone: number | null = null;
   for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
-  return { settings, history, bests, daily: dailySet(), dailyDone, streak: streak(history), perf: perf.show, bestFor: (id, k) => bestFor(id as GameId, k) };
+  return { settings, history, bests, daily: dailySet(), dailyDone, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k) };
 }
 
 function buildMenu(n: NavEntry): Menu {
@@ -317,6 +337,14 @@ function buildMenu(n: NavEntry): Menu {
       return dailyMenu(c);
     case 'random':
       return randomMenu();
+    case 'endless':
+      return endlessMenu(c);
+    case 'gamekeys': {
+      const [id, lv] = n.arg.split(':');
+      return gameMenu(c, id!, Number(lv) || 0);
+    }
+    case 'custom':
+      return customMenu(c, n.arg);
     default:
       return startMenu(c);
   }
@@ -411,6 +439,8 @@ function startQuick(spec: string): void {
 
 function startGame(game: GameId): void {
   lastGame = game;
+  // Sets (daily, random) play games with levels at their progressing difficulty.
+  if (dailyQueue) currentLevel = 0;
   const e = entry(game);
   applyKeys(settings.keys[game] ?? 2);
   pointerSlot.fill(0);
@@ -420,7 +450,7 @@ function startGame(game: GameId): void {
     if (e.input !== 'keys') touch.padsOff();
     miniDef = e.def;
     mini = e.def.make();
-    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), muted: settings.muted }, performance.now());
+    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);
@@ -596,7 +626,8 @@ function finishMini(): void {
   const prev = bestFor(miniDef.id, activeKeys);
   const isBest = r.saved && r.score > 0 && (prev === null || r.score > (prev.score ?? 0));
   // Compare the tracked number with the last session and the best one (same key count).
-  const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.value !== undefined);
+  const lvl = miniDef.levels ? currentLevel : undefined;
+  const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.level === lvl && h.value !== undefined);
   const vals = earlier.map((h) => h.value!);
   const cmp = {
     last: vals.length ? vals[vals.length - 1]! : null,
@@ -617,6 +648,7 @@ function finishMini(): void {
       unit: r.primary.unit,
       decimals: r.primary.decimals,
       lower: r.primary.lower,
+      level: lvl,
     });
   }
   const rts = r.rts ?? [];
@@ -682,10 +714,15 @@ function assignKey(code: string): void {
   showKeys();
 }
 
-/** Start a game with a key count, remembering the count for next time. */
-function playWith(game: GameId, n: number): void {
+/** Start a game with a key count (and difficulty, if it has levels), remembering both for next time. */
+function playWith(game: GameId, n: number, level?: number): void {
   const e = entry(game);
   if (!e) return;
+  if (e.def?.levels) {
+    currentLevel = level ?? levels[game] ?? 0;
+    levels[game] = currentLevel;
+    saveMap('tension.levels', levels);
+  }
   if (usesKeyCount(e.input)) {
     if (n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
     settings.keys[game] = n;
@@ -710,8 +747,20 @@ function onAction(action: string, arg: string): void {
       showMenu(1);
       break;
     case 'play': {
-      const [id, n] = arg.split(':');
-      playWith(id as GameId, Number(n));
+      const [id, n, lv] = arg.split(':');
+      playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
+      break;
+    }
+    case 'custom': {
+      // Nudge a game's custom difficulty.
+      const [id, d] = arg.split(':');
+      const cu = entry(id!)?.def?.custom;
+      if (cu) {
+        customLevels[id!] = clamp((customLevels[id!] ?? cu.def) + Number(d), cu.min, cu.max);
+        saveMap('tension.custom', customLevels);
+        sfx.play(SND_UI);
+        showMenu();
+      }
       break;
     }
     case 'crumb':
@@ -916,7 +965,11 @@ function onKeyDown(e: KeyboardEvent): void {
   // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
   if (!Number.isNaN(digit)) {
     const top = nav[nav.length - 1]!;
-    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6) playWith(top.arg as GameId, digit);
+    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6 && !entry(top.arg)?.def?.levels) playWith(top.arg as GameId, digit);
+    else if (screen === 'menu' && top.kind === 'gamekeys' && digit >= 1 && digit <= 6) {
+      const [id, lv] = top.arg.split(':');
+      playWith(id as GameId, digit, Number(lv) || 0);
+    }
     else if (screen === 'menu' && top.kind === 'gamestats' && digit >= 0 && digit <= 6) onAction('gsfilter', String(digit));
     else if (screen === 'keys' && digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
     else if (digit === 0) toggleMute();

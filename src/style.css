@@ -741,3 +741,16 @@ table td + td {
     grid-template-columns: 56px 1fr auto;
   }
 }
+
+.bigval {
+  font-size: 44px;
+  font-weight: 300;
+  margin: 0 0 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bigval small {
+  font-size: 14px;
+  color: var(--mid);
+  margin-left: 8px;
+}

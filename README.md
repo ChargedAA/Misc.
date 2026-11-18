@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 81 small games for reaction, speed, timing, memory,
+A minimal training suite: 86 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -23,7 +23,17 @@ C  Mind        X  Speed                         SPACE stats for this game
 B  Random      C  Timing
 N  Stats       B  Coordination
 M  Settings    SPACE  Three at random
+SPACE Endless  Z  Lanes        Z  Progressing          Z..M  play with 1..6 keys
+               X  Hurdles      X..M  700 ms .. 300 ms
+               C  Rush         SPACE  Custom (Z play, X/C -/+25, B/N -/+100)
 ```
+
+**Endless** runs are reaction games with a set difficulty: the window is the
+time from something popping up ahead of the rolling ball to it arriving.
+Lanes sidesteps blocks, Hurdles jumps bars, Rush mixes both (outer keys move,
+every other key jumps). Progressing starts at 800 ms and tightens with each
+clear; the fixed levels go from Beginner (700 ms) to Expert (300 ms); Custom
+sets your own.
 
 **Random** offers three, five or ten games, three from Reflexes or Mind, or one
 from each skill. After a game: `Z` again, `X` its stats, `C` back.
@@ -45,6 +55,9 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | tap or click |
 | Dodge | Shots come from either side. Block with that hand; let grey ones by. | keys, 2+ keys |
 | Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
+| Lanes | The ball rolls on. Blocks pop up ahead: sidestep them. | keys, 2+ keys |
+| Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
+| Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 3+ keys |
 
 ### Speed
 
@@ -60,6 +73,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 | Exact | Tap exactly N times inside the window. Fast enough, and stop on time. | keys or tap |
 | Rain | Letters fall. Type them before they land. | keys |
+| Trill | Alternate in order, flat out, for ten seconds. Fast and even both count. | keys, 2+ keys |
 
 ### Timing
 
@@ -75,6 +89,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Offbeat | Tap exactly halfway between the clicks. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, and jump the blocks. Hold for a higher jump. | keys or tap |
+| Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
 
 ### Memory
 
@@ -193,6 +208,11 @@ The suite leans on established tasks and on what is known about training:
   stops without warning, so you must keep replacing what you hold. Again is
   continuous recognition with lures (same shapes, other order or shade), scored
   as hits minus false alarms so calling everything "seen" does not pay.
+- **Even alternation.** Even has you play your keys strictly in order, hands
+  alternating, to a metronome and then alone, and only raises the pace while
+  your gaps stay within about 10% of each other. Trill does the same flat out.
+  Both show each gap as a bar, so a hand that runs fast shows as a zigzag
+  ("galloping"), and report that imbalance.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
   they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
   Burst train held and controlled rates; Sprint measures the peak.
