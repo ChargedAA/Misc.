@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 69 small games for reaction, speed, timing, memory,
+A minimal training suite: 73 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -30,6 +30,7 @@ the same set for everyone on a given day.
 | Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
 | Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | tap or click |
 | Dodge | Shots come from either side. Block with that hand; let grey ones by. | keys, 2+ keys |
+| Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
 
 ### Speed
 
@@ -73,6 +74,7 @@ the same set for everyone on a given day.
 | Digits | Remember a number. Type it back, sometimes backwards. | tap or click |
 | Where | Shapes scatter and vanish. Tap where one of them was. | tap or click |
 | Running | Digits stream by and stop without warning. Type the last few. | tap or click |
+| Melody | Pads play a tune. Play it back. Later you only hear it. | tap or click |
 
 ### Attention
 
@@ -102,6 +104,7 @@ the same set for everyone on a given day.
 | Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 | Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
+| Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
 
 ### Judgement
 
@@ -113,6 +116,7 @@ the same set for everyone on a given day.
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap, 2+ keys |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap, 2+ keys |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap, 2+ keys |
+| Guess | A cloud of dots flashes. How many? | tap or click |
 
 ### Reasoning
 
@@ -157,6 +161,9 @@ The suite leans on established tasks and on what is known about training:
   item. Matrix is a procedurally generated progressive-matrices puzzle, Relate
   is transitive inference (the premises vanish later, adding a memory load),
   and Balance is algebra in pictures.
+- **More than one sense.** Ears mixes flashes and beeps; simple reaction to
+  sound is usually a few tens of milliseconds faster than to light. Melody
+  turns the pads dark on alternate tunes so you work from pitch alone.
 - **Updating, not just holding.** Running is running memory span: the list
   stops without warning, so you must keep replacing what you hold.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
