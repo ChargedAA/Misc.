@@ -46,7 +46,9 @@ export function play(modeId: number, seed: number, skill: Skill, maxSeconds: num
       const speed = climbSpeed(sim.time);
       const bursting = sim.burstState === BURST_LEADIN || sim.burstState === BURST_ACTIVE;
 
-      if (bursting) {
+      if (sim.cueActive && sim.cueNogo && !sim.mode.reflex) {
+        // Grey cue: hold still.
+      } else if (bursting) {
         for (let s = 0; s < 2; s++) {
           if (s === 1 && sim.oneKey) continue;
           if (now - lastTap[s]! >= 1000 / (sim.burstTarget * 1.12)) tapNext(s, now);
@@ -129,7 +131,7 @@ export function play(modeId: number, seed: number, skill: Skill, maxSeconds: num
       }
 
       // Reaction cue.
-      if (sim.cueActive && sim.cueDrawnAt > 0 && answered !== sim.cueCount) {
+      if (sim.cueActive && !sim.cueNogo && sim.cueDrawnAt > 0 && answered !== sim.cueCount) {
         if (reflexAt === 0) reflexAt = sim.cueDrawnAt + skill.reactionMs;
         if (now >= reflexAt) {
           if (sim.mode.reflex) sim.reflex(now);

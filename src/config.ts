@@ -101,13 +101,16 @@ export interface ModeDef {
   burstBase: number;
   burstStep: number;
   burstCap: number;
+  /** Climb speed and hazard density multipliers: more keys dodge further, so the board pushes harder. */
+  pace: number;
+  density: number;
 }
 
 const perSide = [
-  { lift: 1, burstBase: 4, burstStep: 0.3, burstCap: 7 },
-  { lift: 1, burstBase: 4, burstStep: 0.3, burstCap: 7 },
-  { lift: 2 / 3, burstBase: 6, burstStep: 0.45, burstCap: 11 },
-  { lift: 1 / 2, burstBase: 8, burstStep: 0.6, burstCap: 14.5 },
+  { lift: 1, burstBase: 4, burstStep: 0.3, burstCap: 7, pace: 1, density: 1 },
+  { lift: 1, burstBase: 4, burstStep: 0.3, burstCap: 7, pace: 1, density: 1 },
+  { lift: 2 / 3, burstBase: 6, burstStep: 0.45, burstCap: 11, pace: 1.3, density: 1.5 },
+  { lift: 1 / 2, burstBase: 8, burstStep: 0.6, burstCap: 14.5, pace: 1.38, density: 1.6 },
 ];
 
 function mode(id: number, left: number, right: number, reflex: boolean): ModeDef {

@@ -108,14 +108,14 @@ export function controlsHint(game: GameId, keys: number, b: Bindings): string {
   if (game === 'climb') {
     if (m.right === 0) {
       lines.push(`${left} surges: the beam jerks upward and carries the ball over a hole or bar. Time it.`);
-      lines.push('When a cable turns orange, press once to catch it.');
+      lines.push('When a cable turns orange, press once to catch it. Grey: do not press until it fades.');
     } else {
       if (m.left === 1) lines.push(`${left} dash left &nbsp; ${right} dash right`);
       else lines.push(`${left} dash left, ${right} dash right. Outer keys dash further.`);
       lines.push('Both sides together: surge. The beam jerks upward over a hole or bar, then recharges.');
-      lines.push(reflex ? `${reflex} when a cable turns orange.` : 'When a cable turns orange, tap that side.');
+      lines.push((reflex ? `${reflex} when a cable turns orange.` : 'When a cable turns orange, tap that side.') + ' Grey: hold still until it fades.');
     }
-    lines.push(m.left > 1 ? 'Heavy pull: both hands fast, alternating the keys of each hand.' : 'Heavy pull: tap fast until the meter fills.');
+    lines.push((m.left > 1 ? 'Heavy pull: both hands fast, alternating the keys of each hand.' : 'Heavy pull: tap fast until the meter fills.') + ' One comes about every 20 seconds, marked PULL.');
   } else if (game === 'reflex') {
     lines.push('Each round shows its rules, then shapes appear one at a time.');
     lines.push(`Press what the rules say with ${left}${right}${reflex}, or press nothing. Three mistakes end it.`);
@@ -248,6 +248,8 @@ export interface RunSummary {
   hist: Histogram;
   cues: number;
   caught: number;
+  holds: number;
+  held: number;
   falseStarts: number;
   pullsWon: number;
   pulls: number;
@@ -261,6 +263,7 @@ export interface RunSummary {
 
 export function resultsHtml(r: RunSummary): string {
   const note = [`${r.caught} of ${r.cues} caught`];
+  if (r.holds) note.push(`${r.held} of ${r.holds} held`);
   if (r.falseStarts) note.push(`${r.falseStarts} false start${r.falseStarts === 1 ? '' : 's'}`);
   return `<section class="screen">
   <div class="big">

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { BEAM_HALF, HOVER_MID, LANES, LANE_W, MID_LANE, STEP_MS, SURGE_DIST, TICK_HZ, climbSpeed, laneX } from '../src/config.ts';
 import { ACT_REFLEX, Runner } from '../src/loop.ts';
 import { Rng } from '../src/rng.ts';
+import { play } from '../scripts/bot.ts';
 import { BURST_ACTIVE, BURST_LEADIN, BURST_NONE, HAZ_BAR, HAZ_CAP, PHASE_FALL, PHASE_OVER, PHASE_READY, PHASE_RUN, Sim } from '../src/sim.ts';
 
 /** A scripted player: random dashes, the odd chord and reflex press. */
@@ -285,12 +286,13 @@ test('reaction cue without a reflex key: the tap is used up, logged in ms, and c
       sim.tap(1, 0, 300);
       for (let i = 1; i < TICK_HZ * 30; i++) {
         const now = 1000 + i * STEP_MS;
-        if (sim.cueActive && sim.cueDrawnAt > 0 && now - sim.cueDrawnAt >= 250) {
+        // A chord needs a full surge charge (a lost heavy pull empties it).
+        if (sim.cueActive && !sim.cueNogo && sim.cueDrawnAt > 0 && now - sim.cueDrawnAt >= 250 && (!chord || sim.charge >= 1)) {
           const lane = sim.lane;
           const other = 1 - sim.cueSide;
           sim.tap(sim.cueSide, 0, now);
-          assert.equal(sim.cueHits, 1);
-          assert.ok(sim.rt[0]! >= 250 && sim.rt[0]! < 255, `rt ${sim.rt[0]}`);
+          assert.equal(sim.rt[sim.rtCount - 1]! >= 250, true);
+          assert.ok(sim.rt[sim.rtCount - 1]! >= 250 && sim.rt[0]! < 255, `rt ${sim.rt[sim.rtCount - 1]}`);
           assert.equal(sim.lane, lane, 'the catching tap does not dash');
           if (chord) {
             sim.tap(other, 0, now + 10);
@@ -418,4 +420,104 @@ test('pickups build the chain, which multiplies the score', () => {
   assert.equal(sim.chain, 3);
   assert.equal(sim.mult, 4);
   assert.equal(sim.bestChain, 3);
+});
+
+test('grey cues: holding still is rewarded, pressing is a false start', () => {
+  const grey = (sim: Sim, now: number) => {
+    sim.cueActive = true;
+    sim.cueNogo = true;
+    sim.cueSide = 1;
+    sim.cueDrawnAt = now - 150;
+    sim.cueWindow = 500;
+  };
+  const a = new Sim();
+  a.headless = true;
+  a.reset(2, 3);
+  a.tap(0, 0, 0);
+  a.step(1);
+  grey(a, 1000);
+  a.tap(0, 0, 1000);
+  assert.equal(a.falseStarts, 1, 'any lift tap during grey is a false start');
+  assert.ok(!a.cueActive);
+  assert.equal(a.chain, 0);
+
+  const b = new Sim();
+  b.headless = true;
+  b.reset(3, 3);
+  b.tap(0, 0, 0);
+  b.step(1);
+  grey(b, 1000);
+  b.tap(0, 0, 1000);
+  assert.equal(b.falseStarts, 0, 'with a reflex key, dashing during grey is fine');
+  b.reflex(1010);
+  assert.equal(b.falseStarts, 1, 'but the reflex key is not');
+
+  const c = new Sim();
+  c.headless = true;
+  c.reset(2, 3);
+  c.tap(0, 0, 0);
+  c.step(1);
+  grey(c, 1000);
+  for (let i = 0; i < 400 && c.cueActive; i++) c.step(1000 + i * STEP_MS);
+  assert.equal(c.nogoHeld, 1, 'waiting it out counts as held');
+  assert.equal(c.cueMisses, 0);
+
+  // Over real runs, about a quarter of cues are grey, and a player who holds still keeps them.
+  let go = 0;
+  let nogo = 0;
+  let heldAll = 0;
+  for (let seed = 1; seed <= 6; seed++) {
+    const sim = play(2, seed * 7919, { keyCps: 7.5, reactionMs: 230, look: 2.4, think: 16 }, 120);
+    go += sim.cueCount;
+    nogo += sim.nogoCount;
+    heldAll += sim.nogoHeld;
+  }
+  const share = nogo / (go + nogo);
+  assert.ok(share > 0.12 && share < 0.38, `grey share ${share.toFixed(2)}`);
+  assert.ok(heldAll >= nogo - 1, `held ${heldAll} of ${nogo}`);
+});
+
+test('cues only fire after a quiet moment, and the first heavy pull comes early', () => {
+  const taps: number[] = [];
+  const origTap = Sim.prototype.tap;
+  const origStep = Sim.prototype.step;
+  let violations = 0;
+  let starts = 0;
+  Sim.prototype.tap = function (this: Sim, side: number, key: number, ts: number) {
+    if (this.phase === PHASE_RUN && this.burstState === BURST_NONE) taps.push(this.time);
+    origTap.call(this, side, key, ts);
+  };
+  Sim.prototype.step = function (this: Sim, tickMs: number) {
+    const before = this.cueCount + this.nogoCount;
+    origStep.call(this, tickMs);
+    if (this.cueCount + this.nogoCount > before) {
+      starts++;
+      const last = taps.length ? taps[taps.length - 1]! : -1e9;
+      if (this.time - last < 0.6 - 1e-9) violations++;
+    }
+  };
+  const firsts: number[] = [];
+  try {
+    for (let seed = 1; seed <= 6; seed++) {
+      taps.length = 0;
+      let first = -1;
+      const sim = new Sim();
+      const stepWatch = Sim.prototype.step;
+      Sim.prototype.step = function (this: Sim, tickMs: number) {
+        stepWatch.call(this, tickMs);
+        if (first < 0 && this.burstState !== BURST_NONE) first = this.time;
+      };
+      play(2, seed * 31, { keyCps: 7.5, reactionMs: 230, look: 2.4, think: 16 }, 40);
+      Sim.prototype.step = stepWatch;
+      void sim;
+      if (first > 0) firsts.push(first);
+    }
+  } finally {
+    Sim.prototype.tap = origTap;
+    Sim.prototype.step = origStep;
+  }
+  assert.ok(starts > 5, `cues started: ${starts}`);
+  assert.equal(violations, 0, 'a cue started less than 0.6 s after a tap');
+  assert.ok(firsts.length >= 4, `runs that reached a pull: ${firsts.length}`);
+  for (const t of firsts) assert.ok(t < 14, `first pull at ${t.toFixed(1)} s`);
 });

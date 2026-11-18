@@ -87,7 +87,8 @@ export const SEC_PITS = 1;
 export const SEC_BARS = 2;
 export const SEC_SLIDERS = 3;
 export const SEC_MIX = 4;
-export const SECTION_NAMES = ['HOLES', 'PITS', 'BARS', 'SLIDERS', 'MIX'] as const;
+export const SEC_PULL = 5;
+export const SECTION_NAMES = ['HOLES', 'PITS', 'BARS', 'SLIDERS', 'MIX', 'PULL'] as const;
 
 export const HAZ_CAP = 256;
 export const RING_CAP = 64;
@@ -99,6 +100,8 @@ const GEN_AHEAD = 18;
 const SHAKE_K = Math.exp(-9 * DT);
 const FALL_TIME = 0.85;
 const BURST_OUT_TIME = 0.5;
+/** Seconds without a lift tap before a cue may fire. */
+const QUIET_BEFORE_CUE = 0.6;
 const CUE_FORGIVE_TICKS = Math.round(0.45 / DT);
 const BAR_R = 0.16;
 const DASH_STEP = DASH_SPEED * DT;
@@ -177,6 +180,12 @@ export class Sim {
   nextCueAt = 0;
   cueCount = 0;
   cueHits = 0;
+  /** The active cue is grey: hold still. */
+  cueNogo = false;
+  nogoCount = 0;
+  nogoHeld = 0;
+  /** Sim time of the last lift tap; cues wait for a quiet moment. */
+  private lastTapTime = -1e9;
   cueMisses = 0;
   falseStarts = 0;
   lastRt = 0;
@@ -313,6 +322,10 @@ export class Sim {
     this.nextCueAt = 7 + this.rngEvent.next() * 3;
     this.cueCount = 0;
     this.cueHits = 0;
+    this.cueNogo = false;
+    this.nogoCount = 0;
+    this.nogoHeld = 0;
+    this.lastTapTime = -1e9;
     this.cueMisses = 0;
     this.falseStarts = 0;
     this.lastRt = 0;
@@ -350,7 +363,8 @@ export class Sim {
     this.sectionEndY = this.genY + 34 + this.rngBoard.next() * 8;
     this.skipRows = 0;
     this.lastBarY = -1e9;
-    this.burstGenY = 30 + this.rngBoard.next() * 6;
+    // The first heavy pull comes about ten seconds in.
+    this.burstGenY = BALL_REST + 11 + this.rngBoard.next() * 2;
     this.clearFrom = Infinity;
     this.clearUntil = -Infinity;
 
@@ -411,6 +425,13 @@ export class Sim {
       return;
     }
     this.lastKey[side] = keyIdx;
+    this.lastTapTime = this.time;
+
+    // A grey cue means hold still: without a reflex key, any tap breaks it.
+    if (this.cueActive && this.cueNogo && !this.mode.reflex && this.cueDrawnAt > 0) {
+      this.breakHold(side);
+      return;
+    }
 
     // Without a reflex key, a tap on the cued side answers the cue.
     let caught = false;
@@ -466,6 +487,10 @@ export class Sim {
   /** The reflex key. Pressing it with no cue showing is a false start. */
   reflex(ts: number): void {
     if (this.phase !== PHASE_RUN || !this.mode.reflex) return;
+    if (this.cueActive && this.cueNogo) {
+      if (this.cueDrawnAt > 0) this.breakHold(this.cueSide);
+      return;
+    }
     if (this.cueActive && this.cueDrawnAt > 0) {
       const rt = ts - this.cueDrawnAt;
       if (rt >= ANTICIPATION_MS && rt <= this.cueWindow) {
@@ -531,7 +556,7 @@ export class Sim {
 
     this.runTicks++;
     const time = (this.time = this.runTicks * DT);
-    const speed = climbSpeed(time);
+    const speed = climbSpeed(time) * this.mode.pace;
     let climb = this.climb + speed * DT;
     this.lastRtAge++;
 
@@ -692,9 +717,16 @@ export class Sim {
       } else if (tickMs > this.cueDrawnAt + this.cueWindow) {
         this.cueActive = false;
         this.cueEndTick = this.tick;
-        this.cueMisses++;
-        this.lurch(this.cueSide, 1);
-        this.fx |= FX_CUE_MISS;
+        if (this.cueNogo) {
+          // Held still through a grey cue.
+          this.nogoHeld++;
+          this.score += 30 * (1 + this.chain);
+          this.fx |= FX_CATCH;
+        } else {
+          this.cueMisses++;
+          this.lurch(this.cueSide, 1);
+          this.fx |= FX_CUE_MISS;
+        }
         this.scheduleCue(time);
       }
       return;
@@ -704,7 +736,16 @@ export class Sim {
     // Keep cues clear of heavy pulls. Where answering one uses up a lift key,
     // also wait until the ball does not need that key in the next moment.
     const needs = (window / 1000 + 0.45) * speed + 1.2;
+    // A grey cue now and then (about one in four, as in stop-signal research),
+    // but never among the first two, so the go signal is learned first.
+    const nogo = this.cueCount + this.nogoCount >= 2 && this.rngEvent.next() < 0.25;
+    // Cues come after a quiet moment, so the press is a reaction, not a tap
+    // that was going to happen anyway. A grey one also needs a clear lane,
+    // since holding still means not dodging.
+    const quiet = time - this.lastTapTime >= QUIET_BEFORE_CUE;
     if (
+      !quiet ||
+      (nogo && !this.pathClear(needs, needs)) ||
       this.burstState !== BURST_NONE ||
       this.nextBurstY - this.ballY < speed * 1.6 ||
       this.surgeT > 0 ||
@@ -715,9 +756,21 @@ export class Sim {
     }
     this.cueActive = true;
     this.cueDrawnAt = 0;
+    this.cueNogo = nogo;
     this.cueSide = this.rngEvent.next() < 0.5 ? 0 : 1;
-    this.cueWindow = window;
-    this.cueCount++;
+    this.cueWindow = nogo ? window * 1.15 : window;
+    if (nogo) this.nogoCount++;
+    else this.cueCount++;
+  }
+
+  /** A press during a grey cue. */
+  private breakHold(side: number): void {
+    this.cueActive = false;
+    this.cueEndTick = this.tick;
+    this.falseStarts++;
+    this.lurch(side, 1);
+    this.fx |= FX_FALSE;
+    this.scheduleCue(this.time);
   }
 
   /**
@@ -898,9 +951,9 @@ export class Sim {
     const y = this.genY;
     // Difficulty at the moment the ball will get there.
     const ahead = Math.max(0, y - this.ballY);
-    const tArr = this.time + ahead / climbSpeed(this.time);
+    const tArr = this.time + ahead / (climbSpeed(this.time) * this.mode.pace);
     const d = difficulty(tArr);
-    const speed = climbSpeed(tArr);
+    const speed = climbSpeed(tArr) * this.mode.pace;
     const one = this.oneKey;
 
     // A new section: a different mix of hazards, announced by a marker line.
@@ -927,8 +980,14 @@ export class Sim {
       this.nextBurstY = y + 0.6;
       this.clearFrom = y - 0.2;
       this.clearUntil = y + 0.6 + (BURST_LEAD + need * BURST_MAX_FACTOR + 0.9) * speed + 1.5;
-      const gapT = lerp(26, 16, d) * (0.8 + 0.4 * rng.next());
+      const gapT = lerp(20, 14, d) * (0.85 + 0.3 * rng.next());
       this.burstGenY = this.clearUntil + gapT * speed;
+      if (this.markCount < MARK_CAP) {
+        const k = (this.markStart + this.markCount) % MARK_CAP;
+        this.markY[k] = y;
+        this.markType[k] = SEC_PULL;
+        this.markCount++;
+      }
       // A short run of pickups for whoever finishes the pull early.
       const step = rng.next() < 0.5 ? 1 : -1;
       const lane0 = clamp(this.safeLane, 1, LANES - 2) - step;
@@ -984,7 +1043,7 @@ export class Sim {
     this.safeLane = safe;
 
     const sec = this.section === SEC_MIX ? Math.floor(rng.next() * 4) : this.section;
-    const p = lerp(0.24, 0.6, d);
+    const p = Math.min(0.85, lerp(0.24, 0.6, d) * this.mode.density);
     const r = 0.44 + 0.08 * d;
     let placed = 0;
 

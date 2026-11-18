@@ -511,6 +511,8 @@ export class View {
 
     // Cables.
     const cueSide = sim.cueActive ? sim.cueSide : -1;
+    // Orange means press; grey means hold still.
+    const cueCol = sim.cueNogo ? COL_MID : COL_ACCENT;
     if (sim.cueActive) sim.markCueDrawn(performance.now());
     for (let side = 0; side < 2; side++) {
       const x = side === 0 ? xL : xR;
@@ -527,13 +529,13 @@ export class View {
         ctx.moveTo(x, top);
         ctx.lineTo(x, yCut);
         ctx.stroke();
-        ctx.strokeStyle = COL_ACCENT;
+        ctx.strokeStyle = cueCol;
         ctx.lineWidth = 3 * dpr;
         ctx.beginPath();
         ctx.moveTo(jx, yCut);
         ctx.lineTo(jx, y);
         ctx.stroke();
-        ctx.fillStyle = COL_ACCENT;
+        ctx.fillStyle = cueCol;
         const q = 5 * dpr;
         ctx.fillRect(x - q, y - q, q * 2, q * 2);
       } else {

@@ -141,12 +141,12 @@ function refreshHints(): void {
   if (mode.right === 0) {
     hints.left = hints.right = '';
     hints.center = pads ? 'tap: surge over holes' : `${left}  surge over holes`;
-    hints.sub = 'orange cable: press once';
+    hints.sub = 'orange cable: press once \u00b7 grey: hold still';
   } else {
     hints.left = pads ? 'dash left' : `${left}  dash left`;
     hints.right = pads ? 'dash right' : `dash right  ${right}`;
     hints.center = 'both sides: surge';
-    hints.sub = mode.reflex && b.reflex ? `orange cable: ${keyLabel(b.reflex)}` : 'orange cable: tap that side';
+    hints.sub = (mode.reflex && b.reflex ? `orange cable: ${keyLabel(b.reflex)}` : 'orange cable: tap that side') + ' \u00b7 grey: hold still';
   }
 }
 
@@ -327,6 +327,8 @@ function finishRun(): void {
       hist: histogram(sim.rt, sim.rtCount, 20),
       cues: sim.cueCount,
       caught: sim.cueHits,
+      holds: sim.nogoCount,
+      held: sim.nogoHeld,
       falseStarts: sim.falseStarts,
       pullsWon: sim.burstsWon,
       pulls: sim.burstsWon + sim.burstsLost,
