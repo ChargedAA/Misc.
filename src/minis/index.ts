@@ -3,6 +3,7 @@
 import type { InputKind, MiniDef, Skill } from './kit.ts';
 import { MEMORY } from './memory.ts';
 import { REACTION } from './reaction.ts';
+import { SPEED, TIMING } from './tempo.ts';
 
 export interface Entry {
   id: string;
@@ -21,7 +22,7 @@ const BUILT_IN: Entry[] = [
   { id: 'burst', name: 'Burst', skill: 'speed', blurb: 'Hold a rising tap rate for five seconds.', input: 'keys', minKeys: 1 },
 ];
 
-export const MINIS: MiniDef[] = [...REACTION, ...MEMORY];
+export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY];
 
 export const ENTRIES: Entry[] = [
   ...BUILT_IN,
