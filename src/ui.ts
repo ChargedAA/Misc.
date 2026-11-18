@@ -437,6 +437,28 @@ function shortDate(at: number): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/** One trend card per mini-game, grouped by skill, using each game's tracked number. */
+function miniStats(history: RunRecord[], filter: number): string {
+  let h = '';
+  for (const sk of SKILLS) {
+    const games = ENTRIES.filter((e) => e.def && e.skill === sk.id);
+    if (!games.length) continue;
+    const cards = games.map((g) => {
+      const recs = history.filter((r) => r.kind === 'mini' && r.game === g.id && (filter === 0 || r.mode === 0 || r.mode === filter));
+      const last = recs[recs.length - 1];
+      const metric: Metric = {
+        label: `${g.name}${last?.vlabel ? ` \u00b7 ${last.vlabel}` : ''}`,
+        get: (r) => r.value,
+        fmt: (v) => fmtPrimary(v, { label: '', value: v, unit: last?.unit ?? '', decimals: last?.decimals }),
+        lower: last?.lower,
+      };
+      return card(metric, recs);
+    });
+    h += `<h2>${sk.name} games <span>${sk.blurb}</span></h2><div class="grid">${cards.join('')}</div>`;
+  }
+  return h;
+}
+
 export function statsHtml(history: RunRecord[], filter: number, perf: boolean): string {
   const byMode = (r: RunRecord) => filter === 0 || r.mode === filter;
   const runs = history.filter((r) => r.kind === 'run' && byMode(r));
@@ -464,6 +486,7 @@ export function statsHtml(history: RunRecord[], filter: number, perf: boolean): 
   <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}</div>
   <h2>Burst <span>${n(cps)}</span></h2>
   <div class="grid">${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>
+  ${miniStats(history, filter)}
   ${table}
   ${foot([
     ['Back', 'menu', 'esc'],
