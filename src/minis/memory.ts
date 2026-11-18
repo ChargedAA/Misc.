@@ -413,7 +413,7 @@ class Order implements Mini {
     if (this.state === 2 && this.wrongCell < 0) message(v, a, `next: ${this.n} numbers`);
     if (this.best === 0 && this.next === 1 && this.state === 1) {
       ctx.fillStyle = COL_MID;
-      v.text('tap 1, then the rest hide: keep going in order', a.cx, a.bottom + 8 * dpr, v.fontTiny, 'center');
+      v.text('tap 1, then the rest hide: keep going in order', a.cx, a.bottom - 6 * dpr, v.fontTiny, 'center');
     }
     footer(v, touch, 0);
     return false;
