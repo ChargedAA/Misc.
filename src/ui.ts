@@ -143,10 +143,23 @@ function keysLine(keys: number, b: Bindings): string {
  * The title screen: every game, grouped by skill. With `picked` set, the
  * pop-out for that game is open over it; `slide` plays its entrance.
  */
-export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean): string {
+export interface TitleExtras {
+  /** Best score per game id. */
+  bests: Record<string, number>;
+  daily: string[];
+  /** Today's daily total, if the set was finished today. */
+  dailyDone: number | null;
+}
+
+export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean, extras: TitleExtras): string {
   let h = `<section class="screen title"${picked ? ' aria-hidden="true"' : ''}>
   <h1 class="logo">TENSION</h1>
   <p class="tag">A minimal training suite. ${ENTRIES.length} games, six skills.</p>
+  <button class="daily" data-act="daily">
+    <span class="n">Daily set</span>
+    <span class="d">${extras.daily.map((id) => entry(id)?.name ?? id).join(DOT)}</span>
+    <span class="k">${extras.dailyDone !== null ? `done${DOT}${fmtInt(extras.dailyDone)}` : 'd'}</span>
+  </button>
   <div class="skills">
     ${SKILLS.map((sk) => {
       const games = ENTRIES.filter((e) => e.skill === sk.id);
@@ -154,7 +167,7 @@ export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | 
       return `<section class="skill"><h2>${sk.name}<span>${sk.blurb}</span></h2><div class="modes">${games
         .map(
           (g) =>
-            `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.input === 'pointer' ? 'tap' : g.input === 'both' ? 'key or tap' : 'keys'}</span></button>`,
+            `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.input === 'pointer' ? 'tap' : g.input === 'both' ? 'key or tap' : 'keys'}${extras.bests[g.id] ? `<b>${fmtInt(extras.bests[g.id]!)}</b>` : ''}</span></button>`,
         )
         .join('')}</div></section>`;
     }).join('')}
@@ -351,8 +364,26 @@ export function reflexResultsHtml(r: ReflexSummary): string {
 </section>`;
 }
 
-export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | null, rtMedian: number, best: boolean): string {
+export interface DailyStep {
+  /** 1-based number of the game just played, and how many in the set. */
+  index: number;
+  total: number;
+  nextName: string | null;
+}
+
+export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | null, rtMedian: number, best: boolean, daily: DailyStep | null = null): string {
   const p = r.primary;
+  const actions: [string, string, string][] = daily
+    ? daily.nextName
+      ? [
+          [`Next: ${daily.nextName}`, 'dailynext', 'enter'],
+          ['Stop the set', 'menu', 'esc'],
+        ]
+      : [
+          ['See the day', 'dailynext', 'enter'],
+          ['Menu', 'menu', 'esc'],
+        ]
+    : AGAIN;
   return `<section class="screen">
   <div class="big">
     <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
@@ -362,8 +393,40 @@ export function miniResultsHtml(name: string, r: MiniResult, hist: Histogram | n
   <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
-  ${foot(AGAIN)}
+  ${daily ? `<p class="muted">Daily set: game ${daily.index} of ${daily.total}</p>` : ''}
+  ${foot(actions)}
 </section>`;
+}
+
+export interface DailyRow {
+  name: string;
+  skill: string;
+  score: number;
+  primary: string;
+  best: boolean;
+}
+
+export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number): string {
+  return `<section class="screen">
+  <div class="big">
+    <div class="stat"><div class="v">${fmtInt(total)}</div><div class="l">today${total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
+    <div class="stat"><div class="v">${rows.length}</div><div class="l">games</div></div>
+    <div class="stat"><div class="v">${rows.filter((r) => r.best).length}</div><div class="l">personal bests</div></div>
+  </div>
+  <table>
+    <tr><th></th><th>skill</th><th>result</th><th>score</th></tr>
+    ${rows.map((r) => `<tr><td>${r.name}${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.primary}</td><td>${fmtInt(r.score)}</td></tr>`).join('')}
+  </table>
+  <p class="muted">The set changes every day. Same games for everyone on a given date.</p>
+  ${foot([
+    ['Menu', 'menu', 'esc'],
+    ['Stats', 'stats', 's'],
+  ])}
+</section>`;
+}
+
+export function formatPrimary(p: MiniResult['primary']): string {
+  return fmtPrimary(p.value, p);
 }
 
 export interface CpsTrainSummary {

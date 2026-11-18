@@ -33,6 +33,21 @@ export const ENTRIES: Entry[] = [
   ...MINIS.map((d) => ({ id: d.id, name: d.name, skill: d.skill, blurb: d.blurb, input: d.input, minKeys: d.minKeys, def: d })),
 ];
 
+/** Today's set: one mini-game per skill, the same for everyone on a given date. */
+export function dailySet(date: Date = new Date()): string[] {
+  const key = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  let h = 2166136261;
+  for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+  const out: string[] = [];
+  for (const sk of ['reaction', 'speed', 'timing', 'memory', 'attention', 'coordination']) {
+    const pool = MINIS.filter((d) => d.skill === sk);
+    if (!pool.length) continue;
+    h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+    out.push(pool[h % pool.length]!.id);
+  }
+  return out;
+}
+
 export function entry(id: string): Entry | undefined {
   return ENTRIES.find((e) => e.id === id);
 }

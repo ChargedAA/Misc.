@@ -50,9 +50,9 @@ import {
 } from './storage.ts';
 import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
-import { entry } from './minis/index.ts';
+import { dailySet, entry } from './minis/index.ts';
 import type { Mini, MiniDef } from './minis/kit.ts';
-import { Ui, cpsResultsHtml, miniResultsHtml, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
+import { Ui, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
 
 type Screen =
   | 'title'
@@ -88,6 +88,10 @@ let picked: GameId | null = null;
 let lastGame: GameId = 'climb';
 /** The mini-game in progress, if any. */
 let mini: Mini | null = null;
+/** The daily set in progress: game ids, which one we are on, and results so far. */
+let dailyQueue: string[] | null = null;
+let dailyIdx = 0;
+let dailyRows: DailyRow[] = [];
 let miniDef: MiniDef | null = null;
 /** Key count of the session in progress. */
 let activeKeys = settings.keys.climb ?? 2;
@@ -266,7 +270,50 @@ function showTitle(slide = false): void {
   stopLoop();
   screen = 'title';
   listening = '';
-  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked] ?? 2) : null, slide));
+  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked] ?? 2) : null, slide, titleExtras()));
+}
+
+function sameDay(a: number, b: number): boolean {
+  const x = new Date(a);
+  const y = new Date(b);
+  return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
+}
+
+function titleExtras() {
+  const bests: Record<string, number> = {};
+  for (const r of history) {
+    const id = r.kind === 'run' ? 'climb' : r.kind === 'rt' ? 'reflex' : r.kind === 'cps' ? 'burst' : (r.game ?? '');
+    const v = r.kind === 'cps' ? (r.target ?? 0) : (r.score ?? 0);
+    if (v > (bests[id] ?? 0)) bests[id] = v;
+  }
+  const now = Date.now();
+  let dailyDone: number | null = null;
+  for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
+  return { bests, daily: dailySet(), dailyDone };
+}
+
+function startDaily(): void {
+  dailyQueue = dailySet();
+  dailyIdx = 0;
+  dailyRows = [];
+  startGame(dailyQueue[0]!);
+}
+
+function nextDaily(): void {
+  if (!dailyQueue) return;
+  dailyIdx++;
+  if (dailyIdx < dailyQueue.length) {
+    startGame(dailyQueue[dailyIdx]!);
+    return;
+  }
+  const total = dailyRows.reduce((s, r) => s + r.score, 0);
+  let bestTotal = 0;
+  for (const r of history) if (r.kind === 'mini' && r.game === 'daily') bestTotal = Math.max(bestTotal, r.score ?? 0);
+  history = addRecord({ kind: 'mini', game: 'daily', at: Date.now(), mode: 0, time: 0, score: total, value: total, vlabel: 'day total', unit: '' });
+  dailyQueue = null;
+  screen = 'miniResults';
+  inputLockUntil = performance.now() + 450;
+  ui.show(dailySummaryHtml(dailyRows, total, Math.max(bestTotal, total)));
 }
 
 function startGame(game: GameId): void {
@@ -475,7 +522,13 @@ function finishMini(): void {
   const st = rtStats(rts, rts.length);
   screen = 'miniResults';
   inputLockUntil = performance.now() + 450;
-  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest));
+  let step = null;
+  if (dailyQueue) {
+    dailyRows.push({ name: miniDef.name, skill: miniDef.skill, score: r.score, primary: `${r.primary.label} ${formatPrimary(r.primary)}`, best: isBest });
+    const next = dailyQueue[dailyIdx + 1];
+    step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null };
+  }
+  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step));
 }
 
 function showStats(): void {
@@ -561,6 +614,12 @@ function onAction(action: string, arg: string): void {
     case 'again':
       startGame(lastGame);
       break;
+    case 'daily':
+      startDaily();
+      break;
+    case 'dailynext':
+      nextDaily();
+      break;
     case 'restart':
       startGame('climb');
       break;
@@ -581,6 +640,7 @@ function onAction(action: string, arg: string): void {
       break;
     case 'menu':
       picked = null;
+      dailyQueue = null;
       showTitle();
       break;
     case 'resume':
@@ -749,6 +809,7 @@ function onKeyDown(e: KeyboardEvent): void {
         break;
       }
       if (enter) onAction('pick', lastGame);
+      else if (code === 'KeyD') startDaily();
       else if (code === 'KeyS') showStats();
       else if (code === 'KeyK') onAction('keys', '');
       else if (digit === 0) toggleMute();
@@ -757,7 +818,8 @@ function onKeyDown(e: KeyboardEvent): void {
     case 'reflexResults':
     case 'burstResults':
     case 'miniResults':
-      if (enter) startGame(lastGame);
+      if (enter && dailyQueue) nextDaily();
+      else if (enter) startGame(lastGame);
       else if (code === 'KeyS') showStats();
       else if (code === 'Escape') onAction('menu', '');
       break;
