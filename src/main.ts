@@ -745,6 +745,10 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
 
+  if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e))) {
+    e.preventDefault();
+    return;
+  }
   if (screen === 'play' || screen === 'reflex' || screen === 'burst' || screen === 'mini') {
     const slot = keymap.get(code);
     if (slot !== undefined) {

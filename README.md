@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 36 small games for reaction, speed, timing, memory,
+A minimal training suite: 42 small games for reaction, speed, timing, memory,
 attention and coordination. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -26,6 +26,7 @@ the same set for everyone on a given day.
 | Flank | Answer the middle arrow. Ignore the crowd. | keys |
 | Choice | Press whichever string lights. More strings, more thinking. | 2+ keys |
 | Aim | Tap each target the moment it appears. They shrink. | tap or click |
+| Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
 
 ### Speed
 
@@ -36,6 +37,7 @@ the same set for everyone on a given day.
 | Pulse | Ride a target rate that rises, drops and stops. | keys |
 | Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
 | Ladder | The target rate steps up every second. Hang on. | keys |
+| Tug | Tug of war against a rate that never gets tired. | keys |
 
 ### Timing
 
@@ -46,6 +48,7 @@ the same set for everyone on a given day.
 | Gap | Two clicks make a gap. Copy it from memory. | keys or tap |
 | Echo | Hear a rhythm. Tap it back. It gets longer. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
+| Second | Hold a key for exactly the time shown. No clock. | keys |
 
 ### Memory
 
@@ -58,6 +61,7 @@ the same set for everyone on a given day.
 | Pairs | Turn tiles two at a time. Remember where everything was. | tap or click |
 | Path | Blocks light up in order. Tap the same path, sometimes backwards. | tap or click |
 | Spot | Look, look away, look again. Did anything change? | 2+ keys |
+| Digits | Remember a number. Type it back, sometimes backwards. | tap or click |
 
 ### Attention
 
@@ -71,6 +75,7 @@ the same set for everyone on a given day.
 | Count | How many dots were there, in that blink? | tap or click |
 | Glance | A shape in the middle, a dot out wide. One blink to see both. | tap or click |
 | Stream | Letters fly past. Press for the X. | keys or tap |
+| Side | Shade picks the hand. Where it appears pulls the other way. | 2+ keys |
 
 ### Coordination
 
@@ -81,7 +86,7 @@ the same set for everyone on a given day.
 | Split | Each hand steers its own dot. Dodge on both sides at once. | 2+ keys |
 | Juggle | Every key keeps its own ball in the air. | keys |
 | Poly | Two hands, two tempos at once. Two against three, and up. | 2+ keys |
-
+| Zigzag | Hold to rise, let go to fall. The corridor narrows. | keys |
 
 ## Why these games
 

@@ -51,6 +51,8 @@ export interface Mini {
   press(slot: number, ts: number): void;
   /** A key or pad came up. `ts` is the event's timeStamp. */
   release?(slot: number, ts: number): void;
+  /** Any other key (games that type, like Digits). Return true if it was used. */
+  typeKey?(code: string, ts: number): boolean;
   /** A click or tap at canvas device pixels (pointer games). */
   pointer?(x: number, y: number, ts: number): void;
   /** Advance and draw. Returns true once the session is over. */
