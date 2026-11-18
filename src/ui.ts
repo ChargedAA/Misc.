@@ -151,12 +151,14 @@ export interface TitleExtras {
   dailyDone: number | null;
   /** The skill being shown, or 'all'. */
   filter: string;
+  /** Days in a row with a session. */
+  streak: number;
 }
 
 export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean, extras: TitleExtras): string {
   let h = `<section class="screen title"${picked ? ' aria-hidden="true"' : ''}>
   <h1 class="logo">TENSION</h1>
-  <p class="tag">A minimal training suite. ${ENTRIES.length} games, ${SKILLS.length} skills.</p>
+  <p class="tag">A minimal training suite. ${ENTRIES.length} games, ${SKILLS.length} skills.${extras.streak > 1 ? `${DOT}${extras.streak} day streak` : ''}</p>
   <button class="daily" data-act="daily">
     <span class="n">Daily set</span>
     <span class="d">${extras.daily.map((id) => entry(id)?.name ?? id).join(DOT)}</span>

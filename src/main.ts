@@ -53,7 +53,7 @@ import { CpsTrainer } from './trainers.ts';
 import { ENTRIES, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import type { Mini, MiniDef } from './minis/kit.ts';
-import { Ui, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
+import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
 
 type Screen =
   | 'title'
@@ -310,7 +310,7 @@ function titleExtras() {
   const now = Date.now();
   let dailyDone: number | null = null;
   for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
-  return { bests, daily: dailySet(), dailyDone, filter: skillFilter };
+  return { bests, daily: dailySet(), dailyDone, filter: skillFilter, streak: streak(history) };
 }
 
 function startDaily(): void {
