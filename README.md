@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 77 small games for reaction, speed, timing, memory,
+A minimal training suite: 81 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -58,6 +58,7 @@ with `B`. After a game: `Z` again, `X` its stats, `C` back.
 | Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
 | Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 | Exact | Tap exactly N times inside the window. Fast enough, and stop on time. | keys or tap |
+| Rain | Letters fall. Type them before they land. | keys |
 
 ### Timing
 
@@ -90,6 +91,7 @@ with `B`. After a game: `Z` again, `X` its stats, `C` back.
 | Running | Digits stream by and stop without warning. Type the last few. | tap or click |
 | Melody | Pads play a tune. Play it back. Later you only hear it. | tap or click |
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap, 2+ keys |
+| Link | Shapes and numbers, paired. Which number went with this shape? | tap or click |
 
 ### Attention
 
@@ -106,6 +108,7 @@ with `B`. After a game: `Z` again, `X` its stats, `C` back.
 | Side | Shade picks the hand. Where it appears pulls the other way. | keys, 2+ keys |
 | Flicker | Two versions flicker back and forth. Find what changes. | tap or click |
 | Shells | A ball under a cup, then the cups swap. Where is it? | tap or click |
+| Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 
 ### Coordination
 
@@ -121,6 +124,7 @@ with `B`. After a game: `Z` again, `X` its stats, `C` back.
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 | Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
+| Sync | Both hands at exactly the same moment. Then with a set gap. | keys, 2+ keys |
 
 ### Judgement
 
@@ -178,6 +182,9 @@ The suite leans on established tasks and on what is known about training:
   item. Matrix is a procedurally generated progressive-matrices puzzle, Relate
   is transitive inference (the premises vanish later, adding a memory load),
   and Balance is algebra in pictures.
+- **Sustained attention.** Except is the sustained attention to response task
+  (SART): press for every digit but the rare 3, so the habit of pressing is the
+  trap. It reports withheld 3s, misses, and how steady your presses are.
 - **More than one sense.** Ears mixes flashes and beeps; simple reaction to
   sound is usually a few tens of milliseconds faster than to light. Melody
   turns the pads dark on alternate tunes so you work from pitch alone.

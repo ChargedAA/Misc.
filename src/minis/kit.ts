@@ -18,8 +18,13 @@ export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'reasoning', name: 'Reasoning', blurb: 'Think fast and stay right.' },
 ];
 
-/** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either. */
-export type InputKind = 'keys' | 'pointer' | 'both';
+/** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either; 'type' needs a full keyboard. */
+export type InputKind = 'keys' | 'pointer' | 'both' | 'type';
+
+/** Whether a game is played on the lift keys, so its key count matters. */
+export function usesKeyCount(input: InputKind): boolean {
+  return input === 'keys' || input === 'both';
+}
 
 export interface MiniLine {
   label: string;

@@ -5,7 +5,7 @@
 
 import { MODES } from './config.ts';
 import { ENTRIES, entry, type Entry } from './minis/index.ts';
-import { SKILLS, type MiniResult, type Skill } from './minis/kit.ts';
+import { SKILLS, usesKeyCount, type MiniResult, type Skill } from './minis/kit.ts';
 import { trendSvg } from './charts.ts';
 import type { RunRecord, Settings } from './storage.ts';
 import {
@@ -111,7 +111,7 @@ function gamesOf(skills: readonly string[]): Entry[] {
 }
 
 function inputLabel(e: Entry): string {
-  return e.input === 'pointer' ? 'tap' : e.input === 'both' ? 'key or tap' : 'keys';
+  return e.input === 'pointer' ? 'tap' : e.input === 'both' ? 'key or tap' : e.input === 'type' ? 'keyboard' : 'keys';
 }
 
 export function startMenu(c: MenuCtx): Menu {
@@ -174,7 +174,7 @@ export function gameMenu(c: MenuCtx, id: string): Menu {
   const e = entry(id)!;
   const keys = c.settings.keys[id] ?? 2;
   const min = e.minKeys ?? 1;
-  const usesKeys = e.input !== 'pointer';
+  const usesKeys = usesKeyCount(e.input);
   const how = e.def ? `${e.def.how}${usesKeys ? `<br>Keys: ${keysLine(keys, c.settings.bindings[keys]!)}` : ''}` : controlsHint(id, keys, c.settings.bindings[keys]!);
   const best = c.bestFor(id, keys);
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
@@ -254,7 +254,7 @@ function changeLine(vals: number[], lower: boolean, fmt: (v: number) => string):
 
 export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
   const e = entry(id)!;
-  const usesKeys = e.input !== 'pointer';
+  const usesKeys = usesKeyCount(e.input);
   const all = c.history.filter((r) => gameOf(r) === id);
   const recs = all.filter((r) => !usesKeys || filter === 0 || r.mode === filter);
   const seg = usesKeys

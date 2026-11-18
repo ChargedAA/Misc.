@@ -68,12 +68,14 @@ function slots(id: number): number[] {
   return out;
 }
 
+const TYPED = [...'0123456789'].map((d) => `Digit${d}`).concat([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((c) => `Key${c}`), ['Enter', 'Backspace']);
+
 test('every mini-game survives random play in every key mode it allows', () => {
   const view = fakeView();
   useClock();
   try {
     for (const def of MINIS) {
-      const modes = def.input === 'pointer' ? [2] : MODES.map((m) => m.id).filter((id) => id >= (def.minKeys ?? 1));
+      const modes = def.input === 'pointer' || def.input === 'type' ? [2] : MODES.map((m) => m.id).filter((id) => id >= (def.minKeys ?? 1));
       for (const modeId of modes) {
         for (let seed = 0; seed < 3; seed++) {
           clock = 1000;
@@ -104,6 +106,8 @@ test('every mini-game survives random play in every key mode it allows', () => {
               }
             }
             if (Math.random() < 0.05) game.pointer?.(Math.random() * 1280, Math.random() * 800, clock);
+            // And type: digits, letters, Enter and Backspace, for the games that read the keyboard.
+            if (Math.random() < 0.04) game.typeKey?.(TYPED[Math.floor(Math.random() * TYPED.length)]!, clock);
             done = game.frame(clock, view, touch);
           }
           const r = game.result();

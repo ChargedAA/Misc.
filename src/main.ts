@@ -52,7 +52,7 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { ENTRIES, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import type { Mini, MiniDef } from './minis/kit.ts';
+import { usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, gameMenu, gameStatsMenu, groupMenu, menuHtml, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -193,7 +193,8 @@ function bestFor(game: GameId, keys: number): RunRecord | null {
   if (game === 'climb') return best('run', keys, 'score');
   if (game === 'reflex') return best('rt', keys, 'score');
   if (game === 'burst') return best('cps', keys, 'target');
-  const anyKeys = entry(game)?.input === 'pointer';
+  const e = entry(game);
+  const anyKeys = e ? !usesKeyCount(e.input) : false;
   let top: RunRecord | null = null;
   for (const r of history) {
     if (r.kind === 'mini' && r.game === game && (anyKeys || r.mode === keys) && (top === null || (r.score ?? 0) > (top.score ?? 0))) top = r;
@@ -569,7 +570,7 @@ function finishMini(): void {
   stopLoop();
   if (!mini || !miniDef) return;
   const r = mini.result();
-  const pointerOnly = miniDef.input === 'pointer';
+  const pointerOnly = !usesKeyCount(miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
   const prev = bestFor(miniDef.id, activeKeys);
   const isBest = r.saved && r.score > 0 && (prev === null || r.score > (prev.score ?? 0));
@@ -662,7 +663,7 @@ function assignKey(code: string): void {
 
 function setKeyCount(n: number): void {
   const game = navGame();
-  if (!game || entry(game)?.input === 'pointer' || n < 1 || n > 6 || n < (entry(game)?.minKeys ?? 1)) return;
+  if (!game || !usesKeyCount(entry(game)?.input ?? 'keys') || n < 1 || n > 6 || n < (entry(game)?.minKeys ?? 1)) return;
   settings.keys[game] = n;
   saveSettings(settings);
   sfx.play(SND_UI);
@@ -977,5 +978,18 @@ showMenu();
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__tension = { sim, runner, reflex, cpsTrainer, perf, view, touch, mini: () => mini };
+  (window as unknown as Record<string, unknown>).__tension = {
+    sim,
+    runner,
+    reflex,
+    cpsTrainer,
+    perf,
+    view,
+    touch,
+    mini: () => mini,
+    start: (id: string, keys = 2) => {
+      settings.keys[id] = keys;
+      startGame(id as GameId);
+    },
+  };
 }
