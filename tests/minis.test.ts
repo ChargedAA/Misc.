@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MODES, SLOT_REFLEX } from '../src/config.ts';
 import { MINIS } from '../src/minis/index.ts';
+import { Rng } from '../src/rng.ts';
 import type { View } from '../src/render.ts';
 import type { TouchLayout } from '../src/touch.ts';
 
@@ -50,6 +51,14 @@ function restoreClock(): void {
   performance.now = realNow;
 }
 
+const realRandom = Math.random;
+
+function hash(s: string): number {
+  let h = 7;
+  for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h;
+}
+
 function slots(id: number): number[] {
   const m = MODES[id - 1]!;
   const out: number[] = [];
@@ -68,6 +77,9 @@ test('every mini-game survives random play in every key mode it allows', () => {
       for (const modeId of modes) {
         for (let seed = 0; seed < 3; seed++) {
           clock = 1000;
+          // Seed everything (game and fake player) so a failure can be replayed.
+          const rng = new Rng(hash(def.id) * 31 + modeId * 7 + seed);
+          Math.random = () => rng.next();
           const game = def.make();
           game.start({ mode: MODES[modeId - 1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: seed === 2 }, clock);
           const ks = slots(modeId);
@@ -99,12 +111,13 @@ test('every mini-game survives random play in every key mode it allows', () => {
           assert.ok(Number.isFinite(r.primary.value), `${def.id}: primary ${r.primary.value}`);
           assert.ok(r.lines.length > 0, `${def.id}: result lines`);
           for (const l of r.lines) assert.ok(l.value !== undefined && !String(l.value).includes('NaN'), `${def.id}: ${l.label} = ${l.value}`);
-          assert.ok(done, `${def.id} with ${modeId} keys never ended (presses: ${presses})`);
+          assert.ok(done, `${def.id} with ${modeId} keys (seed ${seed}) never ended (presses: ${presses})`);
         }
       }
     }
   } finally {
     restoreClock();
+    Math.random = realRandom;
   }
 });
 
