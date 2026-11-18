@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 73 small games for reaction, speed, timing, memory,
+A minimal training suite: 77 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -59,6 +59,7 @@ the same set for everyone on a given day.
 | Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
 | Offbeat | Tap exactly halfway between the clicks. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
+| Hop | Run, and jump the blocks. Hold for a higher jump. | keys or tap |
 
 ### Memory
 
@@ -75,6 +76,7 @@ the same set for everyone on a given day.
 | Where | Shapes scatter and vanish. Tap where one of them was. | tap or click |
 | Running | Digits stream by and stop without warning. Type the last few. | tap or click |
 | Melody | Pads play a tune. Play it back. Later you only hear it. | tap or click |
+| Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap, 2+ keys |
 
 ### Attention
 
@@ -90,6 +92,7 @@ the same set for everyone on a given day.
 | Stream | Letters fly past. Press for the X. | keys or tap |
 | Side | Shade picks the hand. Where it appears pulls the other way. | keys, 2+ keys |
 | Flicker | Two versions flicker back and forth. Find what changes. | tap or click |
+| Shells | A ball under a cup, then the cups swap. Where is it? | tap or click |
 
 ### Coordination
 
@@ -128,6 +131,7 @@ the same set for everyone on a given day.
 | Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap, 2+ keys |
 | Matrix | A three-by-three pattern with a gap. Which piece fits? | tap or click |
 | Balance | The scales balance. How many triangles weigh the same as a square? | tap or click |
+| Odd | All but one share something. Which one does not? | tap or click |
 
 ## Why these games
 
@@ -165,7 +169,9 @@ The suite leans on established tasks and on what is known about training:
   sound is usually a few tens of milliseconds faster than to light. Melody
   turns the pads dark on alternate tunes so you work from pitch alone.
 - **Updating, not just holding.** Running is running memory span: the list
-  stops without warning, so you must keep replacing what you hold.
+  stops without warning, so you must keep replacing what you hold. Again is
+  continuous recognition with lures (same shapes, other order or shade), scored
+  as hits minus false alarms so calling everything "seen" does not pay.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
   they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
   Burst train held and controlled rates; Sprint measures the peak.
