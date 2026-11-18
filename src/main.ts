@@ -50,7 +50,7 @@ import {
 } from './storage.ts';
 import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
-import { ENTRIES, dailySet, entry } from './minis/index.ts';
+import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
@@ -101,6 +101,8 @@ let mini: Mini | null = null;
 let dailyQueue: string[] | null = null;
 let dailyIdx = 0;
 let dailyRows: DailyRow[] = [];
+/** An endless run's scope ('all', or a group id): games keep coming until you end it. */
+let endlessScope: string | null = null;
 /** 'Daily set', or e.g. 'Memory set' for three random games of one skill. */
 let queueLabel = 'Daily set';
 let miniDef: MiniDef | null = null;
@@ -381,6 +383,7 @@ function truncate(level: number): void {
 }
 
 function startDaily(): void {
+  endlessScope = null;
   dailyQueue = dailySet();
   queueLabel = 'Daily set';
   dailyIdx = 0;
@@ -421,20 +424,44 @@ function startQuick(spec: string): void {
     }
     return list;
   };
-  const group = GROUPS.find((g) => g.id === scope);
+  endlessScope = scope === 'endless' ? (countText || 'all') : null;
+  const group = GROUPS.find((g) => g.id === (endlessScope ?? scope));
   const skill = SKILLS.find((k) => k.id === scope);
   let queue: string[];
-  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(ENTRIES.filter((e) => e.skill === k.id))[0]!.id));
+  // Sets use the mini-games only: Climb, Reflex and Burst have their own result screens.
+  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(MINIS.filter((e) => e.skill === k.id))[0]!.id));
+  else if (endlessScope) queue = [pickNext([])];
   else {
-    const pool = ENTRIES.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
+    const pool = MINIS.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
     queue = shuffled(pool).slice(0, count);
   }
   if (!queue.length) return;
   dailyQueue = queue;
-  queueLabel = `${group ? group.name : skill ? skill.name : scope === 'each' ? 'Mixed' : 'Random'} set`;
+  queueLabel = endlessScope ? 'Endless run' : `${group ? group.name : skill ? skill.name : scope === 'each' ? 'Mixed' : 'Random'} set`;
   dailyIdx = 0;
   dailyRows = [];
   startGame(dailyQueue[0]!);
+}
+
+/** The next game of an endless run: random, within its scope, and none of the last eight. */
+function pickNext(recent: readonly string[]): string {
+  const group = GROUPS.find((g) => g.id === endlessScope);
+  const pool = MINIS.filter((e) => !group || group.skills.includes(e.skill)).map((e) => e.id);
+  const fresh = pool.filter((id) => !recent.slice(-8).includes(id));
+  const from = fresh.length ? fresh : pool;
+  return from[Math.floor(Math.random() * from.length)]!;
+}
+
+/** End an endless run (or any set) early and show what it came to. */
+function endRun(): void {
+  if (!dailyQueue) return;
+  const total = dailyRows.reduce((sum, r) => sum + r.score, 0);
+  const label = queueLabel;
+  dailyQueue = null;
+  endlessScope = null;
+  screen = 'miniResults';
+  inputLockUntil = performance.now() + 750;
+  ui.show(dailySummaryHtml(dailyRows, total, total, label));
 }
 
 function startGame(game: GameId): void {
@@ -657,9 +684,11 @@ function finishMini(): void {
   inputLockUntil = performance.now() + 750;
   let step = null;
   if (dailyQueue) {
+    // An endless run always has a next game.
+    if (endlessScope && dailyIdx + 1 >= dailyQueue.length) dailyQueue.push(pickNext(dailyQueue));
     dailyRows.push({ name: miniDef.name, skill: miniDef.skill, score: r.score, primary: `${r.primary.label} ${formatPrimary(r.primary)}`, best: isBest });
     const next = dailyQueue[dailyIdx + 1];
-    step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
+    step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
 }
@@ -789,6 +818,9 @@ function onAction(action: string, arg: string): void {
     case 'dailynext':
       nextDaily();
       break;
+    case 'endrun':
+      endRun();
+      break;
     case 'restart':
       startGame('climb');
       break;
@@ -817,6 +849,7 @@ function onAction(action: string, arg: string): void {
       break;
     case 'menu':
       dailyQueue = null;
+      endlessScope = null;
       showMenu(-1);
       break;
     case 'resume':

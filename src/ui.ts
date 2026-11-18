@@ -349,7 +349,7 @@ export function miniResultsHtml(
       ? [
           [`Next: ${daily.nextName}`, 'dailynext', 'z', 'KeyZ Enter'],
           ['Game stats', 'gamestats', 'x', 'KeyX'],
-          ['Stop the set', 'menu', 'c', 'KeyC Escape Backspace'],
+          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'c', 'KeyC Escape Backspace'],
         ]
       : [
           [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'z', 'KeyZ Enter'],
@@ -366,7 +366,7 @@ export function miniResultsHtml(
   <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
-  ${daily ? `<p class="muted">${daily.label}: game ${daily.index} of ${daily.total}</p>` : ''}
+  ${daily ? `<p class="muted">${daily.label}: game ${daily.index}${daily.total ? ` of ${daily.total}` : ''}</p>` : ''}
   ${foot(actions)}
 </section>`;
 }
@@ -391,7 +391,7 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
     <tr><th></th><th>skill</th><th>result</th><th>score</th></tr>
     ${rows.map((r) => `<tr><td>${r.name}${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.primary}</td><td>${fmtInt(r.score)}</td></tr>`).join('')}
   </table>
-  <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : 'A fresh random three every time.'}</p>
+  <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : label === 'Endless run' ? 'Random games until you stop.' : 'A fresh draw every time.'}</p>
   ${foot([['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']])}
 </section>`;
 }

@@ -5,7 +5,7 @@
 //   Odd    (reasoning) - all but one share something. Which one does not?
 
 import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TONE } from '../audio.ts';
+import { SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import {
@@ -257,6 +257,10 @@ class Hop implements Mini {
     this.last = now;
   }
 
+  private slams = 0;
+  private slamAt = -1e9;
+  private width = 1;
+
   private jump(): void {
     this.started = true;
     if (this.over || this.y > 0.001) return;
@@ -265,21 +269,48 @@ class Hop implements Mini {
     this.env.sound(SND_TAP_R);
   }
 
-  press(slot: number): void {
+  /** Straight down, fast: for landing in time before the next block. */
+  private slam(now: number): void {
+    this.started = true;
+    if (this.over || this.y <= 0.001) return;
+    this.vy = -4.5;
+    this.holding = false;
+    this.slams++;
+    this.slamAt = now;
+    this.env.sound(SND_TAP_WEAK);
+  }
+
+  /** Jump keys: the left hand (and Space). Slam keys: the right hand. One key does both: again in the air slams. */
+  private isSlam(slot: number): boolean {
+    if (this.env.mode.right === 0) return this.y > 0.001;
+    return sideOf(slot) > 0;
+  }
+
+  press(slot: number, ts: number): void {
     this.held |= 1 << slot;
+    if (this.isSlam(slot)) {
+      this.slam(ts);
+      return;
+    }
     this.holding = true;
     this.jump();
   }
 
   release(slot: number): void {
     this.held &= ~(1 << slot);
-    if (this.held === 0) this.holding = false;
+    // Jumping stays "held" while any jump key is down.
+    let jumpHeld = false;
+    for (let k = 0; k < 7; k++) if (this.held & (1 << k) && !(this.env.mode.right > 0 && sideOf(k) > 0)) jumpHeld = true;
+    if (!jumpHeld) this.holding = false;
   }
 
-  pointer(): void {
-    // A tap is a short jump.
-    this.jump();
-    this.holding = false;
+  pointer(x: number, _y: number, ts: number): void {
+    // Left half: a short jump. Right half: slam.
+    if (x > this.width / 2) this.slam(ts);
+    else {
+      this.jump();
+      this.holding = false;
+    }
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
@@ -342,12 +373,24 @@ class Hop implements Mini {
     for (let d = Math.floor(this.x * 10) / 10; d < this.x + W / scale; d += 0.1) ctx.fillRect(toX(d), ground + 4 * dpr, dpr, 4 * dpr);
     ctx.fillStyle = COL_LINE;
     for (const b of this.blocks) ctx.fillRect(toX(b.x), ground - b.h * scale, b.w * scale, b.h * scale);
+    if (now - this.slamAt < 200) {
+      // A short streak above the ball while it slams.
+      ctx.fillStyle = COL_MID;
+      ctx.fillRect(toX(this.x + 0.25) - dpr, ground - this.y * scale - 0.07 * scale, 2 * dpr, 0.05 * scale);
+    }
     ctx.fillStyle = COL_ACCENT;
     ctx.beginPath();
     ctx.arc(toX(this.x + 0.25), ground - this.y * scale - 0.015 * scale, 0.015 * scale, 0, TAU);
     ctx.fill();
     ctx.restore();
-    if (!this.started) message(v, { ...a, cy: a.top + 40 * a.u }, 'press to jump. hold for higher', 'tall blocks need a long hold; quick pairs need a short hop', COL_MID);
+    if (!this.started)
+      message(
+        v,
+        { ...a, cy: a.top + 40 * a.u },
+        this.env.mode.right ? `${handLabel(this.env, -1)} jumps (hold for higher)  \u00b7  ${handLabel(this.env, 1)} slams down` : 'press to jump, hold for higher, press again in the air to slam down',
+        'slam to land fast before a close block',
+        COL_MID,
+      );
     if (this.over) message(v, { ...a, cy: a.top + 40 * a.u }, `${this.cleared} cleared`, '');
     footer(v, touch, this.held);
     return false;
@@ -361,6 +404,7 @@ class Hop implements Mini {
         { label: 'blocks cleared', value: String(this.cleared) },
         { label: 'distance', value: (this.x * 10).toFixed(0) },
         { label: 'jumps', value: String(this.jumps) },
+        { label: 'slams', value: String(this.slams) },
       ],
       saved: this.cleared >= 3,
     };
@@ -695,8 +739,8 @@ export const BATCH12: MiniDef[] = [
     id: 'hop',
     name: 'Hop',
     skill: 'timing',
-    blurb: 'Run, and jump the blocks. Hold for a higher jump.',
-    how: 'You run on your own; press to jump. Hold longer to jump higher: tall blocks need a long hold, quick pairs need a short hop so you land in time. It speeds up. One hit ends it.',
+    blurb: 'Run, jump the blocks, and slam down to land in time.',
+    how: 'You run on your own. Left hand jumps: hold longer to jump higher. Right hand slams you straight down, so you can land in time for a block that follows close behind. With one key, press again in the air to slam. On a touch screen, tap the left half to jump and the right half to slam. It speeds up. One hit ends it.',
     input: 'both',
     make: () => new Hop(),
   },

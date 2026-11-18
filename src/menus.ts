@@ -178,17 +178,26 @@ export function startMenu(c: MenuCtx): Menu {
       { label: 'Random', desc: 'A run of random games, short or long', act: 'go', arg: 'random' },
       { label: 'Stats', desc: sessions ? `${sessions} sessions${c.streak ? `${DOT}${c.streak} day streak` : ''}` : 'Nothing yet', act: 'go', arg: 'stats' },
       { label: 'Settings', desc: `Keys${DOT}sound ${c.settings.muted ? 'off' : 'on'}${DOT}history`, act: 'go', arg: 'settings' },
-      { label: 'Endless', desc: 'Reaction runs with a set difficulty, until three hits', act: 'go', arg: 'endless', slot: 6 },
+      { label: 'Endless', desc: 'Games one after another until you stop, or a reaction run', act: 'go', arg: 'endless', slot: 6 },
     ],
   };
 }
 
-/** Games with difficulty levels, gathered in one list. */
+function MINIS_COUNT(): number {
+  return ENTRIES.filter((e) => e.def).length;
+}
+
+/** Endless: runs of random games, and the reaction runs with difficulty levels. */
 export function endlessMenu(c: MenuCtx): Menu {
   return {
     title: 'ENDLESS',
-    sub: 'Pick a run, then a difficulty, then your keys',
-    items: ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : '', act: 'go', arg: `game:${e.id}` })),
+    sub: 'Random games one after another until you stop, or a reaction run at a set difficulty',
+    items: [
+      { label: 'Everything', desc: `Any of the ${MINIS_COUNT()} games, one after another`, act: 'quick', arg: 'endless:all' },
+      ...GROUPS.map((g) => ({ label: `${g.name} only`, desc: g.desc, act: 'quick', arg: `endless:${g.id}` })),
+      ...ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : 'difficulty', act: 'go', arg: `game:${e.id}` })),
+    ],
+    enter: { label: 'Everything', act: 'quick', arg: 'endless:all' },
   };
 }
 

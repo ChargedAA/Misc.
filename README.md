@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 86 small games for reaction, speed, timing, memory,
+A minimal training suite: 90 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -23,12 +23,17 @@ C  Mind        X  Speed                         SPACE stats for this game
 B  Random      C  Timing
 N  Stats       B  Coordination
 M  Settings    SPACE  Three at random
-SPACE Endless  Z  Lanes        Z  Progressing          Z..M  play with 1..6 keys
-               X  Hurdles      X..M  700 ms .. 300 ms
-               C  Rush         SPACE  Custom (Z play, X/C -/+25, B/N -/+100)
+SPACE Endless  Z  Everything   (random games, one after another, until you stop)
+               X  Reflexes only
+               C  Mind only
+               B  Lanes        Z  Progressing          Z..M  play with 1..6 keys
+               N  Hurdles      X..M  700 ms .. 300 ms
+               M  Rush         SPACE  Custom (Z play, X/C -/+25, B/N -/+100)
 ```
 
-**Endless** runs are reaction games with a set difficulty: the window is the
+**Endless** either runs through everything (a random game, then another, never
+the same as the last eight, until you choose to end the run and see its
+summary) or offers reaction runs with a set difficulty: the window is the
 time from something popping up ahead of the rolling ball to it arriving.
 Lanes sidesteps blocks, Hurdles jumps bars, Rush mixes both (outer keys move,
 every other key jumps). Progressing starts at 800 ms and tightens with each
@@ -58,6 +63,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Lanes | The ball rolls on. Blocks pop up ahead: sidestep them. | keys, 2+ keys |
 | Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
 | Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 3+ keys |
+| Lights | Five lights come on one by one, then go out together. Go. | keys or tap |
 
 ### Speed
 
@@ -88,7 +94,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
 | Offbeat | Tap exactly halfway between the clicks. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
-| Hop | Run, and jump the blocks. Hold for a higher jump. | keys or tap |
+| Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
 | Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
 
 ### Memory
@@ -125,6 +131,8 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Flicker | Two versions flicker back and forth. Find what changes. | tap or click |
 | Shells | A ball under a cup, then the cups swap. Where is it? | tap or click |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
+| Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
+| Tangle | Follow one line through a tangle to its end. | tap or click |
 
 ### Coordination
 
@@ -153,6 +161,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap, 2+ keys |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap, 2+ keys |
 | Guess | A cloud of dots flashes. How many? | tap or click |
+| First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap, 2+ keys |
 
 ### Reasoning
 
@@ -201,6 +210,9 @@ The suite leans on established tasks and on what is known about training:
 - **Sustained attention.** Except is the sustained attention to response task
   (SART): press for every digit but the rare 3, so the habit of pressing is the
   trap. It reports withheld 3s, misses, and how steady your presses are.
+- **Vigilance.** Clock is the Mackworth clock test: a dot steps round a dial
+  and rarely skips a step; Alert is the psychomotor vigilance task. Both measure
+  keeping attention up when almost nothing happens.
 - **More than one sense.** Ears mixes flashes and beeps; simple reaction to
   sound is usually a few tens of milliseconds faster than to light. Melody
   turns the pads dark on alternate tunes so you work from pitch alone.
