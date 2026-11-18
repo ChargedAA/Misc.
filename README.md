@@ -1,7 +1,7 @@
 # TENSION
 
-A minimal training suite: 55 small games for reaction, speed, timing, memory,
-attention, coordination and judgement. Near-black, thin lines, one accent colour. Every
+A minimal training suite: 61 small games for reaction, speed, timing, memory,
+attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
 ```bash
@@ -105,6 +105,17 @@ the same set for everyone on a given day.
 | Longer | Which line is longer? The difference keeps shrinking. | keys or tap, 2+ keys |
 | More | Which cloud had more dots? There is no time to count. | keys or tap, 2+ keys |
 | Middle | Tap the exact middle of a line. | tap or click |
+| Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap, 2+ keys |
+| Faster | Which dot moved faster? Distance is no clue. | keys or tap, 2+ keys |
+| Shade | Which square is lighter? Their surroundings lie. | keys or tap, 2+ keys |
+
+### Reasoning
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Sum | True or false, as fast as you can. | keys or tap, 2+ keys |
+| Compare | Two expressions. Which is bigger? | keys or tap, 2+ keys |
+| Series | Five numbers. What comes next? | tap or click |
 
 ## Why these games
 
@@ -130,6 +141,12 @@ The suite leans on established tasks and on what is known about training:
   smallest numerosity ratio (approximate number acuity) you can reliably tell.
   More equates total dot area on half the trials so size is no shortcut.
   Middle is line bisection, where most people show a small, consistent lean.
+  Tilt adds the rod-and-frame illusion and Shade simultaneous contrast, so
+  part of the skill is not being fooled by context.
+- **Reasoning under time.** Sum and Compare are speeded arithmetic
+  verification and comparison, scored as right minus wrong so guessing does
+  not pay. Series is number-series completion, a classic inductive reasoning
+  item.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
   they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
   Burst train held and controlled rates; Sprint measures the peak.

@@ -6,6 +6,7 @@ import { BATCH4 } from './batch4.ts';
 import { BATCH5 } from './batch5.ts';
 import { BATCH6 } from './batch6.ts';
 import { BATCH7 } from './batch7.ts';
+import { BATCH8 } from './batch8.ts';
 import { SKILLS } from './kit.ts';
 import { COORDINATION } from './coord.ts';
 import { EXTRA } from './extra.ts';
@@ -31,7 +32,7 @@ const BUILT_IN: Entry[] = [
   { id: 'burst', name: 'Burst', skill: 'speed', blurb: 'Hold a rising tap rate for five seconds.', input: 'keys', minKeys: 1 },
 ];
 
-export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7];
+export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7, ...BATCH8];
 
 export const ENTRIES: Entry[] = [
   ...BUILT_IN,
