@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 65 small games for reaction, speed, timing, memory,
+A minimal training suite: 69 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -28,6 +28,8 @@ the same set for everyone on a given day.
 | Aim | Tap each target the moment it appears. They shrink. | tap or click |
 | Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
 | Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
+| Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | tap or click |
+| Dodge | Shots come from either side. Block with that hand; let grey ones by. | keys, 2+ keys |
 
 ### Speed
 
@@ -41,6 +43,7 @@ the same set for everyone on a given day.
 | Tug | Tug of war against a rate that never gets tired. | keys |
 | Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
 | Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
+| Exact | Tap exactly N times inside the window. Fast enough, and stop on time. | keys or tap |
 
 ### Timing
 
@@ -98,6 +101,7 @@ the same set for everyone on a given day.
 | Zigzag | Hold to rise, let go to fall. The corridor narrows. | keys |
 | Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
+| Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
 
 ### Judgement
 
