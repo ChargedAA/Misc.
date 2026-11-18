@@ -666,3 +666,15 @@ table td + td {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   column-gap: 40px;
 }
+
+.skilltab td.bar {
+  width: 40%;
+  padding-left: 12px;
+}
+
+.skilltab td.bar span {
+  display: block;
+  height: 2px;
+  background: var(--line);
+  min-width: 0;
+}

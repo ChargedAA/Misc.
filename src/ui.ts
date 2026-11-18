@@ -549,11 +549,73 @@ function shortDate(at: number): string {
 }
 
 /** One trend card per mini-game, grouped by skill, using each game's tracked number. */
+const DAY = 86400000;
+
+function dayKey(t: number): number {
+  const d = new Date(t);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+/** Which skill a history record belongs to. */
+function skillOf(r: RunRecord): string | null {
+  const id = r.kind === 'run' ? 'climb' : r.kind === 'rt' ? 'reflex' : r.kind === 'cps' ? 'burst' : (r.game ?? '');
+  return entry(id)?.skill ?? null;
+}
+
+/** Days in a row, ending today or yesterday, with at least one session. */
+export function streak(history: RunRecord[], now = Date.now()): number {
+  const days = new Set(history.map((r) => dayKey(r.at)));
+  let d = dayKey(now);
+  if (!days.has(d)) d -= DAY;
+  let n = 0;
+  // Step back a day at a time (dayKey copes with daylight-saving shifts).
+  while (days.has(d)) {
+    n++;
+    d = dayKey(d - DAY / 2);
+  }
+  return n;
+}
+
+function overview(history: RunRecord[]): string {
+  const now = Date.now();
+  const week = history.filter((r) => now - r.at < 7 * DAY && r.game !== 'daily');
+  const rows = SKILLS.map((sk) => {
+    const all = history.filter((r) => r.game !== 'daily' && skillOf(r) === sk.id);
+    const w = week.filter((r) => skillOf(r) === sk.id).length;
+    const games = ENTRIES.filter((e) => e.skill === sk.id);
+    const tried = new Set(all.map((r) => (r.kind === 'mini' ? r.game : skillOf(r) && r.kind))).size;
+    const last = all.length ? all[all.length - 1]!.at : 0;
+    return { sk, w, total: all.length, tried: Math.min(tried, games.length), of: games.length, last };
+  });
+  const most = Math.max(1, ...rows.map((r) => r.w));
+  const quiet = [...rows].sort((p, q) => p.w - q.w || p.last - q.last)[0]!;
+  const st = streak(history, now);
+  return `<div class="big">
+    <div class="stat"><div class="v">${st}</div><div class="l">day streak</div></div>
+    <div class="stat"><div class="v">${week.length}</div><div class="l">sessions this week</div></div>
+    <div class="stat"><div class="v">${history.filter((r) => r.game !== 'daily').length}</div><div class="l">sessions in all</div></div>
+  </div>
+  <h2>Skills <span>this week${history.length ? `${DOT}least trained: ${quiet.sk.name.toLowerCase()}` : ''}</span></h2>
+  <table class="skilltab">
+    <tr><th>skill</th><th>this week</th><th></th><th>games tried</th><th>last</th></tr>
+    ${rows
+      .map(
+        (r) =>
+          `<tr><td>${r.sk.name}</td><td>${r.w}</td><td class="bar"><span style="width:${Math.round((r.w / most) * 100)}%"></span></td><td>${r.tried} / ${r.of}</td><td>${r.last ? shortDate(r.last) : '\u2013'}</td></tr>`,
+      )
+      .join('')}
+  </table>`;
+}
+
 function miniStats(history: RunRecord[], filter: number): string {
   let h = '';
   for (const sk of SKILLS) {
-    const games = ENTRIES.filter((e) => e.def && e.skill === sk.id);
-    if (!games.length) continue;
+    const all = ENTRIES.filter((e) => e.def && e.skill === sk.id);
+    // Only games with history get a card; the rest are listed by name.
+    const played = (id: string) => history.some((r) => r.kind === 'mini' && r.game === id);
+    const games = all.filter((g) => played(g.id));
+    const unplayed = all.filter((g) => !played(g.id));
+    if (!all.length) continue;
     const cards = games.map((g) => {
       const recs = history.filter((r) => r.kind === 'mini' && r.game === g.id && (filter === 0 || r.mode === 0 || r.mode === filter));
       const last = recs[recs.length - 1];
@@ -565,7 +627,9 @@ function miniStats(history: RunRecord[], filter: number): string {
       };
       return card(metric, recs);
     });
-    h += `<h2>${sk.name} games <span>${sk.blurb}</span></h2><div class="grid">${cards.join('')}</div>`;
+    h += `<h2>${sk.name} games <span>${sk.blurb}</span></h2>${cards.length ? `<div class="grid">${cards.join('')}</div>` : ''}${
+      unplayed.length ? `<p class="muted">Not played yet: ${unplayed.map((g) => g.name).join(DOT)}</p>` : ''
+    }`;
   }
   return h;
 }
@@ -590,13 +654,15 @@ export function statsHtml(history: RunRecord[], filter: number, perf: boolean): 
     : '';
   return `<section class="screen wide">
   <h1>STATS</h1>
+  ${overview(history)}
   ${keySeg(filter, 'filter', true)}
-  <h2>Climb <span>${n(runs)}${DOT}white line is the 5-session average</span></h2>
-  <div class="grid">${RUN_METRICS.map((m) => card(m, runs)).join('')}</div>
-  <h2>Reflex <span>${n(rts)}</span></h2>
-  <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}</div>
-  <h2>Burst <span>${n(cps)}</span></h2>
-  <div class="grid">${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>
+  ${runs.length ? `<h2>Climb <span>${n(runs)}${DOT}white line is the 5-session average</span></h2>
+  <div class="grid">${RUN_METRICS.map((m) => card(m, runs)).join('')}</div>` : ''}
+  ${rts.length ? `<h2>Reflex <span>${n(rts)}</span></h2>
+  <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}</div>` : ''}
+  ${cps.length ? `<h2>Burst <span>${n(cps)}</span></h2>
+  <div class="grid">${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>` : ''}
+  ${runs.length && rts.length && cps.length ? '' : `<p class="muted">Not played yet: ${[!runs.length && 'Climb', !rts.length && 'Reflex', !cps.length && 'Burst'].filter(Boolean).join(DOT)}${filter ? ` (with ${filter} keys)` : ''}</p>`}
   ${miniStats(history, filter)}
   ${table}
   ${foot([
