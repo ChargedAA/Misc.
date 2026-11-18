@@ -50,7 +50,8 @@ import {
 } from './storage.ts';
 import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
-import { dailySet, entry } from './minis/index.ts';
+import { ENTRIES, dailySet, entry } from './minis/index.ts';
+import { SKILLS } from './minis/kit.ts';
 import type { Mini, MiniDef } from './minis/kit.ts';
 import { Ui, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
 
@@ -92,6 +93,8 @@ let mini: Mini | null = null;
 let dailyQueue: string[] | null = null;
 let dailyIdx = 0;
 let dailyRows: DailyRow[] = [];
+/** 'Daily set', or e.g. 'Memory set' for three random games of one skill. */
+let queueLabel = 'Daily set';
 let miniDef: MiniDef | null = null;
 /** Key count of the session in progress. */
 let activeKeys = settings.keys.climb ?? 2;
@@ -312,6 +315,7 @@ function titleExtras() {
 
 function startDaily(): void {
   dailyQueue = dailySet();
+  queueLabel = 'Daily set';
   dailyIdx = 0;
   dailyRows = [];
   startGame(dailyQueue[0]!);
@@ -326,12 +330,29 @@ function nextDaily(): void {
   }
   const total = dailyRows.reduce((s, r) => s + r.score, 0);
   let bestTotal = 0;
-  for (const r of history) if (r.kind === 'mini' && r.game === 'daily') bestTotal = Math.max(bestTotal, r.score ?? 0);
-  history = addRecord({ kind: 'mini', game: 'daily', at: Date.now(), mode: 0, time: 0, score: total, value: total, vlabel: 'day total', unit: '' });
+  if (queueLabel === 'Daily set') {
+    for (const r of history) if (r.kind === 'mini' && r.game === 'daily') bestTotal = Math.max(bestTotal, r.score ?? 0);
+    history = addRecord({ kind: 'mini', game: 'daily', at: Date.now(), mode: 0, time: 0, score: total, value: total, vlabel: 'day total', unit: '' });
+  }
   dailyQueue = null;
   screen = 'miniResults';
   inputLockUntil = performance.now() + 450;
-  ui.show(dailySummaryHtml(dailyRows, total, Math.max(bestTotal, total)));
+  ui.show(dailySummaryHtml(dailyRows, total, Math.max(bestTotal, total), queueLabel));
+}
+
+/** Three random games from one skill, played back to back like the daily set. */
+function startSkillSet(skill: string): void {
+  const pool = ENTRIES.filter((e) => e.skill === skill).map((e) => e.id);
+  if (!pool.length) return;
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+  }
+  dailyQueue = pool.slice(0, 3);
+  queueLabel = `${SKILLS.find((k) => k.id === skill)?.name ?? 'Skill'} set`;
+  dailyIdx = 0;
+  dailyRows = [];
+  startGame(dailyQueue[0]!);
 }
 
 function startGame(game: GameId): void {
@@ -553,7 +574,7 @@ function finishMini(): void {
   if (dailyQueue) {
     dailyRows.push({ name: miniDef.name, skill: miniDef.skill, score: r.score, primary: `${r.primary.label} ${formatPrimary(r.primary)}`, best: isBest });
     const next = dailyQueue[dailyIdx + 1];
-    step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null };
+    step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
 }
@@ -644,8 +665,11 @@ function onAction(action: string, arg: string): void {
     case 'daily':
       startDaily();
       break;
-    case 'filter':
+    case 'skillfilter':
       setFilter(arg);
+      break;
+    case 'skillset':
+      startSkillSet(arg);
       break;
     case 'dailynext':
       nextDaily();
@@ -844,6 +868,7 @@ function onKeyDown(e: KeyboardEvent): void {
       }
       if (enter) onAction('pick', lastGame);
       else if (code === 'KeyD') startDaily();
+      else if (code === 'KeyP' && skillFilter !== 'all') startSkillSet(skillFilter);
       else if (code === 'KeyS') showStats();
       else if (code === 'KeyK') onAction('keys', '');
       else if (digit === 0) toggleMute();

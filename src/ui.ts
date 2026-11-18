@@ -163,8 +163,13 @@ export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | 
     <span class="k">${extras.dailyDone !== null ? `done${DOT}${fmtInt(extras.dailyDone)}` : 'd'}</span>
   </button>
   <nav class="filter" aria-label="Skills">${[{ id: 'all', name: 'All' }, ...SKILLS]
-    .map((sk) => `<button data-act="filter" data-arg="${sk.id}" aria-pressed="${extras.filter === sk.id}">${sk.name}<span>${sk.id === 'all' ? ENTRIES.length : ENTRIES.filter((e) => e.skill === sk.id).length}</span></button>`)
+    .map((sk) => `<button data-act="skillfilter" data-arg="${sk.id}" aria-pressed="${extras.filter === sk.id}">${sk.name}<span>${sk.id === 'all' ? ENTRIES.length : ENTRIES.filter((e) => e.skill === sk.id).length}</span></button>`)
     .join('')}</nav>
+  ${
+    extras.filter === 'all'
+      ? ''
+      : `<button class="daily set" data-act="skillset" data-arg="${extras.filter}"><span class="n">Play three</span><span class="d">Three ${SKILLS.find((k) => k.id === extras.filter)?.name.toLowerCase() ?? ''} games in a row, picked at random</span><span class="k">p</span></button>`
+  }
   <div class="skills${extras.filter === 'all' ? '' : ' one'}">
     ${SKILLS.map((sk) => {
       if (extras.filter !== 'all' && extras.filter !== sk.id) return '';
@@ -375,6 +380,8 @@ export interface DailyStep {
   index: number;
   total: number;
   nextName: string | null;
+  /** 'Daily set', or the name of a skill set. */
+  label: string;
 }
 
 export interface Compare {
@@ -419,7 +426,7 @@ export function miniResultsHtml(
           ['Stop the set', 'menu', 'esc'],
         ]
       : [
-          ['See the day', 'dailynext', 'enter'],
+          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'enter'],
           ['Menu', 'menu', 'esc'],
         ]
     : AGAIN;
@@ -433,7 +440,7 @@ export function miniResultsHtml(
   <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
-  ${daily ? `<p class="muted">Daily set: game ${daily.index} of ${daily.total}</p>` : ''}
+  ${daily ? `<p class="muted">${daily.label}: game ${daily.index} of ${daily.total}</p>` : ''}
   ${foot(actions)}
 </section>`;
 }
@@ -446,10 +453,11 @@ export interface DailyRow {
   best: boolean;
 }
 
-export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number): string {
+export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number, label = 'Daily set'): string {
+  const daily = label === 'Daily set';
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${fmtInt(total)}</div><div class="l">today${total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
+    <div class="stat"><div class="v">${fmtInt(total)}</div><div class="l">${daily ? 'today' : label.toLowerCase()}${daily && total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
     <div class="stat"><div class="v">${rows.length}</div><div class="l">games</div></div>
     <div class="stat"><div class="v">${rows.filter((r) => r.best).length}</div><div class="l">personal bests</div></div>
   </div>
@@ -457,7 +465,7 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
     <tr><th></th><th>skill</th><th>result</th><th>score</th></tr>
     ${rows.map((r) => `<tr><td>${r.name}${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.primary}</td><td>${fmtInt(r.score)}</td></tr>`).join('')}
   </table>
-  <p class="muted">The set changes every day. Same games for everyone on a given date.</p>
+  <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : 'A fresh random three every time.'}</p>
   ${foot([
     ['Menu', 'menu', 'esc'],
     ['Stats', 'stats', 's'],
