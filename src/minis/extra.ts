@@ -714,8 +714,16 @@ class Count implements Mini {
     if (this.state === 0 && now >= this.at) {
       this.state = 1;
       this.at = now + this.show.level;
-    } else if (this.state === 1 && now >= this.at) this.state = 2;
-    else if (this.state === 3 && now >= this.at) {
+    } else if (this.state === 1 && now >= this.at) {
+      this.state = 2;
+      this.at = now + 8000;
+    } else if (this.state === 2 && now >= this.at) {
+      // No answer in eight seconds: count it wrong.
+      this.i++;
+      this.show.update(false, -1);
+      this.state = 3;
+      this.at = now + 800;
+    } else if (this.state === 3 && now >= this.at) {
       if (this.i >= COUNT_TRIALS) return true;
       this.arm(now);
     }
