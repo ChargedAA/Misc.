@@ -655,10 +655,10 @@ function press(slot: number, ts: number): void {
   }
 }
 
-function release(slot: number): void {
+function release(slot: number, ts: number): void {
   if (screen === 'reflex') reflex.onRelease(slot);
   else if (screen === 'burst') cpsTrainer.onRelease(slot);
-  else if (screen === 'mini') mini?.release?.(slot);
+  else if (screen === 'mini') mini?.release?.(slot, ts);
 }
 
 function onKeyDown(e: KeyboardEvent): void {
@@ -774,7 +774,7 @@ function onKeyDown(e: KeyboardEvent): void {
 
 function onKeyUp(e: KeyboardEvent): void {
   const slot = keymap.get(e.code);
-  if (slot !== undefined) release(slot);
+  if (slot !== undefined) release(slot, stamp(e));
 }
 
 /** Touch, pen and mouse: pads in the corners, and a corner button for Escape. */
@@ -805,7 +805,7 @@ function onPointerUp(e: PointerEvent): void {
   const held = pointerSlot[e.pointerId & 63]!;
   if (held > 0) {
     pointerSlot[e.pointerId & 63] = 0;
-    release(held - 1);
+    release(held - 1, stamp(e));
   }
   // Browsers that only unlock audio on a finished gesture get their chance here.
   sfx.unlock();

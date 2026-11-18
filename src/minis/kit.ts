@@ -49,7 +49,8 @@ export interface Mini {
   start(env: MiniEnv, now: number): void;
   /** A key or pad went down. `ts` is the event's timeStamp. */
   press(slot: number, ts: number): void;
-  release?(slot: number): void;
+  /** A key or pad came up. `ts` is the event's timeStamp. */
+  release?(slot: number, ts: number): void;
   /** A click or tap at canvas device pixels (pointer games). */
   pointer?(x: number, y: number, ts: number): void;
   /** Advance and draw. Returns true once the session is over. */

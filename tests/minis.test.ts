@@ -73,14 +73,23 @@ test('every mini-game survives random play in every key mode it allows', () => {
           const ks = slots(modeId);
           let done = false;
           let presses = 0;
+          const pending: [number, number][] = [];
           // Up to ten simulated minutes; mash keys and click about.
           for (let f = 0; f < 36000 && !done; f++) {
             clock += 16.7;
             if (Math.random() < 0.06) {
               const k = ks[Math.floor(Math.random() * ks.length)]!;
               game.press(k, clock);
-              game.release?.(k);
+              // Some presses are held for a while, to exercise holds.
+              if (Math.random() < 0.3) pending.push([k, clock + Math.random() * 1500]);
+              else game.release?.(k, clock + 40);
               presses++;
+            }
+            for (let p = pending.length - 1; p >= 0; p--) {
+              if (pending[p]![1] <= clock) {
+                game.release?.(pending[p]![0], clock);
+                pending.splice(p, 1);
+              }
             }
             if (Math.random() < 0.05) game.pointer?.(Math.random() * 1280, Math.random() * 800, clock);
             done = game.frame(clock, view, touch);
