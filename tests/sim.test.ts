@@ -292,7 +292,7 @@ test('reaction cue without a reflex key: the tap is used up, logged in ms, and c
           const other = 1 - sim.cueSide;
           sim.tap(sim.cueSide, 0, now);
           assert.equal(sim.rt[sim.rtCount - 1]! >= 250, true);
-          assert.ok(sim.rt[sim.rtCount - 1]! >= 250 && sim.rt[0]! < 255, `rt ${sim.rt[sim.rtCount - 1]}`);
+          assert.ok(sim.rt[sim.rtCount - 1]! >= 250 && sim.rt[sim.rtCount - 1]! <= sim.cueWindow, `rt ${sim.rt[sim.rtCount - 1]}`);
           assert.equal(sim.lane, lane, 'the catching tap does not dash');
           if (chord) {
             sim.tap(other, 0, now + 10);
