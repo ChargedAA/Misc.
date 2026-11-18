@@ -5,6 +5,8 @@ import type { InputKind, MiniDef, Skill } from './kit.ts';
 import { BATCH4 } from './batch4.ts';
 import { BATCH5 } from './batch5.ts';
 import { BATCH6 } from './batch6.ts';
+import { BATCH7 } from './batch7.ts';
+import { SKILLS } from './kit.ts';
 import { COORDINATION } from './coord.ts';
 import { EXTRA } from './extra.ts';
 import { MEMORY } from './memory.ts';
@@ -29,7 +31,7 @@ const BUILT_IN: Entry[] = [
   { id: 'burst', name: 'Burst', skill: 'speed', blurb: 'Hold a rising tap rate for five seconds.', input: 'keys', minKeys: 1 },
 ];
 
-export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6];
+export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7];
 
 export const ENTRIES: Entry[] = [
   ...BUILT_IN,
@@ -42,7 +44,7 @@ export function dailySet(date: Date = new Date()): string[] {
   let h = 2166136261;
   for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   const out: string[] = [];
-  for (const sk of ['reaction', 'speed', 'timing', 'memory', 'attention', 'coordination']) {
+  for (const { id: sk } of SKILLS) {
     const pool = MINIS.filter((d) => d.skill === sk);
     if (!pool.length) continue;
     h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;

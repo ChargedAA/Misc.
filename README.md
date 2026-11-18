@@ -1,7 +1,7 @@
 # TENSION
 
-A minimal training suite: 48 small games for reaction, speed, timing, memory,
-attention and coordination. Near-black, thin lines, one accent colour. Every
+A minimal training suite: 55 small games for reaction, speed, timing, memory,
+attention, coordination and judgement. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
 ```bash
@@ -39,6 +39,8 @@ the same set for everyone on a given day.
 | Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
 | Ladder | The target rate steps up every second. Hang on. | keys |
 | Tug | Tug of war against a rate that never gets tired. | keys |
+| Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
+| Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 
 ### Timing
 
@@ -51,6 +53,8 @@ the same set for everyone on a given day.
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Second | Hold a key for exactly the time shown. No clock. | keys |
 | Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
+| Offbeat | Tap exactly halfway between the clicks. | keys or tap |
+| Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 
 ### Memory
 
@@ -94,6 +98,14 @@ the same set for everyone on a given day.
 | Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 
+### Judgement
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Longer | Which line is longer? The difference keeps shrinking. | keys or tap, 2+ keys |
+| More | Which cloud had more dots? There is no time to count. | keys or tap, 2+ keys |
+| Middle | Tap the exact middle of a line. | tap or click |
+
 ## Why these games
 
 The suite leans on established tasks and on what is known about training:
@@ -110,7 +122,14 @@ The suite leans on established tasks and on what is known about training:
   are flanker, Stroop and task-switching tasks. Grid, Order and Path are visual
   memory, the chimp test and Corsi blocks. Back is dual n-back. Track is
   multiple object tracking. Glance is a useful-field-of-view task. Spot is
-  change detection with a Cowan's K estimate.
+  change detection with a Cowan's K estimate. Flicker is the flicker
+  paradigm for change blindness. Alert is the psychomotor vigilance task
+  (lapses are responses over 500 ms).
+- **Judgement as thresholds.** Longer and More measure discrimination
+  thresholds: the smallest length difference (a Weber fraction) and the
+  smallest numerosity ratio (approximate number acuity) you can reliably tell.
+  More equates total dot area on half the trials so size is no shortcut.
+  Middle is line bisection, where most people show a small, consistent lean.
 - **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
   they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
   Burst train held and controlled rates; Sprint measures the peak.
