@@ -1,60 +1,108 @@
-# TENSION (working title)
+# TENSION
 
-Three small games that train the same things: fast, accurate presses with one
-to six keys. Pick one on the title screen, then choose how many keys to use.
-Works with a keyboard or a touch screen.
+A minimal training suite: 36 small games for reaction, speed, timing, memory,
+attention and coordination. Near-black, thin lines, one accent colour. Every
+game is short, adapts to you, and keeps your history so you can see trends.
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Climb
+Pick a game on the title screen. Games played with keys open a pop-out where
+you choose how many keys to use (1 to 6); games played by tapping need no keys.
+The **Daily set** at the top plays one game from each skill back to back; it is
+the same set for everyone on a given day.
 
-A ball rides a beam that climbs forever up a board full of holes.
+## Games
 
-- **Dash.** A tap on a side snaps the ball one lane that way. With two or three
-  keys per side, the outer keys dash further.
-- **Surge.** Both sides at the same moment jerk the beam up the board and carry
-  the ball over whatever is in between: a hole, a wide pit, or a bar across
-  every lane. Then it recharges (the ball is hollow until it is ready).
-- **Cables.** When a cable turns orange, catch it: the reflex key, or a tap on
-  that side in modes without one. Miss, and the ball slides a lane toward it.
-- **Heavy pull.** The beam thickens and a meter appears. Tap both sides at the
-  target rate until it fills. The target rises each time.
-- **Pickups.** Diamonds build a chain (up to x5 score). It decays if you stop
-  collecting, and a missed cable breaks it.
+### Reaction
 
-The board moves through named sections (holes, pits, bars, sliders, mix), and
-the climb, hole density and event rate all ramp up the longer you last.
+| Game | What it is | Input |
+| --- | --- | --- |
+| Reflex | Six rule games that change every round. Three strikes. | keys |
+| Snap | Pure reaction time. One disc, one press. | keys or tap |
+| Stop | Press fast, unless it gets struck out. | keys |
+| Flank | Answer the middle arrow. Ignore the crowd. | keys |
+| Choice | Press whichever string lights. More strings, more thinking. | 2+ keys |
+| Aim | Tap each target the moment it appears. They shrink. | tap or click |
 
-With one key the ball stays in the middle lane and the key only surges, so the
-game becomes timing every jump.
+### Speed
 
-## Reflex
+| Game | What it is | Input |
+| --- | --- | --- |
+| Burst | Hold a rising tap rate for five seconds. | keys |
+| Sprint | Ten seconds, flat out. Watch your rate fade. | keys |
+| Pulse | Ride a target rate that rises, drops and stops. | keys |
+| Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
+| Ladder | The target rate steps up every second. Hang on. | keys |
 
-A reaction test that keeps changing the question. Each round is one of six
-mini-games with freshly shuffled rules, shown on a card first:
+### Timing
 
-- **Rules:** shapes map to keys, "anything grey" means both keys at once,
-  anything else means no press. Later rounds add overrides.
-- **Arrows:** the side it points to, the side it points away from, or the side
-  of the screen it is on, depending on the round.
-- **Odd one:** find the shape or shade that differs; sometimes there is none.
-- **More:** which side has more (or fewer) dots, ignoring grey ones.
-- **Same:** is it the same as the one before?
-- **Cable:** orange means go, grey means hold.
+| Game | What it is | Input |
+| --- | --- | --- |
+| Tempo | Keep the beat going after it goes silent. | keys or tap |
+| Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
+| Gap | Two clicks make a gap. Copy it from memory. | keys or tap |
+| Echo | Hear a rhythm. Tap it back. It gets longer. | keys or tap |
+| Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 
-Stimuli appear at shuffled positions. Wrong, too slow and too early each cost a
-strike; three strikes end the session, and a clean round gives one back. The
-response window adapts to your pace. The rules stay on screen for the first two
-rounds only.
+### Memory
 
-## Burst
+| Game | What it is | Input |
+| --- | --- | --- |
+| Sequence | A pattern plays across your strings. Play it back. | 2+ keys |
+| Grid | Tiles flash. Tap every one once they hide. | tap or click |
+| Order | Numbers flash. Tap them in order, blind. | tap or click |
+| Back | Does it match the one n steps ago? Two streams at once. | keys |
+| Pairs | Turn tiles two at a time. Remember where everything was. | tap or click |
+| Path | Blocks light up in order. Tap the same path, sometimes backwards. | tap or click |
+| Spot | Look, look away, look again. Did anything change? | 2+ keys |
 
-Hold a target tap rate for five seconds, rest, and the target rises. Tracks
-peak and sustained rate, each key's share and timing, and repeats (the same key
-twice where you meant to alternate). Two drops at one target end it.
+### Attention
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Track | Follow a few dots among identical ones. | tap or click |
+| Find | Spot the one that matches, among look-alikes. | keys or tap |
+| Switch | The rule depends on where the number lands. | 2+ keys |
+| Shape | The word says square. The outline is a circle. | 2+ keys |
+| Rotate | Same shape, turned, or its mirror image? | 2+ keys |
+| Count | How many dots were there, in that blink? | tap or click |
+| Glance | A shape in the middle, a dot out wide. One blink to see both. | tap or click |
+| Stream | Letters fly past. Press for the X. | keys or tap |
+
+### Coordination
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Climb | Dash between lanes, surge over holes, catch the cables. Endless. | keys |
+| Strings | Pluck notes on time: streams, chords, holds. Endless. | keys |
+| Split | Each hand steers its own dot. Dodge on both sides at once. | 2+ keys |
+| Juggle | Every key keeps its own ball in the air. | keys |
+| Poly | Two hands, two tempos at once. Two against three, and up. | 2+ keys |
+
+
+## Why these games
+
+The suite leans on established tasks and on what is known about training:
+
+- **Practise the thing itself.** Meta-analyses find little far transfer from
+  brain games, but real near transfer. So each game trains one specific skill
+  (reaction time, tap rate, timing, span), rather than promising to make you
+  smarter.
+- **Adaptive difficulty.** Most games use a staircase (two right answers make it
+  harder, one miss makes it easier), which settles near 71% correct, the usual
+  target for staying challenged without giving up.
+- **Classic paradigms, minimal skins.** Stop is a stop-signal task (about a
+  quarter of trials are stops, with an adaptive delay). Flank, Shape and Switch
+  are flanker, Stroop and task-switching tasks. Grid, Order and Path are visual
+  memory, the chimp test and Corsi blocks. Back is dual n-back. Track is
+  multiple object tracking. Glance is a useful-field-of-view task. Spot is
+  change detection with a Cowan's K estimate.
+- **Speed you can use.** Rhythm-game and Geometry Dash players need tap rates
+  they can hold and control, not one-second peaks. Pulse, Ladder, Steady and
+  Burst train held and controlled rates; Sprint measures the peak.
 
 ## Keys
 
@@ -72,23 +120,23 @@ physical key position, not the printed letter.
 
 | Key | Action |
 | --- | --- |
-| `Enter` | Start, again |
+| `Enter` | Start, again, next |
 | `Esc` | Pause, finish, back |
+| arrows | Move through the game list |
+| `D` | Daily set |
+| `S` `K` `0` | Stats, keys, mute |
 | `` ` `` | FPS and frame-time overlay |
-| `0` | Mute (menus and pause) |
-| `C` `R` `B` `S` `K` | Title shortcuts: Climb, Reflex, Burst, Stats, Keys |
 
-**Touch:** pads appear in the bottom corners once you touch the screen (outer
-key at the edge, reflex above), and the corner button pauses or finishes. Two
-thumbs at once is a surge, or a two-key answer in Reflex.
+**Touch:** in key games, pads appear in the bottom corners once you touch the
+screen (outer key at the edge, reflex above), and the corner button pauses or
+finishes. Tap games take taps anywhere on the board.
 
 ## Stats
 
-After each session: reaction average, median, best, standard deviation and a
-histogram; peak and sustained tap rate with per-key and per-hand evenness;
-score, height and survival time; per-mini-game accuracy in Reflex. Everything
-is kept in `localStorage`, and **Stats** plots each metric across sessions with
-a 5-session moving average. History can be exported as JSON.
+Each session ends with its numbers: reaction time histograms, tap-rate
+breakdowns, accuracy, spans, timing errors. Everything is kept in
+`localStorage`; **Stats** plots each game's tracked number across sessions with
+a 5-session moving average, and history can be exported as JSON.
 
 Reaction times run from the frame a stimulus was drawn (`performance.now()`) to
 the input's `event.timeStamp`, so they include display and input latency.
@@ -97,18 +145,23 @@ the input's `event.timeStamp`, so they include display and input latency.
 
 Vite and TypeScript, no framework, Canvas 2D.
 
-- Climb runs on a fixed 480 Hz simulation with render interpolation, and input
-  is applied to the tick its timestamp falls in, so a run plays out the same at
-  60 and 240 fps (`tests/sim.test.ts` checks this).
+- Climb runs on a fixed 480 Hz simulation with render interpolation; input is
+  applied to the tick its timestamp falls in, so a run plays out the same at 60
+  and 240 fps (`tests/sim.test.ts` checks this).
 - Rendering uses `requestAnimationFrame` at the display rate, scaled for
-  `devicePixelRatio`. The game loop does not allocate.
-- Sound is a handful of procedural Web Audio buffers. No assets, no music.
+  `devicePixelRatio`.
+- Sound is procedural Web Audio: clicks, plucked strings (Karplus-Strong) and
+  metronome ticks. No assets, no music.
+- Each mini-game is one class behind a small interface (`src/minis/kit.ts`);
+  the registry is `src/minis/index.ts`. A smoke test plays every game in every
+  key mode with seeded random input.
 
 ```bash
 npm run build     # type-check, then static build to dist/
 npm run preview   # serve dist/
 npm test          # unit tests (node --test)
 npm run bot       # headless bot for checking Climb's difficulty curve
+node scripts/games-md.ts   # regenerate the game list above
 ```
 
 `netlify.toml` builds with `npm run build` and publishes `dist`.
