@@ -38,7 +38,7 @@ export class Ui {
 // --- Formatting -----------------------------------------------------------------
 
 const THIN = ' ';
-const DOT = ' · ';
+export const DOT = ' · ';
 
 export function fmtInt(v: number): string {
   return Math.round(v)
@@ -64,14 +64,17 @@ function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 }
 
-function kbd(code: string): string {
+export function kbd(code: string): string {
   return `<kbd>${esc(keyLabel(code))}</kbd>`;
 }
 
-function foot(items: [label: string, act: string, key: string][]): string {
+/** A row of buttons: label, action, key shown, and the key codes that press it. */
+function foot(items: [label: string, act: string, key: string, codes?: string][]): string {
   return (
     '<div class="foot">' +
-    items.map(([label, act, key]) => `<button data-act="${act}">${label}${key ? `<span class="k">${key}</span>` : ''}</button>`).join('') +
+    items
+      .map(([label, act, key, codes]) => `<button data-act="${act}"${codes ? ` data-key="${codes}"` : ''}>${label}${key ? `<span class="k">${key}</span>` : ''}</button>`)
+      .join('') +
     '</div>'
   );
 }
@@ -118,7 +121,7 @@ export function controlsHint(game: GameId, keys: number, b: Bindings): string {
   return lines.join('<br>');
 }
 
-function bestLine(game: GameId, best: RunRecord | null): string {
+export function bestLine(game: GameId, best: RunRecord | null): string {
   if (!best) return '';
   if (game === 'climb') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}${fmtInt(best.height ?? 0)} m`;
   if (game === 'reflex') return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${DOT}round ${best.rounds ?? 0}`;
@@ -127,95 +130,15 @@ function bestLine(game: GameId, best: RunRecord | null): string {
   return `<span class="l">best</span>${fmtInt(best.score ?? 0)}${v !== undefined && best.vlabel ? `${DOT}${best.vlabel} ${fmtPrimary(v, { label: best.vlabel, value: v, unit: best.unit ?? '', decimals: best.decimals })}` : ''}`;
 }
 
-function fmtPrimary(v: number, p: MiniResult['primary']): string {
+export function fmtPrimary(v: number, p: MiniResult['primary']): string {
   const n = p.decimals ? v.toFixed(p.decimals) : fmtInt(v);
   return p.unit ? `${n}${p.unit === '%' || p.unit.startsWith('-') ? '' : ' '}${p.unit}` : n;
 }
 
-function keysLine(keys: number, b: Bindings): string {
+export function keysLine(keys: number, b: Bindings): string {
   const m = getMode(keys);
   let h = `${b.left.map(kbd).join('')}${m.right ? ' &nbsp; ' + b.right.map(kbd).join('') : ''}`;
   if (m.reflex && b.reflex) h += ` &nbsp; ${kbd(b.reflex)}`;
-  return h;
-}
-
-/**
- * The title screen: every game, grouped by skill. With `picked` set, the
- * pop-out for that game is open over it; `slide` plays its entrance.
- */
-export interface TitleExtras {
-  /** Best score per game id. */
-  bests: Record<string, number>;
-  daily: string[];
-  /** Today's daily total, if the set was finished today. */
-  dailyDone: number | null;
-  /** The skill being shown, or 'all'. */
-  filter: string;
-  /** Days in a row with a session. */
-  streak: number;
-}
-
-export function titleHtml(s: Settings, picked: GameId | null, best: RunRecord | null, slide: boolean, extras: TitleExtras): string {
-  let h = `<section class="screen title"${picked ? ' aria-hidden="true"' : ''}>
-  <h1 class="logo">TENSION</h1>
-  <p class="tag">A minimal training suite. ${ENTRIES.length} games, ${SKILLS.length} skills.${extras.streak > 1 ? `${DOT}${extras.streak} day streak` : ''}</p>
-  <button class="daily" data-act="daily">
-    <span class="n">Daily set</span>
-    <span class="d">${extras.daily.map((id) => entry(id)?.name ?? id).join(DOT)}</span>
-    <span class="k">${extras.dailyDone !== null ? `done${DOT}${fmtInt(extras.dailyDone)}` : 'd'}</span>
-  </button>
-  <nav class="filter" aria-label="Skills">${[{ id: 'all', name: 'All' }, ...SKILLS]
-    .map((sk) => `<button data-act="skillfilter" data-arg="${sk.id}" aria-pressed="${extras.filter === sk.id}">${sk.name}<span>${sk.id === 'all' ? ENTRIES.length : ENTRIES.filter((e) => e.skill === sk.id).length}</span></button>`)
-    .join('')}</nav>
-  ${
-    extras.filter === 'all'
-      ? ''
-      : `<button class="daily set" data-act="skillset" data-arg="${extras.filter}"><span class="n">Play three</span><span class="d">Three ${SKILLS.find((k) => k.id === extras.filter)?.name.toLowerCase() ?? ''} games in a row, picked at random</span><span class="k">p</span></button>`
-  }
-  <div class="skills${extras.filter === 'all' ? '' : ' one'}">
-    ${SKILLS.map((sk) => {
-      if (extras.filter !== 'all' && extras.filter !== sk.id) return '';
-      const games = ENTRIES.filter((e) => e.skill === sk.id);
-      if (!games.length) return '';
-      return `<section class="skill"><h2>${sk.name}<span>${sk.blurb}</span></h2><div class="modes">${games
-        .map(
-          (g) =>
-            `<button class="mode" data-act="pick" data-arg="${g.id}"><span class="n">${g.name}</span><span class="d">${g.blurb}</span><span class="k">${g.input === 'pointer' ? 'tap' : g.input === 'both' ? 'key or tap' : 'keys'}${extras.bests[g.id] ? `<b>${fmtInt(extras.bests[g.id]!)}</b>` : ''}</span></button>`,
-        )
-        .join('')}</div></section>`;
-    }).join('')}
-  </div>
-  ${foot([
-    ['Stats', 'stats', 's'],
-    ['Keys', 'keys', 'k'],
-    [`Sound ${s.muted ? 'off' : 'on'}`, 'mute', '0'],
-  ])}
-</section>`;
-  if (picked) {
-    const g = entry(picked)!;
-    const keys = s.keys[picked] ?? 2;
-    const min = g.minKeys ?? 1;
-    const usesKeys = g.input !== 'pointer';
-    const how = g.def ? `${g.def.how}${usesKeys ? `<br>Keys: ${keysLine(keys, s.bindings[keys]!)}` : ''}` : controlsHint(picked, keys, s.bindings[keys]!);
-    h += `<div class="scrim" data-act="closepop"></div>
-<aside class="pop${slide ? ' slide' : ''}" role="dialog" aria-label="${g.name}">
-  <button class="back" data-act="closepop">Back<span class="k">esc</span></button>
-  <h1>${g.name.toUpperCase()}</h1>
-  <p class="d">${g.blurb}</p>
-  ${
-    usesKeys
-      ? `<h2>How many keys</h2>
-  <div class="counts">${MODES.map(
-    (m) => `<button data-act="keycount" data-arg="${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
-  ).join('')}</div>`
-      : '<h2>Click or tap</h2>'
-  }
-  <p class="hint">${how}</p>
-  <p class="best">${bestLine(picked, best)}</p>
-  <button class="go" data-act="start">Start<span class="k">enter</span></button>
-  ${usesKeys ? '<p class="muted">On a touch screen the keys are pads in the bottom corners.</p>' : ''}
-</aside>`;
-  }
   return h;
 }
 
@@ -277,10 +200,10 @@ function cpsBlock(c: CpsStats, labels: string[], showJitter: boolean): string {
   ${even || rep ? `<div class="line"><span class="muted">evenness</span>${even}${rep}</div>` : ''}`;
 }
 
-const AGAIN: [string, string, string][] = [
-  ['Again', 'again', 'enter'],
-  ['Stats', 'stats', 's'],
-  ['Menu', 'menu', 'esc'],
+const AGAIN: [string, string, string, string][] = [
+  ['Again', 'again', 'z', 'KeyZ Enter'],
+  ['Game stats', 'gamestats', 'x', 'KeyX'],
+  ['Back', 'menu', 'c', 'KeyC Escape Backspace'],
 ];
 
 export interface RunSummary {
@@ -421,15 +344,16 @@ export function miniResultsHtml(
   cmp: Compare | null = null,
 ): string {
   const p = r.primary;
-  const actions: [string, string, string][] = daily
+  const actions: [string, string, string, string][] = daily
     ? daily.nextName
       ? [
-          [`Next: ${daily.nextName}`, 'dailynext', 'enter'],
-          ['Stop the set', 'menu', 'esc'],
+          [`Next: ${daily.nextName}`, 'dailynext', 'z', 'KeyZ Enter'],
+          ['Game stats', 'gamestats', 'x', 'KeyX'],
+          ['Stop the set', 'menu', 'c', 'KeyC Escape Backspace'],
         ]
       : [
-          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'enter'],
-          ['Menu', 'menu', 'esc'],
+          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'z', 'KeyZ Enter'],
+          ['Game stats', 'gamestats', 'x', 'KeyX'],
         ]
     : AGAIN;
   return `<section class="screen">
@@ -468,10 +392,7 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
     ${rows.map((r) => `<tr><td>${r.name}${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.primary}</td><td>${fmtInt(r.score)}</td></tr>`).join('')}
   </table>
   <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : 'A fresh random three every time.'}</p>
-  ${foot([
-    ['Menu', 'menu', 'esc'],
-    ['Stats', 'stats', 's'],
-  ])}
+  ${foot([['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']])}
 </section>`;
 }
 
@@ -502,7 +423,7 @@ export function cpsResultsHtml(r: CpsTrainSummary): string {
 
 // --- Stats ------------------------------------------------------------------------
 
-interface Metric {
+export interface Metric {
   label: string;
   get: (r: RunRecord) => number | undefined;
   fmt: (v: number) => string;
@@ -510,7 +431,7 @@ interface Metric {
   lower?: boolean;
 }
 
-const RUN_METRICS: Metric[] = [
+export const RUN_METRICS: Metric[] = [
   { label: 'Score', get: (r) => r.score, fmt: fmtInt },
   { label: 'Height', get: (r) => r.height, fmt: (v) => fmtInt(v) + ' m' },
   { label: 'Survival', get: (r) => r.time, fmt: fmtTime },
@@ -519,21 +440,21 @@ const RUN_METRICS: Metric[] = [
   { label: 'Sustained 5 s', get: (r) => r.cps?.s5 || undefined, fmt: (v) => v.toFixed(1) },
 ];
 
-const RT_METRICS: Metric[] = [
+export const RT_METRICS: Metric[] = [
   { label: 'Median reaction', get: (r) => (r.rt && r.rt.n ? r.rt.median : undefined), fmt: (v) => v.toFixed(0) + ' ms', lower: true },
   { label: 'Correct', get: (r) => r.accuracy, fmt: pct },
   { label: 'Rounds cleared', get: (r) => r.rounds, fmt: (v) => v.toFixed(0) },
   { label: 'Window', get: (r) => r.window, fmt: (v) => v.toFixed(0) + ' ms', lower: true },
 ];
 
-const CPS_METRICS: Metric[] = [
+export const CPS_METRICS: Metric[] = [
   { label: 'Target held', get: (r) => r.target || undefined, fmt: (v) => v.toFixed(1) },
   { label: 'Sustained 5 s', get: (r) => r.cps?.s5 || undefined, fmt: (v) => v.toFixed(1) },
   { label: 'Peak CPS', get: (r) => r.cps?.peak || undefined, fmt: (v) => v.toFixed(0) },
   { label: 'Repeats', get: (r) => r.cps?.repeatRate, fmt: pct, lower: true },
 ];
 
-function card(m: Metric, records: RunRecord[]): string {
+export function card(m: Metric, records: RunRecord[]): string {
   const vals: number[] = [];
   for (const r of records) {
     const v = m.get(r);
@@ -544,7 +465,7 @@ function card(m: Metric, records: RunRecord[]): string {
   return `<div class="card"><div class="l">${m.label}</div><div class="v">${last}${best ? `<small>best ${best}</small>` : ''}</div>${trendSvg(vals, m.label)}</div>`;
 }
 
-function shortDate(at: number): string {
+export function shortDate(at: number): string {
   const d = new Date(at);
   const p = (n: number) => (n < 10 ? '0' : '') + n;
   return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -578,7 +499,7 @@ export function streak(history: RunRecord[], now = Date.now()): number {
   return n;
 }
 
-function overview(history: RunRecord[]): string {
+export function overview(history: RunRecord[]): string {
   const now = Date.now();
   const week = history.filter((r) => now - r.at < 7 * DAY && r.game !== 'daily');
   const rows = SKILLS.map((sk) => {
@@ -609,73 +530,6 @@ function overview(history: RunRecord[]): string {
   </table>`;
 }
 
-function miniStats(history: RunRecord[], filter: number): string {
-  let h = '';
-  for (const sk of SKILLS) {
-    const all = ENTRIES.filter((e) => e.def && e.skill === sk.id);
-    // Only games with history get a card; the rest are listed by name.
-    const played = (id: string) => history.some((r) => r.kind === 'mini' && r.game === id);
-    const games = all.filter((g) => played(g.id));
-    const unplayed = all.filter((g) => !played(g.id));
-    if (!all.length) continue;
-    const cards = games.map((g) => {
-      const recs = history.filter((r) => r.kind === 'mini' && r.game === g.id && (filter === 0 || r.mode === 0 || r.mode === filter));
-      const last = recs[recs.length - 1];
-      const metric: Metric = {
-        label: `${g.name}${last?.vlabel ? ` \u00b7 ${last.vlabel}` : ''}`,
-        get: (r) => r.value,
-        fmt: (v) => fmtPrimary(v, { label: '', value: v, unit: last?.unit ?? '', decimals: last?.decimals }),
-        lower: last?.lower,
-      };
-      return card(metric, recs);
-    });
-    h += `<h2>${sk.name} games <span>${sk.blurb}</span></h2>${cards.length ? `<div class="grid">${cards.join('')}</div>` : ''}${
-      unplayed.length ? `<p class="muted">Not played yet: ${unplayed.map((g) => g.name).join(DOT)}</p>` : ''
-    }`;
-  }
-  return h;
-}
-
-export function statsHtml(history: RunRecord[], filter: number, perf: boolean): string {
-  const byMode = (r: RunRecord) => filter === 0 || r.mode === filter;
-  const runs = history.filter((r) => r.kind === 'run' && byMode(r));
-  const rts = history.filter((r) => r.kind === 'rt' && byMode(r));
-  const cps = history.filter((r) => r.kind === 'cps' && byMode(r));
-  const n = (list: RunRecord[]) => `${list.length} session${list.length === 1 ? '' : 's'}`;
-  const recent = runs.slice(-8).reverse();
-  const table = recent.length
-    ? `<h2>Recent climbs</h2><table>
-    <tr><th>when</th><th>keys</th><th>score</th><th>height</th><th>time</th><th>median rt</th><th>peak</th></tr>
-    ${recent
-      .map(
-        (r) =>
-          `<tr><td>${shortDate(r.at)}</td><td>${r.mode}</td><td>${fmtInt(r.score ?? 0)}</td><td>${fmtInt(r.height ?? 0)} m</td><td>${fmtTime(r.time)}</td><td>${r.rt && r.rt.n ? r.rt.median.toFixed(0) : '–'}</td><td>${r.cps?.peak ?? '–'}</td></tr>`,
-      )
-      .join('')}
-  </table>`
-    : '';
-  return `<section class="screen wide">
-  <h1>STATS</h1>
-  ${overview(history)}
-  ${keySeg(filter, 'filter', true)}
-  ${runs.length ? `<h2>Climb <span>${n(runs)}${DOT}white line is the 5-session average</span></h2>
-  <div class="grid">${RUN_METRICS.map((m) => card(m, runs)).join('')}</div>` : ''}
-  ${rts.length ? `<h2>Reflex <span>${n(rts)}</span></h2>
-  <div class="grid">${RT_METRICS.map((m) => card(m, rts)).join('')}</div>` : ''}
-  ${cps.length ? `<h2>Burst <span>${n(cps)}</span></h2>
-  <div class="grid">${CPS_METRICS.map((m) => card(m, cps)).join('')}</div>` : ''}
-  ${runs.length && rts.length && cps.length ? '' : `<p class="muted">Not played yet: ${[!runs.length && 'Climb', !rts.length && 'Reflex', !cps.length && 'Burst'].filter(Boolean).join(DOT)}${filter ? ` (with ${filter} keys)` : ''}</p>`}
-  ${miniStats(history, filter)}
-  ${table}
-  ${foot([
-    ['Back', 'menu', 'esc'],
-    ['Export JSON', 'export', ''],
-    [`FPS overlay ${perf ? 'on' : 'off'}`, 'perf', '`'],
-    ['Clear history', 'clear', ''],
-  ])}
-</section>`;
-}
-
 // --- Key rebinding ----------------------------------------------------------------
 
 /** `listening` is the slot waiting for a key: "left:0", "right:1", "reflex", or "". */
@@ -693,7 +547,7 @@ export function keysHtml(s: Settings, keys: number, listening: string): string {
   <div class="slots">${rows}</div>
   <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, shared by all three games.</p>
   ${foot([
-    ['Back', 'menu', 'esc'],
+    ['Back', 'menu', 'esc', 'Escape Backspace'],
     ['Reset these keys', 'resetkeys', ''],
   ])}
 </section>`;

@@ -53,10 +53,11 @@ import { CpsTrainer } from './trainers.ts';
 import { ENTRIES, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import type { Mini, MiniDef } from './minis/kit.ts';
-import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml, statsHtml, titleHtml } from './ui.ts';
+import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { GROUPS, gameMenu, gameStatsMenu, groupMenu, menuHtml, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
-  | 'title'
+  | 'menu'
   | 'play'
   | 'pause'
   | 'results'
@@ -66,7 +67,6 @@ type Screen =
   | 'burstResults'
   | 'mini'
   | 'miniResults'
-  | 'stats'
   | 'keys';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -83,9 +83,15 @@ const settings = loadSettings();
 sfx.muted = settings.muted;
 let history = loadHistory();
 
-let screen: Screen = 'title';
+let screen: Screen = 'menu';
 /** Game whose key-count pop-out is open on the title screen. */
-let picked: GameId | null = null;
+/** The menu stack: the last entry is on screen. Kinds: start, group, skill, game, stats, gamestats, settings. */
+interface NavEntry {
+  kind: string;
+  arg: string;
+  page: number;
+}
+let nav: NavEntry[] = [{ kind: 'start', arg: '', page: 0 }];
 let lastGame: GameId = 'climb';
 /** The mini-game in progress, if any. */
 let mini: Mini | null = null;
@@ -100,7 +106,8 @@ let miniDef: MiniDef | null = null;
 let activeKeys = settings.keys.climb ?? 2;
 /** Key count shown on the rebinding screen. */
 let bindKeys = settings.keys.climb ?? 2;
-let statsFilter = 0;
+/** Key-count filter on a game's stats page (0 = all). */
+let gsFilter = 0;
 let listening = '';
 /** Ignore menu keys until this time, so mashing through an ending does not skip the results. */
 let inputLockUntil = 0;
@@ -269,38 +276,13 @@ function playFx(fx: number): void {
 
 // --- Screens ----------------------------------------------------------------------
 
-let skillFilter = (() => {
-  try {
-    return localStorage.getItem('tension.filter') ?? 'all';
-  } catch {
-    return 'all';
-  }
-})();
-
-function setFilter(f: string): void {
-  skillFilter = f;
-  try {
-    localStorage.setItem('tension.filter', f);
-  } catch {
-    // Private mode: the filter just is not remembered.
-  }
-  showTitle();
-}
-
-function showTitle(slide = false): void {
-  stopLoop();
-  screen = 'title';
-  listening = '';
-  ui.show(titleHtml(settings, picked, picked ? bestFor(picked, settings.keys[picked] ?? 2) : null, slide, titleExtras()));
-}
-
 function sameDay(a: number, b: number): boolean {
   const x = new Date(a);
   const y = new Date(b);
   return x.getFullYear() === y.getFullYear() && x.getMonth() === y.getMonth() && x.getDate() === y.getDate();
 }
 
-function titleExtras() {
+function menuCtx(): MenuCtx {
   const bests: Record<string, number> = {};
   for (const r of history) {
     const id = r.kind === 'run' ? 'climb' : r.kind === 'rt' ? 'reflex' : r.kind === 'cps' ? 'burst' : (r.game ?? '');
@@ -310,7 +292,55 @@ function titleExtras() {
   const now = Date.now();
   let dailyDone: number | null = null;
   for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
-  return { bests, daily: dailySet(), dailyDone, filter: skillFilter, streak: streak(history) };
+  return { settings, history, bests, daily: dailySet(), dailyDone, streak: streak(history), perf: perf.show, bestFor: (id, k) => bestFor(id as GameId, k) };
+}
+
+function buildMenu(n: NavEntry): Menu {
+  const c = menuCtx();
+  switch (n.kind) {
+    case 'group':
+      return groupMenu(c, n.arg);
+    case 'skill':
+      return skillMenu(c, n.arg, n.page);
+    case 'game':
+      return gameMenu(c, n.arg);
+    case 'stats':
+      return statsMenu(c, n.page);
+    case 'gamestats':
+      return gameStatsMenu(c, n.arg, gsFilter);
+    case 'settings':
+      return settingsMenu(c);
+    default:
+      return startMenu(c);
+  }
+}
+
+/** Draw the menu on top of the stack. `dir` picks the slide: 1 forward, -1 back, 0 none. */
+function showMenu(dir = 0): void {
+  stopLoop();
+  screen = 'menu';
+  listening = '';
+  ui.show(menuHtml(buildMenu(nav[nav.length - 1]!), dir));
+}
+
+function go(target: string): void {
+  const i = target.indexOf(':');
+  const kind = i < 0 ? target : target.slice(0, i);
+  const arg = i < 0 ? '' : target.slice(i + 1);
+  if (kind === 'gamestats') gsFilter = 0;
+  nav.push({ kind, arg, page: 0 });
+  showMenu(1);
+}
+
+function back(): void {
+  if (nav.length > 1) nav.pop();
+  showMenu(-1);
+}
+
+/** The game whose page is on top of the stack, if any. */
+function navGame(): GameId | null {
+  const top = nav[nav.length - 1]!;
+  return top.kind === 'game' ? (top.arg as GameId) : null;
 }
 
 function startDaily(): void {
@@ -336,20 +366,22 @@ function nextDaily(): void {
   }
   dailyQueue = null;
   screen = 'miniResults';
-  inputLockUntil = performance.now() + 450;
+  inputLockUntil = performance.now() + 750;
   ui.show(dailySummaryHtml(dailyRows, total, Math.max(bestTotal, total), queueLabel));
 }
 
-/** Three random games from one skill, played back to back like the daily set. */
-function startSkillSet(skill: string): void {
-  const pool = ENTRIES.filter((e) => e.skill === skill).map((e) => e.id);
+/** Three random games from a skill, a group, or everything, back to back like the daily set. */
+function startQuick(scope: string): void {
+  const group = GROUPS.find((g) => g.id === scope);
+  const skill = SKILLS.find((k) => k.id === scope);
+  const pool = ENTRIES.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
   if (!pool.length) return;
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j]!, pool[i]!];
   }
   dailyQueue = pool.slice(0, 3);
-  queueLabel = `${SKILLS.find((k) => k.id === skill)?.name ?? 'Skill'} set`;
+  queueLabel = `${group ? group.name : skill ? skill.name : 'Quick'} set`;
   dailyIdx = 0;
   dailyRows = [];
   startGame(dailyQueue[0]!);
@@ -357,7 +389,6 @@ function startSkillSet(skill: string): void {
 
 function startGame(game: GameId): void {
   lastGame = game;
-  picked = null;
   const e = entry(game);
   applyKeys(settings.keys[game] ?? 2);
   pointerSlot.fill(0);
@@ -387,7 +418,7 @@ function startGame(game: GameId): void {
 function pause(): void {
   if (screen !== 'play') return;
   if (sim.phase === PHASE_READY) {
-    showTitle();
+    showMenu();
     return;
   }
   if (sim.phase !== PHASE_RUN) return;
@@ -441,7 +472,7 @@ function finishRun(): void {
     });
   }
   screen = 'results';
-  inputLockUntil = performance.now() + 450;
+  inputLockUntil = performance.now() + 750;
   ui.show(
     resultsHtml({
       score,
@@ -488,7 +519,7 @@ function finishReflex(): void {
     });
   }
   screen = 'reflexResults';
-  inputLockUntil = performance.now() + 450;
+  inputLockUntil = performance.now() + 750;
   ui.show(
     reflexResultsHtml({
       rt,
@@ -530,7 +561,7 @@ function finishBurst(): void {
     });
   }
   screen = 'burstResults';
-  inputLockUntil = performance.now() + 450;
+  inputLockUntil = performance.now() + 750;
   ui.show(cpsResultsHtml({ cps, labels: t.labels, cleared: t.cleared, time, saved }));
 }
 
@@ -569,7 +600,7 @@ function finishMini(): void {
   const rts = r.rts ?? [];
   const st = rtStats(rts, rts.length);
   screen = 'miniResults';
-  inputLockUntil = performance.now() + 450;
+  inputLockUntil = performance.now() + 750;
   let step = null;
   if (dailyQueue) {
     dailyRows.push({ name: miniDef.name, skill: miniDef.skill, score: r.score, primary: `${r.primary.label} ${formatPrimary(r.primary)}`, best: isBest });
@@ -577,12 +608,6 @@ function finishMini(): void {
     step = { index: dailyIdx + 1, total: dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
-}
-
-function showStats(): void {
-  stopLoop();
-  screen = 'stats';
-  ui.show(statsHtml(history, statsFilter, perf.show));
 }
 
 function showKeys(): void {
@@ -596,7 +621,7 @@ function toggleMute(): void {
   sfx.setMuted(settings.muted);
   saveSettings(settings);
   sfx.play(SND_UI);
-  if (screen === 'title') showTitle();
+  if (screen === 'menu') showMenu();
   else if (screen === 'pause') ui.show(pauseHtml(settings.muted), true);
 }
 
@@ -636,28 +661,34 @@ function assignKey(code: string): void {
 }
 
 function setKeyCount(n: number): void {
-  if (!picked || n < 1 || n > 6 || n < (entry(picked)?.minKeys ?? 1)) return;
-  settings.keys[picked] = n;
+  const game = navGame();
+  if (!game || entry(game)?.input === 'pointer' || n < 1 || n > 6 || n < (entry(game)?.minKeys ?? 1)) return;
+  settings.keys[game] = n;
   saveSettings(settings);
-  showTitle();
+  sfx.play(SND_UI);
+  showMenu();
 }
 
 function onAction(action: string, arg: string): void {
   sfx.unlock();
   switch (action) {
-    case 'pick':
-      picked = arg as GameId;
-      showTitle(true);
+    case 'go':
+      sfx.play(SND_UI);
+      go(arg);
       break;
-    case 'closepop':
-      picked = null;
-      showTitle();
+    case 'back':
+      sfx.play(SND_UI);
+      back();
+      break;
+    case 'page':
+      nav[nav.length - 1]!.page = Number(arg) | 0;
+      showMenu(1);
       break;
     case 'keycount':
       setKeyCount(Number(arg));
       break;
     case 'start':
-      if (picked) startGame(picked);
+      startGame((arg || navGame() || lastGame) as GameId);
       break;
     case 'again':
       startGame(lastGame);
@@ -665,11 +696,8 @@ function onAction(action: string, arg: string): void {
     case 'daily':
       startDaily();
       break;
-    case 'skillfilter':
-      setFilter(arg);
-      break;
-    case 'skillset':
-      startSkillSet(arg);
+    case 'quick':
+      startQuick(arg || 'all');
       break;
     case 'dailynext':
       nextDaily();
@@ -677,8 +705,15 @@ function onAction(action: string, arg: string): void {
     case 'restart':
       startGame('climb');
       break;
-    case 'stats':
-      showStats();
+    case 'gamestats':
+      // From a results screen: the game's stats, over its page.
+      gsFilter = 0;
+      nav.push({ kind: 'gamestats', arg: arg || lastGame, page: 0 });
+      showMenu(1);
+      break;
+    case 'gsfilter':
+      gsFilter = Number(arg) | 0;
+      showMenu();
       break;
     case 'keys':
       bindKeys = settings.keys[lastGame] ?? 2;
@@ -693,20 +728,15 @@ function onAction(action: string, arg: string): void {
       toggleMute();
       break;
     case 'menu':
-      picked = null;
       dailyQueue = null;
-      showTitle();
+      showMenu(-1);
       break;
     case 'resume':
       resume();
       break;
-    case 'filter':
-      statsFilter = Number(arg) | 0;
-      showStats();
-      break;
     case 'perf':
       perf.show = !perf.show;
-      showStats();
+      showMenu();
       break;
     case 'export':
       exportHistory();
@@ -715,7 +745,7 @@ function onAction(action: string, arg: string): void {
       if (window.confirm('Clear all saved runs and training sessions?')) {
         clearHistory();
         history = [];
-        showStats();
+        showMenu();
       }
       break;
     case 'bind':
@@ -794,7 +824,7 @@ function onKeyDown(e: KeyboardEvent): void {
     e.preventDefault();
     if (!e.repeat) {
       perf.show = !perf.show;
-      if (screen === 'stats') showStats();
+      if (screen === 'menu') showMenu();
     }
     return;
   }
@@ -832,10 +862,8 @@ function onKeyDown(e: KeyboardEvent): void {
       press(slot, stamp(e));
     } else if (code === 'Enter') resume();
     else if (code === 'KeyR') startGame('climb');
-    else if (code === 'Escape') {
-      picked = null;
-      showTitle();
-    } else if (code === 'Digit0') toggleMute();
+    else if (code === 'Escape') showMenu(-1);
+    else if (code === 'Digit0') toggleMute();
     return;
   }
 
@@ -845,51 +873,34 @@ function onKeyDown(e: KeyboardEvent): void {
   // A button reached with Tab keeps its own Enter / Space activation.
   if ((code === 'Enter' || code === 'Space') && document.activeElement instanceof HTMLButtonElement) return;
   sfx.unlock();
-  const enter = code === 'Enter' || code === 'NumpadEnter';
   const digit = code.startsWith('Digit') ? Number(code.slice(5)) : code.startsWith('Numpad') ? Number(code.slice(6)) : NaN;
-  switch (screen) {
-    case 'title':
-      if (picked) {
-        if (digit >= 1 && digit <= 6) setKeyCount(digit);
-        else if (code === 'ArrowLeft') setKeyCount((settings.keys[picked] ?? 2) - 1);
-        else if (code === 'ArrowRight') setKeyCount((settings.keys[picked] ?? 2) + 1);
-        else if (enter) startGame(picked);
-        else if (code === 'Escape') onAction('closepop', '');
-        break;
-      }
-      if (code === 'ArrowDown' || code === 'ArrowUp' || code === 'ArrowLeft' || code === 'ArrowRight') {
-        // Walk the game list with the arrow keys; Enter on a focused game opens it.
-        const list = [...document.querySelectorAll<HTMLButtonElement>('.mode')];
-        const at = list.indexOf(document.activeElement as HTMLButtonElement);
-        const step = code === 'ArrowDown' || code === 'ArrowRight' ? 1 : -1;
-        list[at < 0 ? 0 : (at + step + list.length) % list.length]?.focus();
-        e.preventDefault();
-        break;
-      }
-      if (enter) onAction('pick', lastGame);
-      else if (code === 'KeyD') startDaily();
-      else if (code === 'KeyP' && skillFilter !== 'all') startSkillSet(skillFilter);
-      else if (code === 'KeyS') showStats();
-      else if (code === 'KeyK') onAction('keys', '');
-      else if (digit === 0) toggleMute();
-      break;
-    case 'results':
-    case 'reflexResults':
-    case 'burstResults':
-    case 'miniResults':
-      if (enter && dailyQueue) nextDaily();
-      else if (enter) startGame(lastGame);
-      else if (code === 'KeyS') showStats();
-      else if (code === 'Escape') onAction('menu', '');
-      break;
-    case 'stats':
-      if (code === 'Escape') onAction('menu', '');
-      else if (digit >= 0 && digit <= 6) onAction('filter', String(digit));
-      break;
-    case 'keys':
-      if (code === 'Escape') onAction('menu', '');
-      else if (digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
-      break;
+  // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
+  if (!Number.isNaN(digit)) {
+    const top = nav[nav.length - 1]!;
+    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6) setKeyCount(digit);
+    else if (screen === 'menu' && top.kind === 'gamestats' && digit >= 0 && digit <= 6) onAction('gsfilter', String(digit));
+    else if (screen === 'keys' && digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
+    else if (digit === 0) toggleMute();
+    return;
+  }
+  // Everything else on a menu-like screen is a button carrying the key in data-key.
+  const target = [...document.querySelectorAll<HTMLButtonElement>('#ui [data-key]')].find((el) => el.dataset.key!.split(' ').includes(code));
+  if (target) {
+    e.preventDefault();
+    if (!target.disabled) target.click();
+    return;
+  }
+  if (code === 'Escape' || code === 'Backspace') {
+    e.preventDefault();
+    if (screen === 'menu') back();
+    else onAction('menu', '');
+  } else if (code === 'ArrowDown' || code === 'ArrowUp') {
+    // Arrow keys walk the items; Enter on a focused item opens it.
+    const list = [...document.querySelectorAll<HTMLButtonElement>('#ui .item:not([disabled])')];
+    const at = list.indexOf(document.activeElement as HTMLButtonElement);
+    const step = code === 'ArrowDown' ? 1 : -1;
+    list[at < 0 ? 0 : (at + step + list.length) % list.length]?.focus();
+    e.preventDefault();
   }
 }
 
@@ -962,7 +973,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applyKeys(activeKeys);
-showTitle();
+showMenu();
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {

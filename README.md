@@ -9,10 +9,23 @@ npm install
 npm run dev
 ```
 
-Pick a game on the title screen. Games played with keys open a pop-out where
-you choose how many keys to use (1 to 6); games played by tapping need no keys.
-The **Daily set** at the top plays one game from each skill back to back; it is
-the same set for everyone on a given day.
+Everything outside a game is a short menu of at most six options, each on a
+key your hands already rest on: `Z` `X` `C` `B` `N` `M`, top to bottom. `Space`
+shows the next page of a longer list, `Esc` goes back, `Enter` does the
+obvious thing (start, again, next).
+
+| Key | Start screen |
+| --- | --- |
+| `Z` | **Daily**: one game from each skill, the same set for everyone that day |
+| `X` | **Reflexes**: reaction, speed, timing, coordination |
+| `C` | **Mind**: memory, attention, judgement, reasoning |
+| `B` | **Quick**: three random games from anywhere |
+| `N` | **Stats**: streak, skills this week, and every game you have played |
+| `M` | **Settings**: keys, sound, FPS overlay, history |
+
+Pick a group, then a skill, then a game. A game's page sets how many keys to
+play with (`1` to `6`, or `X` / `C`), starts it with `Z`, and opens its stats
+with `B`. After a game: `Z` again, `X` its stats, `C` back.
 
 ## Games
 
@@ -192,11 +205,12 @@ physical key position, not the printed letter.
 
 | Key | Action |
 | --- | --- |
+| `Z` `X` `C` `B` `N` `M` | The six options of any menu |
+| `Space` | Next page of a long list |
 | `Enter` | Start, again, next |
 | `Esc` | Pause, finish, back |
-| arrows | Move through the game list |
-| `D` | Daily set |
-| `S` `K` `0` | Stats, keys, mute |
+| `1`-`6` | Key count on a game's page; key filter on its stats |
+| `0` | Sound on or off |
 | `` ` `` | FPS and frame-time overlay |
 
 **Touch:** in key games, pads appear in the bottom corners once you touch the
@@ -206,9 +220,13 @@ finishes. Tap games take taps anywhere on the board.
 ## Stats
 
 Each session ends with its numbers: reaction time histograms, tap-rate
-breakdowns, accuracy, spans, timing errors. Everything is kept in
-`localStorage`; **Stats** plots each game's tracked number across sessions with
-a 5-session moving average, and history can be exported as JSON.
+breakdowns, accuracy, spans, timing errors, compared with your last session
+and your best. Everything is kept in `localStorage`. **Stats** shows your day
+streak, sessions per skill this week, and the games you have played; each game
+has its own page with its tracked number and score over time (with a 5-session
+moving average), best, average of the last five, change since your first
+sessions, and recent sessions, filterable by key count. History can be exported
+as JSON from Settings.
 
 Reaction times run from the frame a stimulus was drawn (`performance.now()`) to
 the input's `event.timeStamp`, so they include display and input latency.
