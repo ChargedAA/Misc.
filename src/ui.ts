@@ -380,6 +380,8 @@ export interface DailyRow {
   best: boolean;
   /** False when the stage was too short to count. */
   saved: boolean;
+  /** Skipped from the ready screen without playing. */
+  skipped?: boolean;
 }
 
 export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number, label = 'Daily set'): string {
@@ -396,13 +398,46 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
     ${rows
       .map(
         (r) =>
-          `<tr${r.saved ? '' : ' class="dim"'}><td><button class="lnk" data-act="gamestats" data-arg="${r.id}">${r.name}</button>${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.saved ? r.primary : 'incomplete: too short to count'}</td><td>${r.saved ? fmtInt(r.score) : '\u2013'}</td></tr>`,
+          `<tr${r.saved ? '' : ' class="dim"'}><td><button class="lnk" data-act="gamestats" data-arg="${r.id}">${r.name}</button>${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.saved ? r.primary : r.skipped ? 'skipped' : 'incomplete: too short to count'}</td><td>${r.saved ? fmtInt(r.score) : '\u2013'}</td></tr>`,
       )
       .join('')}
   </table>
   ${done < rows.length ? `<p class="muted">Incomplete stages score nothing and are not saved.${daily && !done ? ' Nothing counted, so today does not count toward your streak.' : ''}</p>` : ''}
   <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : label === 'Endless run' ? 'Random games until you stop.' : 'A fresh draw every time.'}</p>
   ${foot([['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']])}
+</section>`;
+}
+
+export interface ReadyInfo {
+  label: string;
+  index: number;
+  /** 0 for a run with no fixed end. */
+  total: number;
+  name: string;
+  skill: string;
+  blurb: string;
+  how: string;
+  controls: string;
+  length: string;
+}
+
+/** The card before each drill of a set. */
+export function readyHtml(r: ReadyInfo): string {
+  return `<section class="screen ready">
+  <p class="rpos">${r.label}${DOT}${r.total ? `${r.index} of ${r.total}` : `drill ${r.index}`}</p>
+  <h1>${r.name.toUpperCase()}</h1>
+  <p class="msub">${r.skill}</p>
+  <p class="mblurb">${r.blurb}</p>
+  <dl class="facts">
+    ${r.how ? `<dt>How</dt><dd>${r.how}</dd>` : ''}
+    <dt>Controls</dt><dd>${r.controls}</dd>
+    <dt>Length</dt><dd>${r.length}</dd>
+  </dl>
+  ${foot([
+    ['Start', 'readygo', 'space', 'Space Enter KeyZ'],
+    ['Skip this one', 'skip', 'x', 'KeyX'],
+    [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape Backspace'],
+  ])}
 </section>`;
 }
 

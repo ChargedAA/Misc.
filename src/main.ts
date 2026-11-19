@@ -52,9 +52,9 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES } from './minis/groups.ts';
+import { GUIDES, durationOf } from './minis/groups.ts';
 import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
-import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
@@ -68,6 +68,7 @@ type Screen =
   | 'burstResults'
   | 'mini'
   | 'miniResults'
+  | 'ready'
   | 'keys';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -391,14 +392,14 @@ function startDaily(): void {
   queueLabel = 'Daily set';
   dailyIdx = 0;
   dailyRows = [];
-  startGame(dailyQueue[0]!);
+  showReady();
 }
 
 function nextDaily(): void {
   if (!dailyQueue) return;
   dailyIdx++;
   if (dailyIdx < dailyQueue.length) {
-    startGame(dailyQueue[dailyIdx]!);
+    showReady();
     return;
   }
   const total = dailyRows.reduce((s, r) => s + (r.saved ? r.score : 0), 0);
@@ -444,7 +445,7 @@ function startQuick(spec: string): void {
   queueLabel = endlessScope ? 'Endless run' : `${group ? group.name : skill ? skill.name : scope === 'each' ? 'Mixed' : 'Random'} set`;
   dailyIdx = 0;
   dailyRows = [];
-  startGame(dailyQueue[0]!);
+  showReady();
 }
 
 /** The next game of an endless run: random, within its scope, and none of the last eight. */
@@ -454,6 +455,41 @@ function pickNext(recent: readonly string[]): string {
   const fresh = pool.filter((id) => !recent.slice(-8).includes(id));
   const from = fresh.length ? fresh : pool;
   return from[Math.floor(Math.random() * from.length)]!;
+}
+
+/** Before each drill of a set: what it is and how to play, so the clock never runs while you read. */
+function showReady(): void {
+  if (!dailyQueue) return;
+  const id = dailyQueue[dailyIdx]!;
+  const e = entry(id);
+  if (!e) return;
+  stopLoop();
+  screen = 'ready';
+  inputLockUntil = performance.now() + 250;
+  const keys = settings.keys[id] ?? 2;
+  ui.show(
+    readyHtml({
+      label: queueLabel,
+      index: dailyIdx + 1,
+      total: endlessScope ? 0 : dailyQueue.length,
+      name: e.name,
+      skill: SKILLS.find((k) => k.id === e.skill)?.name ?? '',
+      blurb: e.blurb,
+      how: e.def ? e.def.how : '',
+      controls: e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, settings.bindings[keys]!)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`,
+      length: durationOf(id),
+    }),
+  );
+}
+
+/** Skip the drill on the ready screen: it counts as incomplete. */
+function skipDrill(): void {
+  if (!dailyQueue) return;
+  const id = dailyQueue[dailyIdx]!;
+  const e = entry(id);
+  dailyRows.push({ id, name: e?.name ?? id, skill: e?.skill ?? '', score: 0, primary: '', best: false, saved: false, skipped: true });
+  if (endlessScope && dailyIdx + 1 >= dailyQueue.length) dailyQueue.push(pickNext(dailyQueue));
+  nextDaily();
 }
 
 /** End an endless run (or any set) early and show what it came to. */
@@ -769,7 +805,7 @@ function startList(ids: string[], label: string): void {
   queueLabel = label;
   dailyIdx = 0;
   dailyRows = [];
-  startGame(dailyQueue[0]!);
+  showReady();
 }
 
 /** Start a game with a key count (and difficulty, if it has levels), remembering both for next time. */
@@ -859,6 +895,12 @@ function onAction(action: string, arg: string): void {
       break;
     case 'endrun':
       endRun();
+      break;
+    case 'readygo':
+      if (dailyQueue) startGame(dailyQueue[dailyIdx]! as GameId);
+      break;
+    case 'skip':
+      skipDrill();
       break;
     case 'restart':
       startGame('climb');

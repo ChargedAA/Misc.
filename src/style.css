@@ -945,3 +945,23 @@ tr.dim td {
     grid-template-columns: 1fr;
   }
 }
+
+.ready {
+  max-width: 560px;
+}
+
+.rpos {
+  color: var(--mid);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0 0 18px;
+}
+
+.ready h1 {
+  margin-bottom: 8px;
+}
+
+.ready .mblurb {
+  margin-top: 20px;
+}
