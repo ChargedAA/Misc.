@@ -80,6 +80,26 @@ export class Sfx {
     src.start();
   }
 
+  /** A pure tone at any pitch, with a soft attack and release: for listening drills. */
+  tone(hz: number, ms: number, pan = 0): void {
+    const ctx = this.ctx;
+    if (!ctx || this.muted || !this.master) return;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = hz;
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+    const d = ms / 1000;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.015);
+    g.gain.setValueAtTime(0.22, t + Math.max(0.02, d - 0.03));
+    g.gain.linearRampToValueAtTime(0, t + d);
+    osc.connect(g);
+    g.connect(this.pans[Math.max(0, Math.min(2, Math.round(pan) + 1))]!);
+    osc.start(t);
+    osc.stop(t + d + 0.02);
+  }
+
   private noise(): number {
     this.noiseSeed = (Math.imul(this.noiseSeed, 1664525) + 1013904223) | 0;
     return (this.noiseSeed >>> 8) / 8388608 - 1;

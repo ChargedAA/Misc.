@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 90 small games for reaction, speed, timing, memory,
+A minimal training suite: 110 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -9,39 +9,36 @@ npm install
 npm run dev
 ```
 
-Menus are a path of short lists, each option on a key your hands already
-rest on: `Z` `X` `C` `B` `N` `M`, top to bottom, and `Space` for a seventh.
-Choosing opens the next list beside the last one, so the path stays in view
-(on a phone, only the open list shows, with the path above it). `Esc` goes back
-one list; clicking an earlier list re-opens from there. When a list is longer
-than six, `Space` turns the page.
+The home screen leads with **Daily** (`Space`): one drill per skill, the same
+set for everyone that day. Below it are the eight skills, the Reflexes skills on
+the left hand's keys and the Mind skills on the right hand's:
 
-```
-Z  Daily       Z  Play the set
-X  Reflexes    Z  Reaction     Z..M  games     Z..M  play with 1..6 keys
-C  Mind        X  Speed                         SPACE stats for this game
-B  Random      C  Timing
-N  Stats       B  Coordination
-M  Settings    SPACE  Three at random
-SPACE Endless  Z  Everything   (random games, one after another, until you stop)
-               X  Reflexes only
-               C  Mind only
-               B  Lanes        Z  Progressing          Z..M  play with 1..6 keys
-               N  Hurdles      X..M  700 ms .. 300 ms
-               M  Rush         SPACE  Custom (Z play, X/C -/+25, B/N -/+100)
-```
+| Left hand | | Right hand | |
+| --- | --- | --- | --- |
+| `Z` | Reaction | `B` | Memory |
+| `X` | Speed | `N` | Attention |
+| `C` | Timing | `M` | Judgement |
+| `V` | Coordination | `,` | Reasoning |
 
-**Endless** either runs through everything (a random game, then another, never
-the same as the last eight, until you choose to end the run and see its
-summary) or offers reaction runs with a set difficulty: the window is the
-time from something popping up ahead of the rolling ball to it arriving.
-Lanes sidesteps blocks, Hurdles jumps bars, Rush mixes both (outer keys move,
-every other key jumps). Progressing starts at 800 ms and tightens with each
-clear; the fixed levels go from Beginner (700 ms) to Expert (300 ms); Custom
-sets your own.
+`R` Random, `E` Endless, `S` Stats and `O` Settings sit in the header.
 
-**Random** offers three, five or ten games, three from Reflexes or Mind, or one
-from each skill. After a game: `Z` again, `X` its stats, `C` back.
+A skill's page starts with a three-drill **routine** (`Space`) and a
+**benchmark** (`Enter`), then lists every drill grouped by what it trains, each
+on its own key. A drill's page shows what it is, how to play, the exact
+controls and how long it takes, with a 1-6 key selector, **Start** (`Z`),
+**Stats** (`X`) and **Practice** (`C`, plays it through but saves nothing).
+Menus open as columns beside each other; `Esc` goes back.
+
+In Daily, Random, routines and Endless, each drill opens with a ready card
+(what it is, how to play, controls) so the clock never runs while you read;
+`Space` starts it and `X` skips it. **Endless** runs random drills until you
+stop, or the reaction runs Lanes, Hurdles and Rush at a set difficulty
+(Progressing, 700 to 300 ms, or Custom).
+
+Results lead with the drill's own number in its units, say which direction is
+better, compare with last time and your best, and draw bars where the parts
+matter. A session with no input, or too short to count, scores nothing and is
+not saved; neither are practice runs.
 
 ## Games
 
@@ -64,6 +61,9 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
 | Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 3+ keys |
 | Lights | Five lights come on one by one, then go out together. Go. | keys or tap |
+| Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
+| Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
+| Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
 
 ### Speed
 
@@ -96,6 +96,8 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
 | Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
+| Tower | A block slides over the stack. Drop it squarely; overhang is cut off. | keys or tap |
+| Keep | Steer a paddle to keep the balls in play. A second one joins later. | keys, 2+ keys |
 
 ### Memory
 
@@ -114,6 +116,7 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Melody | Pads play a tune. Play it back. Later you only hear it. | tap or click |
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap, 2+ keys |
 | Link | Shapes and numbers, paired. Which number went with this shape? | tap or click |
+| Route | Learn a string of turns, then drive it from memory. | keys, 2+ keys |
 
 ### Attention
 
@@ -133,6 +136,8 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
 | Tangle | Follow one line through a tangle to its end. | tap or click |
+| Sort | Flip the switch to send each item down the right chute. The rule changes. | keys, 2+ keys |
+| Shadow | Keep your pointer on a wandering target. Catch flashes at the edges. | tap or click |
 
 ### Coordination
 
@@ -149,6 +154,9 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
 | Sync | Both hands at exactly the same moment. Then with a set gap. | keys, 2+ keys |
+| Dock | Thrust a drifting ship into the dock and stop dead inside it. | keys, 2+ keys |
+| Lander | Feather the thrust and touch down softly on the pad. | keys |
+| Mirror | Steer along a track. Every so often the controls swap sides. | keys, 2+ keys |
 
 ### Judgement
 
@@ -162,6 +170,10 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap, 2+ keys |
 | Guess | A cloud of dots flashes. How many? | tap or click |
 | First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap, 2+ keys |
+| Merge | Cars stream past the junction. Pull out into the first safe gap. | keys or tap |
+| Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
+| Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
+| Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | tap or click |
 
 ### Reasoning
 
@@ -174,6 +186,11 @@ from each skill. After a game: `Z` again, `X` its stats, `C` back.
 | Matrix | A three-by-three pattern with a gap. Which piece fits? | tap or click |
 | Balance | The scales balance. How many triangles weigh the same as a square? | tap or click |
 | Odd | All but one share something. Which one does not? | tap or click |
+| Probe | A hidden rule says yes or no to shapes. Test it three times, then classify. | keys or tap, 2+ keys |
+| Plan | Jobs with lengths, deadlines and values. Put them in the best order. | tap or click |
+| Crack | Find the hidden code from right-place and wrong-place clues. | tap or click |
+| Compass | Follow a string of turns in your head. Which way are you facing? | tap or click |
+| Letters | Unscramble the word. Type it. | keys |
 
 ## Why these games
 

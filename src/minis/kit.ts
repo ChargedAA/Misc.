@@ -54,6 +54,8 @@ export interface MiniEnv {
   muted: boolean;
   /** For games with difficulty levels: the chosen one (0 = progressing). */
   level?: number;
+  /** Play a pure tone (listening drills). */
+  tone?(hz: number, ms: number, pan?: number): void;
 }
 
 export interface Mini {
