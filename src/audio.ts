@@ -34,6 +34,11 @@ export class Sfx {
   private noiseSeed = 12345;
 
   /** Must be called from a user gesture (first key or click). */
+  /** Freeze the audio clock (sounds already scheduled wait too), for a pause. */
+  suspend(): void {
+    if (this.ctx && this.ctx.state === 'running') void this.ctx.suspend();
+  }
+
   unlock(): void {
     if (this.ctx) {
       if (this.ctx.state === 'suspended') void this.ctx.resume();

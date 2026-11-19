@@ -8,7 +8,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../conf
 import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, gameNow } from './kit.ts';
 
 const TAU = Math.PI * 2;
 
@@ -150,7 +150,7 @@ class Opposite implements Mini {
     if (this.state === 0) {
       message(v, { ...a, cy: a.cy - 80 * a.u }, this.anti ? 'OPPOSITE' : 'SAME SIDE', this.anti ? 'press the hand away from the dot' : 'press the hand on the dot’s side', this.anti ? COL_ACCENT : COL_LINE);
     } else if (this.state === 2) {
-      if (!this.drawnAt) this.drawnAt = performance.now();
+      if (!this.drawnAt) this.drawnAt = gameNow();
       ctx.fillStyle = COL_LINE;
       ctx.beginPath();
       ctx.arc(a.cx + this.side * off, a.cy, 14 * a.u, 0, TAU);

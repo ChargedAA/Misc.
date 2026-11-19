@@ -29,6 +29,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const STRIKES = 3;
@@ -617,7 +618,7 @@ class Rotate implements Mini {
     if (this.state === 1) {
       this.drawShape(v, this.cells, a.cx - 140 * a.u, a.cy, cell, 0, false);
       this.drawShape(v, this.cells, a.cx + 140 * a.u, a.cy, cell, this.angle, this.mirror);
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) message(v, a, this.feedback, '', COL_MID);
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(Math.round(a.cx), a.cy - 80 * a.u, dpr, 160 * a.u);

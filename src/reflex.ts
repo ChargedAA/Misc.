@@ -887,7 +887,7 @@ export class ReflexSession {
 
     if (!touch.active) {
       ctx.fillStyle = COL_DIM;
-      v.text('esc to finish', cx, v.h - 26 * dpr, v.fontTiny, 'center');
+      v.text('esc to pause', cx, v.h - 26 * dpr, v.fontTiny, 'center');
     }
     v.drawTouch(touch, ICON_CLOSE, this.held);
   }

@@ -26,6 +26,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -126,7 +127,7 @@ class Snap implements Mini {
       ctx.beginPath();
       ctx.arc(x, y, r, 0, TAU);
       ctx.fill();
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else {
       // Resting: three faint outlines so the eyes have somewhere to wait.
       ctx.strokeStyle = COL_DIM;
@@ -308,7 +309,7 @@ class Stop implements Mini {
         ctx.lineTo(a.cx + r * 1.3, a.cy - r * 0.9);
         ctx.stroke();
       }
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.feedback) {
       message(v, a, this.feedback, '', this.good ? COL_LINE : COL_MID);
     }
@@ -454,7 +455,7 @@ class Flank implements Mini {
         ctx.lineWidth = (k === 0 ? 3.5 : 2.5) * dpr;
         v.arrow(a.cx + k * gap, a.cy, r, d);
       }
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) {
       message(v, a, this.feedback, '', COL_MID);
     } else {

@@ -25,6 +25,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -397,7 +398,7 @@ class Ears implements Mini {
     if (this.state === 0 && now >= this.at) {
       this.state = 1;
       if (this.audio) {
-        this.stimAt = performance.now();
+        this.stimAt = gameNow();
         this.env.sound(SND_BEAT_UP);
       }
     }
@@ -422,7 +423,7 @@ class Ears implements Mini {
     ctx.arc(a.cx, a.cy, 50 * a.u, 0, TAU);
     ctx.stroke();
     if (this.state === 1 && !this.audio) {
-      if (this.stimAt === 0) this.stimAt = performance.now();
+      if (this.stimAt === 0) this.stimAt = gameNow();
       ctx.fillStyle = COL_LINE;
       ctx.beginPath();
       ctx.arc(a.cx, a.cy, 50 * a.u, 0, TAU);

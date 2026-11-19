@@ -29,6 +29,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -142,7 +143,7 @@ class Duel implements Mini {
     v.text('them', a.cx - half, a.cy + 64 * a.u, v.fontTiny, 'center');
     v.text('you', a.cx + half, a.cy + 64 * a.u, v.fontTiny, 'center');
     if (this.state === 1) {
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
       ctx.fillStyle = COL_ACCENT;
       ctx.fillRect(a.cx - half + 12 * a.u, a.cy - 2 * dpr, half * 2 - 24 * a.u, 4 * dpr);
       v.text('DRAW', a.cx, a.cy - 24 * a.u, v.fontHud, 'center');

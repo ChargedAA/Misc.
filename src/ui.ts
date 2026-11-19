@@ -177,6 +177,21 @@ export function pauseHtml(muted: boolean): string {
 </section>`;
 }
 
+/** The pause card for a drill: the clock and the sound stop until you choose. */
+export function miniPauseHtml(name: string, inSet: boolean, practice: boolean): string {
+  return `<section class="screen ready">
+  <p class="rpos">paused${practice ? `${DOT}practice` : ''}</p>
+  <h1>${name.toUpperCase()}</h1>
+  <p class="msub">The clock and the sound are stopped until you choose.</p>
+  ${foot([
+    ['Resume', 'miniresume', 'space', 'Space Enter Escape'],
+    ['Restart', 'minirestart', 'r', 'KeyR'],
+    ['Finish and score it', 'minifinish', 'f', 'KeyF'],
+    [inSet ? 'Skip this drill' : 'Quit, no score', 'miniquit', 'q', 'KeyQ Backspace'],
+  ])}
+</section>`;
+}
+
 // --- Results --------------------------------------------------------------------
 
 function rtBlock(rt: RtStats, hist: Histogram, note: string): string {

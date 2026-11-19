@@ -24,6 +24,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const STRIKES = 3;
@@ -472,7 +473,7 @@ class Switch implements Mini {
     if (this.state === 1) {
       ctx.fillStyle = COL_LINE;
       v.text(String(this.digit), a.cx, (this.top ? yTop : yBot) + h / 2 + 16 * dpr, v.fontBig, 'center');
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) {
       ctx.fillStyle = COL_MID;
       v.text(this.feedback, a.cx, (this.top ? yTop : yBot) + h / 2 + 5 * dpr, v.fontHud, 'center');

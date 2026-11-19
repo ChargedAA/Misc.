@@ -53,8 +53,8 @@ import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, quick } from './minis/groups.ts';
-import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
-import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { clamp, clockShift, setClockShift, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
+import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
@@ -68,6 +68,7 @@ type Screen =
   | 'burstResults'
   | 'mini'
   | 'miniResults'
+  | 'miniPause'
   | 'ready'
   | 'keys';
 
@@ -268,7 +269,7 @@ function frame(now: number): void {
     view.drawPerf(perf);
     if (done) finishBurst();
   } else if (screen === 'mini' && mini) {
-    const done = mini.frame(now, view, touch);
+    const done = mini.frame(now - clockShift(), view, touch);
     view.drawPerf(perf);
     if (done) finishMini();
   }
@@ -524,6 +525,7 @@ function startGame(game: GameId): void {
     if (e.input !== 'keys') touch.padsOff();
     miniDef = e.def;
     miniInputs = 0;
+    setClockShift(0);
     mini = e.def.make();
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), tone: (hz, d, pan) => sfx.tone(hz, d, pan), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
@@ -568,7 +570,32 @@ function leave(): void {
   if (screen === 'play') pause();
   else if (screen === 'reflex') finishReflex();
   else if (screen === 'burst') finishBurst();
-  else if (screen === 'mini') finishMini();
+  else if (screen === 'mini') pauseMini();
+}
+
+let pausedAt = 0;
+
+/** Escape in a drill: stop the game clock and the audio, and offer the ways out. */
+function pauseMini(): void {
+  if (screen !== 'mini' || !mini || !miniDef) return;
+  pausedAt = performance.now();
+  // Let go of anything held, so nothing is stuck down on return.
+  for (let slot = 0; slot <= SLOT_REFLEX; slot++) mini.release?.(slot, pausedAt - clockShift());
+  pointerSlot.fill(0);
+  stopLoop();
+  sfx.suspend();
+  screen = 'miniPause';
+  inputLockUntil = performance.now() + 200;
+  ui.show(miniPauseHtml(miniDef.name, !!dailyQueue, practicing));
+}
+
+function resumeMini(): void {
+  if (screen !== 'miniPause' || !mini) return;
+  setClockShift(clockShift() + (performance.now() - pausedAt));
+  sfx.unlock();
+  screen = 'mini';
+  ui.hide();
+  startLoop();
 }
 
 function liftSlots(): number[] {
@@ -976,6 +1003,27 @@ function onAction(action: string, arg: string): void {
     case 'resume':
       resume();
       break;
+    case 'miniresume':
+      resumeMini();
+      break;
+    case 'minirestart':
+      sfx.unlock();
+      startGame(lastGame);
+      break;
+    case 'minifinish':
+      sfx.unlock();
+      screen = 'mini';
+      finishMini();
+      break;
+    case 'miniquit':
+      sfx.unlock();
+      mini = null;
+      if (dailyQueue) skipDrill();
+      else {
+        practicing = false;
+        showMenu(-1);
+      }
+      break;
     case 'perf':
       perf.show = !perf.show;
       showMenu();
@@ -1034,7 +1082,7 @@ function press(slot: number, ts: number): void {
     else sfx.play(slot >= 3 ? SND_TAP_R : SND_TAP_L);
   } else if (screen === 'mini' && mini) {
     miniInputs++;
-    mini.press(slot, ts);
+    mini.press(slot, ts - clockShift());
   } else if (screen === 'burst') {
     if (slot === SLOT_REFLEX) return;
     const repeat = cpsTrainer.onTap(slot, ts);
@@ -1045,7 +1093,7 @@ function press(slot: number, ts: number): void {
 function release(slot: number, ts: number): void {
   if (screen === 'reflex') reflex.onRelease(slot);
   else if (screen === 'burst') cpsTrainer.onRelease(slot);
-  else if (screen === 'mini') mini?.release?.(slot, ts);
+  else if (screen === 'mini') mini?.release?.(slot, ts - clockShift());
 }
 
 function onKeyDown(e: KeyboardEvent): void {
@@ -1072,7 +1120,7 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e))) {
+  if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift())) {
     miniInputs++;
     e.preventDefault();
     return;
@@ -1170,7 +1218,7 @@ function onPointerDown(e: PointerEvent): void {
   }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
     miniInputs++;
-    mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e));
+    mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
     return;
   }
   if (hit < 0) return;
@@ -1205,7 +1253,7 @@ canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
 canvas.addEventListener('pointermove', (e) => {
   if (screen !== 'mini' || !mini?.pointerMove) return;
   const rect = canvas.getBoundingClientRect();
-  mini.pointerMove((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e));
+  mini.pointerMove((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
 });
 canvas.addEventListener('pointerup', onPointerUp);
 canvas.addEventListener('pointercancel', onPointerUp);
@@ -1242,3 +1290,8 @@ if (import.meta.env.DEV) {
     },
   };
 }
+
+// Switching tabs or apps mid-drill pauses it, rather than letting the clock run on unseen.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && screen === 'mini') pauseMini();
+});

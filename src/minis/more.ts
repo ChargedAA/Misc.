@@ -28,6 +28,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const GREY = '#6c6c74';
@@ -158,7 +159,7 @@ class Choice implements Mini {
       ctx.fillStyle = on ? COL_MID : COL_DIM;
       v.text(this.env.labels[this.slots[i]!] ?? '', x, bottom + 22 * dpr, v.fontTiny, 'center');
     }
-    if (this.state === 1 && this.drawnAt === 0) this.drawnAt = performance.now();
+    if (this.state === 1 && this.drawnAt === 0) this.drawnAt = gameNow();
     if (this.state === 3) message(v, { ...a, cy: top - 6 * dpr }, this.active.length === 1 ? 'one string: just react' : `${this.active.length} strings: press whichever lights`, '', COL_MID);
     else if (this.state === 2) {
       ctx.fillStyle = COL_MID;
@@ -578,7 +579,7 @@ class Shape implements Mini {
         ctx.fillStyle = COL_ACCENT;
         v.text('WORD', a.cx, a.cy - r - 22 * dpr, v.fontTiny, 'center');
       }
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) message(v, a, this.feedback, '', COL_MID);
     ctx.fillStyle = COL_MID;
     v.text(`circle  ${handLabel(this.env, -1)}`, a.cx - 150 * a.u, a.bottom - 20 * dpr, v.fontTiny, 'center');

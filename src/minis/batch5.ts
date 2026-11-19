@@ -28,6 +28,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  gameNow,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -124,7 +125,7 @@ class Side implements Mini {
       ctx.beginPath();
       ctx.arc(a.cx + this.pos * off, a.cy, 34 * a.u, 0, TAU);
       ctx.fill();
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) message(v, a, this.feedback, '', COL_MID);
     ctx.fillStyle = COL_MID;
     v.text(`white  ${handLabel(this.env, -1)}`, a.cx - off, a.bottom - 20 * dpr, v.fontTiny, 'center');
@@ -590,7 +591,7 @@ class Alert implements Mini {
     ctx.lineWidth = dpr;
     ctx.strokeRect(a.cx - 90 * a.u, a.cy - 40 * a.u, 180 * a.u, 80 * a.u);
     if (this.state === 1) {
-      if (this.drawnAt === 0) this.drawnAt = performance.now();
+      if (this.drawnAt === 0) this.drawnAt = gameNow();
       ctx.fillStyle = COL_ACCENT;
       v.text(String(Math.floor(now - this.drawnAt)).padStart(3, '0'), a.cx, a.cy + 16 * dpr, v.fontBig, 'center');
     } else if (this.state === 2) {

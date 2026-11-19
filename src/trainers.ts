@@ -248,7 +248,7 @@ export class CpsTrainer {
 
     if (!touch.active) {
       ctx.fillStyle = COL_DIM;
-      view.text('esc to finish', cx, view.h - 26 * dpr, view.fontTiny, 'center');
+      view.text('esc to pause', cx, view.h - 26 * dpr, view.fontTiny, 'center');
     }
     view.drawTouch(touch, ICON_CLOSE, this.held);
   }

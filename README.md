@@ -281,7 +281,7 @@ physical key position, not the printed letter.
 | `Z` `X` `C` `B` `N` `M` | The options of the open list |
 | `Space` | Seventh option, or the next page of a long list |
 | `Enter` | Start, again, next |
-| `Esc` | Pause, finish, back |
+| `Esc` | In a drill: pause (resume, restart, finish and score, or quit). In menus: back |
 | `1`-`6` | On a game's list: play with that many keys; on its stats: key filter |
 | `0` | Sound on or off |
 | `` ` `` | FPS and frame-time overlay |

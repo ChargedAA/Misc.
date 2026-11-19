@@ -126,6 +126,21 @@ export function handLabel(env: MiniEnv, side: number): string {
  * harder, one miss makes it easier. 2-down 1-up settles near 71% correct,
  * the usual target for staying challenged without giving up.
  */
+// --- Game clock ----------------------------------------------------------------
+// Games see time with paused stretches taken out, so a pause never shows up in a
+// reaction time or makes a timer jump.
+let shift = 0;
+/** Now on the game clock. Use this instead of performance.now() inside a game. */
+export function gameNow(): number {
+  return performance.now() - shift;
+}
+export function clockShift(): number {
+  return shift;
+}
+export function setClockShift(v: number): void {
+  shift = v;
+}
+
 export class Stair {
   level: number;
   readonly step: number;
@@ -259,7 +274,7 @@ export function header(
 }
 
 /** The footer hint and touch controls. Call last. */
-export function footer(v: View, touch: TouchLayout, held: number, hint = 'esc to finish'): void {
+export function footer(v: View, touch: TouchLayout, held: number, hint = 'esc to pause'): void {
   if (!touch.active) {
     v.ctx.fillStyle = COL_DIM;
     v.text(hint, v.ox, v.h - 22 * v.dpr, v.fontTiny, 'center');
