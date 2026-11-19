@@ -46,7 +46,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop', 'tower'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo'] },
     ],
     routine: ['tempo', 'cross', 'gap'],
@@ -56,7 +56,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole'] },
-      { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock'] },
+      { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
       { name: 'Full runs', desc: 'Everything at once, until you fall', ids: ['climb', 'zigzag'] },
     ],
@@ -66,7 +66,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   memory: {
     about: 'Hold more in your head, keep it up to date, and remember where things were.',
     groups: [
-      { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody'] },
+      { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route'] },
       { name: 'Places', desc: 'Where things were', ids: ['grid', 'where', 'pairs'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive', ids: ['back', 'running'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link'] },
@@ -90,6 +90,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Size and amount', desc: 'Lengths, counts and midpoints', ids: ['longer', 'more', 'guess', 'middle'] },
       { name: 'Angle, shade, speed', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first'] },
+      { name: 'In motion', desc: 'Judge gaps and amounts as they change', ids: ['merge', 'pour'] },
     ],
     routine: ['longer', 'tilt', 'more'],
     benchmark: 'longer',
@@ -141,6 +142,9 @@ export const DURATION: Record<string, string> = {
   catch: 'until three lives are gone',
   sort: 'until three wrong',
   shield: 'until three hits',
+  tower: 'until a block misses',
+  lander: 'until three crashes',
+  route: 'until three wrong turns',
   matrix: '2 to 4 min',
   balance: '2 to 4 min',
   series: '2 min',
