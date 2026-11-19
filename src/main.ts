@@ -55,6 +55,7 @@ import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
+import { Integrity } from './integrity.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
@@ -83,6 +84,9 @@ const reflex = new ReflexSession();
 const cpsTrainer = new CpsTrainer();
 const touch = new TouchLayout();
 const uiRoot = document.getElementById('ui')!;
+const integrity = new Integrity();
+/** Why the last run was not trusted, if it was not. */
+let integrityFlags: string[] = [];
 const ui = new Ui(uiRoot, onAction);
 
 const settings = loadSettings();
@@ -618,6 +622,7 @@ function endRun(): void {
 
 function startGame(game: GameId): void {
   lastGame = game;
+  integrity.reset();
   // A stats page opened over an old result has nothing to return to once a new game starts.
   nav = nav.filter((n) => !n.over);
   // The key that started this (Space, Enter, R...) is still down: it is not gameplay until released.
@@ -852,6 +857,10 @@ function finishMini(): void {
   // A session with no input at all, or too short to save, counts for nothing:
   // no score, no best, no history, no streak.
   if (miniInputs === 0) r.saved = false;
+  // Fair play: input from a script, machine-regular timing or impossible reactions mean the run is not saved.
+  const verdict = integrity.verdict(r.rts ?? []);
+  integrityFlags = verdict.flags;
+  if (!verdict.ok) r.saved = false;
   if (practicing) {
     // Practice: show how it went, keep nothing.
     stopLoop();
@@ -913,7 +922,7 @@ function finishMini(): void {
     const next = dailyQueue[dailyIdx + 1];
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
-  ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
+  ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp, integrityFlags));
 }
 
 function showKeys(): void {
@@ -1341,6 +1350,7 @@ function onKeyDown(e: KeyboardEvent): void {
     e.preventDefault();
     return;
   }
+  if (screen === 'mini' && !e.repeat) integrity.note(e, stamp(e));
   if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift())) {
     miniInputs++;
     e.preventDefault();
@@ -1447,11 +1457,13 @@ function onPointerDown(e: PointerEvent): void {
   }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
     miniInputs++;
+    integrity.note(e, stamp(e));
     mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
     return;
   }
   if (hit < 0) return;
   pointerSlot[e.pointerId & 63] = hit + 1;
+  if (screen === 'mini') integrity.note(e, stamp(e));
   press(hit, stamp(e));
 }
 

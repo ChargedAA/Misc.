@@ -470,6 +470,7 @@ export function miniResultsHtml(
   _best: boolean,
   daily: DailyStep | null = null,
   cmp: Compare | null = null,
+  flags: string[] = [],
 ): string {
   const p = r.primary;
   const e = entry(id);
@@ -505,7 +506,7 @@ export function miniResultsHtml(
   <h1>${(e?.name ?? id).toUpperCase()}</h1>
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
-  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : flags.length ? `<p class="warn">Not saved: this run did not look like a person playing. ${flags.join('; ')}.</p>` : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
   ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
   <table>${r.lines
