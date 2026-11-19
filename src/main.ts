@@ -440,26 +440,82 @@ function nextDaily(): void {
  * Random games back to back, like the daily set. `spec` is "scope:count": scope is
  * 'all', a group, a skill, or 'each' (one from every skill).
  */
+/** Games picked by Random and Endless lately, oldest first, kept across sessions so a new set does not repeat the last. */
+function recentPicks(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem('tension.recent') ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+function rememberPicks(ids: string[]): void {
+  try {
+    localStorage.setItem('tension.recent', JSON.stringify([...recentPicks(), ...ids].slice(-60)));
+  } catch {
+    /* private mode: variety within a session still works */
+  }
+}
+
+/**
+ * Draw games that feel random: none played in the last few dozen picks if avoidable,
+ * never two of the same skill (or the same kind of drill) back to back, and games you
+ * have played less are more likely.
+ */
+function drawVaried(pool: string[], count: number, before: readonly string[] = []): string[] {
+  const recent = [...recentPicks(), ...before];
+  const plays = new Map<string, number>();
+  for (const r of history) if (r.kind === 'mini' && r.game) plays.set(r.game, (plays.get(r.game) ?? 0) + 1);
+  const kindOf = (id: string) => {
+    const e = entry(id);
+    const g = e ? GUIDES[e.skill].groups.find((x) => x.ids.includes(id)) : undefined;
+    return `${e?.skill}:${g?.name ?? ''}`;
+  };
+  const out: string[] = [];
+  for (let n = 0; n < count; n++) {
+    const prev = [...before, ...out];
+    const lastSkill = prev.length ? entry(prev[prev.length - 1]!)?.skill : undefined;
+    const lastKinds = prev.slice(-3).map(kindOf);
+    // Relax the rules step by step if the pool is too small to keep them all.
+    const tiers = [
+      pool.filter((id) => !out.includes(id) && !recent.slice(-40).includes(id) && entry(id)?.skill !== lastSkill && !lastKinds.includes(kindOf(id))),
+      pool.filter((id) => !out.includes(id) && !recent.slice(-12).includes(id) && entry(id)?.skill !== lastSkill),
+      pool.filter((id) => !out.includes(id) && !prev.slice(-4).includes(id)),
+      pool,
+    ];
+    const from = tiers.find((t) => t.length) ?? pool;
+    const w = from.map((id) => 1 / (1 + (plays.get(id) ?? 0)) ** 0.7);
+    let r = Math.random() * w.reduce((a, b) => a + b, 0);
+    let pick = from[from.length - 1]!;
+    for (let i = 0; i < from.length; i++) {
+      r -= w[i]!;
+      if (r <= 0) {
+        pick = from[i]!;
+        break;
+      }
+    }
+    out.push(pick);
+  }
+  rememberPicks(out);
+  return out;
+}
+
 function startQuick(spec: string): void {
   const [scope = 'all', countText = '3'] = spec.split(':');
   const count = Math.max(1, Number(countText) || 3);
-  const shuffled = <T,>(list: T[]): T[] => {
-    for (let i = list.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [list[i], list[j]] = [list[j]!, list[i]!];
-    }
-    return list;
-  };
   endlessScope = scope === 'endless' ? (countText || 'all') : null;
   const group = GROUPS.find((g) => g.id === (endlessScope ?? scope));
   const skill = SKILLS.find((k) => k.id === scope);
   let queue: string[];
   // Sets use the mini-games only: Climb, Reflex and Burst have their own result screens.
-  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(MINIS.filter((e) => e.skill === k.id && quick(e.id)))[0]!.id));
-  else if (endlessScope) queue = [pickNext([])];
+  if (scope === 'each') {
+    const order = [...SKILLS].sort(() => Math.random() - 0.5);
+    queue = [];
+    for (const k of order) queue.push(...drawVaried(MINIS.filter((e) => e.skill === k.id && quick(e.id)).map((e) => e.id), 1, queue));
+  } else if (endlessScope) queue = [pickNext([])];
   else {
     const pool = MINIS.filter((e) => quick(e.id) && (scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope))).map((e) => e.id);
-    queue = shuffled(pool).slice(0, count);
+    queue = drawVaried(pool, count);
   }
   if (!queue.length) return;
   dailyQueue = queue;
@@ -469,13 +525,11 @@ function startQuick(spec: string): void {
   showReady();
 }
 
-/** The next game of an endless run: random, within its scope, and none of the last eight. */
+/** The next game of an endless run: varied, within its scope. */
 function pickNext(recent: readonly string[]): string {
   const group = GROUPS.find((g) => g.id === endlessScope);
   const pool = MINIS.filter((e) => quick(e.id) && (!group || group.skills.includes(e.skill))).map((e) => e.id);
-  const fresh = pool.filter((id) => !recent.slice(-8).includes(id));
-  const from = fresh.length ? fresh : pool;
-  return from[Math.floor(Math.random() * from.length)]!;
+  return drawVaried(pool, 1, recent)[0]!;
 }
 
 /** Before each drill of a set: what it is and how to play, so the clock never runs while you read. */
