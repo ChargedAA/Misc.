@@ -26,6 +26,29 @@ export function usesKeyCount(input: InputKind): boolean {
   return input === 'keys' || input === 'both';
 }
 
+/**
+ * Games where the number of keys changes the game: more strings to choose from, more
+ * keys to roll through or tap with, further dashes. Every other key game only asks
+ * which hand, so it is played with one key per hand and offers no choice.
+ */
+export const MULTI_KEY: ReadonlySet<string> = new Set([
+  'climb', 'reflex', 'burst',
+  'choice', 'sequence', 'code', 'juggle', 'split', 'strings',
+  'sprint', 'sets', 'tug', 'ladder', 'pulse', 'steady', 'exact',
+  'roll', 'trill', 'even',
+  'lanes', 'hurdles', 'rush',
+]);
+
+/** True when a game offers a choice of how many keys. */
+export function picksKeys(id: string, input: InputKind): boolean {
+  return usesKeyCount(input) && MULTI_KEY.has(id);
+}
+
+/** The key count a game is played with: the saved choice where there is one, else one key per hand. */
+export function keysFor(id: string, input: InputKind, saved: number | undefined): number {
+  return picksKeys(id, input) ? (saved ?? 2) : 2;
+}
+
 export interface MiniLine {
   label: string;
   value: string;

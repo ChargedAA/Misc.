@@ -53,7 +53,7 @@ import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, quick } from './minis/groups.ts';
-import { clamp, clockShift, setClockShift, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -205,7 +205,7 @@ function bestFor(game: GameId, keys: number): RunRecord | null {
   if (game === 'reflex') return best('rt', keys, 'score');
   if (game === 'burst') return best('cps', keys, 'target');
   const e = entry(game);
-  const anyKeys = e ? !usesKeyCount(e.input) : false;
+  const anyKeys = e ? !picksKeys(game, e.input) : false;
   let top: RunRecord | null = null;
   for (const r of history) {
     if (r.kind === 'mini' && r.game === game && (anyKeys || r.mode === keys) && (top === null || (r.score ?? 0) > (top.score ?? 0))) top = r;
@@ -517,7 +517,7 @@ function startGame(game: GameId): void {
   // Sets (daily, random) play games with levels at their progressing difficulty.
   if (dailyQueue) currentLevel = 0;
   const e = entry(game);
-  applyKeys(settings.keys[game] ?? 2);
+  applyKeys(e ? keysFor(game, e.input, settings.keys[game]) : (settings.keys[game] ?? 2));
   pointerSlot.fill(0);
   ui.hide();
   if (e?.def) {
@@ -737,7 +737,7 @@ function finishMini(): void {
     return;
   }
   r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
-  const pointerOnly = !usesKeyCount(miniDef.input);
+  const pointerOnly = !picksKeys(miniDef.id, miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
   // Compare the tracked number with the last session and the best one (same key count).
   const lvl = miniDef.levels ? currentLevel : undefined;
@@ -841,7 +841,7 @@ function assignKey(code: string): void {
 /** Set the key count a game is played with, from its page. */
 function setKeys(game: GameId, n: number): void {
   const e = entry(game);
-  if (!e || !usesKeyCount(e.input) || n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
+  if (!e || !picksKeys(game, e.input) || n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
   settings.keys[game] = n;
   saveSettings(settings);
   sfx.play(SND_UI);
@@ -867,7 +867,7 @@ function playWith(game: GameId, n: number, level?: number): void {
     levels[game] = currentLevel;
     saveMap('tension.levels', levels);
   }
-  if (usesKeyCount(e.input)) {
+  if (picksKeys(game, e.input)) {
     if (n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
     settings.keys[game] = n;
     saveSettings(settings);
