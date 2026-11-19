@@ -453,6 +453,10 @@ export interface DailyRow {
   best: boolean;
   /** False when the stage was too short to count. */
   saved: boolean;
+  /** Key count it was played with, for a retry. */
+  keys?: number;
+  /** Against your recent average on the headline number: +0.1 is 10% better, -0.1 10% worse. */
+  vsUsual?: number;
   /** Skipped from the ready screen without playing. */
   skipped?: boolean;
 }
@@ -460,24 +464,39 @@ export interface DailyRow {
 export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number, label = 'Daily set'): string {
   const daily = label === 'Daily set';
   const done = rows.filter((r) => r.saved).length;
+  const pctOf = (v: number) => `${Math.round(Math.abs(v) * 100)}%`;
+  const vs = (r: DailyRow) => (r.vsUsual === undefined ? '' : Math.abs(r.vsUsual) < 0.03 ? 'usual' : `${r.vsUsual > 0 ? '\u25b2' : '\u25bc'} ${pctOf(r.vsUsual)}`);
+  // The weakest drill against your own recent average: worth one more go while it is fresh.
+  const judged = rows.filter((r) => r.saved && r.vsUsual !== undefined);
+  const worst = judged.length ? judged.reduce((a, b) => (b.vsUsual! < a.vsUsual! ? b : a)) : null;
+  const retry = worst && worst.vsUsual! <= -0.05 ? worst : null;
+  const actions: [string, string, string, string][] = retry
+    ? [
+        [`Retry ${retry.name}`, 'play', 'z', 'KeyZ Enter', ],
+        ['Back', 'menu', 'x', 'KeyX Escape Backspace'],
+      ]
+    : [['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']];
+  const foots = foot(actions).replace('data-act="play"', `data-act="play" data-arg="${retry ? `${retry.id}:${retry.keys ?? 2}` : ''}"`);
   return `<section class="screen">
+  <p class="rpos">${label}${DOT}done</p>
   <div class="big">
-    <div class="stat"><div class="v">${done ? fmtInt(total) : '\u2013'}</div><div class="l">${daily ? 'today' : label.toLowerCase()}${daily && done && total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
+    <div class="stat"><div class="v">${done ? fmtInt(total) : '\u2013'}</div><div class="l">${daily ? 'today' : 'total score'}${daily && done && total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
     <div class="stat"><div class="v">${done} / ${rows.length}</div><div class="l">completed</div></div>
     <div class="stat"><div class="v">${rows.filter((r) => r.best).length}</div><div class="l">personal bests</div></div>
   </div>
+  ${retry ? `<p class="cmp down">Furthest below your usual: ${retry.name}, ${pctOf(retry.vsUsual!)} worse than your recent average. One more go while it is fresh?</p>` : judged.length && worst ? `<p class="cmp up">Everything at or above your usual today.</p>` : ''}
   <table>
-    <tr><th></th><th>skill</th><th>result</th><th>score</th></tr>
+    <tr><th></th><th>skill</th><th>result</th><th>vs usual</th><th>score</th></tr>
     ${rows
       .map(
         (r) =>
-          `<tr${r.saved ? '' : ' class="dim"'}><td><button class="lnk" data-act="gamestats" data-arg="${r.id}">${r.name}</button>${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.saved ? r.primary : r.skipped ? 'skipped' : 'incomplete: too short to count'}</td><td>${r.saved ? fmtInt(r.score) : '\u2013'}</td></tr>`,
+          `<tr${r.saved ? '' : ' class="dim"'}><td><button class="lnk" data-act="gamestats" data-arg="${r.id}">${r.name}</button>${r.best ? ' \u00b7 best' : ''}</td><td>${SKILLS.find((k) => k.id === r.skill)?.name ?? r.skill}</td><td>${r.saved ? r.primary : r.skipped ? 'skipped' : 'incomplete: too short to count'}</td><td>${r.saved ? vs(r) || '\u2013' : '\u2013'}</td><td>${r.saved ? fmtInt(r.score) : '\u2013'}</td></tr>`,
       )
       .join('')}
   </table>
   ${done < rows.length ? `<p class="muted">Incomplete stages score nothing and are not saved.${daily && !done ? ' Nothing counted, so today does not count toward your streak.' : ''}</p>` : ''}
-  <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : label === 'Endless run' ? 'Random games until you stop.' : 'A fresh draw every time.'}</p>
-  ${foot([['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']])}
+  <p class="muted">${judged.length < done ? '"vs usual" needs three earlier sessions of a game. ' : ''}${daily ? 'The set changes every day. Same games for everyone on a given date.' : label === 'Endless run' ? 'Random games until you stop.' : 'A fresh draw every time.'}</p>
+  ${foots}
 </section>`;
 }
 

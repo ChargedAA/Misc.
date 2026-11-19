@@ -750,7 +750,11 @@ function finishMini(): void {
   if (dailyQueue) {
     // An endless run always has a next game.
     if (endlessScope && dailyIdx + 1 >= dailyQueue.length) dailyQueue.push(pickNext(dailyQueue));
-    dailyRows.push({ id: miniDef.id, name: miniDef.name, skill: miniDef.skill, score: r.score, primary: r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : '', best: isBest, saved: r.saved });
+    // Against the recent average of earlier sessions, signed so that positive is better.
+    const usualOf = cmp.recent.slice(-5);
+    const usual = usualOf.length >= 3 ? usualOf.reduce((a, b) => a + b, 0) / usualOf.length : 0;
+    const vsUsual = r.saved && usual > 0 && Number.isFinite(r.primary.value) ? ((r.primary.value - usual) / usual) * (r.primary.lower ? -1 : 1) : undefined;
+    dailyRows.push({ id: miniDef.id, name: miniDef.name, skill: miniDef.skill, score: r.score, primary: r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : '', best: isBest, saved: r.saved, keys: activeKeys, vsUsual });
     const next = dailyQueue[dailyIdx + 1];
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
