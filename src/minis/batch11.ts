@@ -10,7 +10,6 @@ import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import {
   arena,
-  clamp,
   footer,
   foreperiod,
   handLabel,
@@ -187,10 +186,20 @@ class Melody implements Mini {
 
 // --- Pole -------------------------------------------------------------------------
 
+/** Pole length (m), half the track (m), motor (m/s²), drag (1/s), gravity at the start (m/s²). */
+const POLE_LEN = 1.5;
+const POLE_TRACK = 1.4;
+const POLE_FORCE = 3.6;
+const POLE_DRAG = 1.2;
+const POLE_G = 2.4;
+
 class Pole implements Mini {
   private env!: MiniEnv;
+  /** Cart position (m, 0 at the middle) and speed (m/s). */
   private x = 0;
   private v = 0;
+  /** Motor force, eased toward what the keys ask for so a push is firm but not a jolt. */
+  private drive = 0;
   private th = 0.04;
   private om = 0;
   private push = 0;
@@ -237,33 +246,39 @@ class Pole implements Mini {
     if (this.over && now >= this.overAt) return true;
     if (this.started && !this.over) {
       this.time += dt;
-      // Gusts start after a few seconds and grow.
+      // Gusts start after a few seconds and grow: a sideways push on the top of the pole.
       this.gustT -= dt;
       if (this.gustT <= 0) {
-        this.gust = (Math.random() < 0.5 ? -1 : 1) * Math.min(2.2, 0.6 + this.time * 0.03);
+        this.gust = (Math.random() < 0.5 ? -1 : 1) * Math.min(1.6, 0.5 + this.time * 0.025);
         this.gustT = 2 + Math.random() * 3;
       }
       this.gust *= Math.exp(-dt * 2.5);
-      // Cart-pole, fixed substeps. The pole is long, so it falls slowly enough to catch.
-      const g = 3.2 + Math.min(2, this.time * 0.02);
-      const L = 1;
-      const steps = 8;
+      // Cart and pole in one set of units (metres, seconds). Gravity is turned down so
+      // the pole falls slowly enough to catch, and creeps up the longer you last.
+      const g = POLE_G + Math.min(1.8, this.time * 0.02);
+      const steps = 10;
       const h = dt / steps;
       for (let i = 0; i < steps; i++) {
-        let acc = this.push * 2.6 - this.v * 1.4;
-        // Pinned against a wall, pushing into it moves nothing.
-        if ((this.x >= 1 && acc > 0) || (this.x <= -1 && acc < 0)) acc = 0;
-        this.v += acc * h;
-        this.x += this.v * h;
-        if (this.x < -1 || this.x > 1) {
-          this.x = clamp(this.x, -1, 1);
+        this.drive += (this.push - this.drive) * Math.min(1, h / 0.05);
+        let acc = this.drive * POLE_FORCE - this.v * POLE_DRAG;
+        const nv = this.v + acc * h;
+        const nx = this.x + nv * h;
+        if (Math.abs(nx) > POLE_TRACK) {
+          // Hitting the end stop halts the cart within the step, and the pole feels it.
+          acc = -this.v / h;
+          this.x = Math.sign(nx) * POLE_TRACK;
           this.v = 0;
+        } else {
+          this.v = nv;
+          this.x = nx;
         }
-        const alpha = (g * Math.sin(this.th) - acc * Math.cos(this.th)) / L + this.gust - this.om * 0.15;
+        // Inverted pendulum with its weight at the top: the cart's acceleration tips it the other way.
+        const alpha = (g * Math.sin(this.th) - acc * Math.cos(this.th) + this.gust * Math.cos(this.th)) / POLE_LEN;
         this.om += alpha * h;
+        this.om *= Math.exp(-0.25 * h);
         this.th += this.om * h;
       }
-      if (Math.abs(this.th) > 0.85) {
+      if (Math.abs(this.th) > 0.9) {
         this.over = true;
         this.overAt = now + 1400;
         this.env.sound(SND_FALL);
@@ -274,14 +289,18 @@ class Pole implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     header(v, touch, 'time', `${this.time.toFixed(1)} s`, 'lean', `${Math.round((this.th * 180) / Math.PI)}°`);
-    const half = Math.min((a.right - a.left) / 2 - 30 * a.u, 360 * a.u);
     const ground = a.bottom - 60 * a.u;
-    const Lpx = Math.min(ground - a.top - 30 * a.u, 300 * a.u);
+    // One scale for the track and the pole, so what you see is what the physics does.
+    const ppm = Math.min(((a.right - a.left) / 2 - 50 * a.u) / POLE_TRACK, (ground - a.top - 50 * a.u) / POLE_LEN);
+    const half = POLE_TRACK * ppm;
+    const Lpx = POLE_LEN * ppm;
     ctx.fillStyle = COL_DIM;
-    ctx.fillRect(a.cx - half - 20 * a.u, ground, half * 2 + 40 * a.u, dpr);
-    ctx.fillRect(a.cx - half - 20 * a.u, ground - 12 * a.u, dpr, 12 * a.u);
-    ctx.fillRect(a.cx + half + 20 * a.u, ground - 12 * a.u, dpr, 12 * a.u);
-    const cx = a.cx + this.x * half;
+    // The track, with end stops just past where the cart's sides meet them.
+    const stop = half + 26 * a.u;
+    ctx.fillRect(a.cx - stop, ground, stop * 2, dpr);
+    ctx.fillRect(a.cx - stop, ground - 14 * a.u, 2 * dpr, 14 * a.u);
+    ctx.fillRect(a.cx + stop - 2 * dpr, ground - 14 * a.u, 2 * dpr, 14 * a.u);
+    const cx = a.cx + this.x * ppm;
     // Cart.
     ctx.strokeStyle = COL_MID;
     ctx.lineWidth = 1.5 * dpr;

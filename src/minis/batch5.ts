@@ -626,12 +626,15 @@ class Alert implements Mini {
 
 // --- Zigzag -----------------------------------------------------------------------
 
+/** Starting speed, screen widths per second. */
+const ZZ_BASE = 0.42;
+
 class Zigzag implements Mini {
   private env!: MiniEnv;
   private y = 0.5;
   private up = false;
   private x = 0; // distance travelled, in screen widths
-  private speed = 0.32;
+  private speed = ZZ_BASE;
   private last = 0;
   private started = false;
   private over = false;
@@ -670,10 +673,17 @@ class Zigzag implements Mini {
     }
   }
 
+  /** Corridor centre and half-width at a distance, interpolated between samples. */
   private sample(at: number): [number, number] {
-    const i = clamp(Math.floor(at / 0.02), 0, this.cy.length - 1);
-    return [this.cy[i]!, this.hw[i]!];
+    const f = clamp(at / 0.02, 0, this.cy.length - 1);
+    const i = Math.floor(f);
+    const j = Math.min(i + 1, this.cy.length - 1);
+    const t = f - i;
+    return [this.cy[i]! + (this.cy[j]! - this.cy[i]!) * t, this.hw[i]! + (this.hw[j]! - this.hw[i]!) * t];
   }
+
+  /** Dart half-size in corridor units, from the last frame's layout. */
+  private margin = 0.012;
 
   press(slot: number): void {
     this.held |= 1 << slot;
@@ -700,14 +710,16 @@ class Zigzag implements Mini {
     this.last = now;
     if (this.over && now >= this.overAt) return true;
     if (this.started && !this.over) {
-      this.speed = 0.32 + this.x * 0.004;
+      this.speed = ZZ_BASE + this.x * 0.004;
       this.x += this.speed * dt;
-      // Diagonal motion: the same speed up or down, 45 degrees on screen.
-      this.y += (this.up ? -1 : 1) * this.speed * dt * 1.0;
+      // Diagonal motion: the same speed up or down, 45 degrees on screen. Direction
+      // changes the instant a key goes down or up: nothing to wind up, nothing heavy.
+      this.y += (this.up ? -1 : 1) * this.speed * dt;
       if (this.up) this.holdCount += dt;
       if ((this.cy.length - 1) * 0.02 < this.x + 2) this.extend();
-      const [c, w] = this.sample(this.x + 0.25);
-      if (this.y < c - w || this.y > c + w) {
+      // The walls where the dart is (not ahead of it), less the dart's own size.
+      const [c, w] = this.sample(this.x);
+      if (this.y - this.margin < c - w || this.y + this.margin > c + w) {
         this.over = true;
         this.overAt = now + 1300;
         this.env.sound(SND_FALL);
@@ -719,7 +731,7 @@ class Zigzag implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'distance', `${(this.x * 10).toFixed(0)}`, 'speed', `${(this.speed / 0.32).toFixed(2)}×`);
+    header(v, touch, 'distance', `${(this.x * 10).toFixed(0)}`, 'speed', `${(this.speed / ZZ_BASE).toFixed(2)}×`);
     const W = a.right - a.left;
     const H = a.bottom - a.top;
     const scale = Math.min(W, H);
@@ -727,6 +739,8 @@ class Zigzag implements Mini {
     const y0 = a.top + (H - scale) / 2;
     const toX = (d: number) => x0 + (d - this.x + 0.25) * scale;
     const toY = (yy: number) => y0 + yy * scale;
+    // The collision margin is the dart's half-height, a little forgiving.
+    this.margin = (5 * a.u) / scale;
     ctx.save();
     ctx.beginPath();
     ctx.rect(a.left, a.top, W, H);
@@ -737,7 +751,7 @@ class Zigzag implements Mini {
     for (const side of [-1, 1]) {
       ctx.beginPath();
       let first = true;
-      for (let d = this.x - 0.3; d < this.x + W / scale; d += 0.02) {
+      for (let d = this.x - 0.3; d < this.x + W / scale; d += 0.01) {
         const [c, w] = this.sample(d);
         const px = toX(d);
         const py = toY(c + side * w);
@@ -791,7 +805,7 @@ class Zigzag implements Mini {
       lines: [
         { label: 'distance', value: String(dist) },
         { label: 'direction changes', value: String(this.flips) },
-        { label: 'top speed', value: `${(this.speed / 0.32).toFixed(2)}×` },
+        { label: 'top speed', value: `${(this.speed / ZZ_BASE).toFixed(2)}×` },
       ],
       saved: this.started && this.x > 0.5,
     };
