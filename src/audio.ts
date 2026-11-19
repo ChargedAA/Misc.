@@ -130,6 +130,31 @@ export class Sfx {
     osc.stop(t + d + 0.02);
   }
 
+  /**
+   * A plucked note, warmer than a pure tone and easy to name: a triangle with a soft attack,
+   * a quick decay to a sustain, and a release. `delayMs` schedules it on the audio clock,
+   * so chords land together and phrases keep time.
+   */
+  note(hz: number, ms: number, delayMs = 0, gain = 0.16): void {
+    const ctx = this.ctx;
+    if (!ctx || this.muted || !this.master) return;
+    const t = ctx.currentTime + Math.max(0, delayMs) / 1000;
+    const d = ms / 1000;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = hz;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(gain * 0.45, t + 0.18);
+    g.gain.setValueAtTime(gain * 0.45, t + Math.max(0.2, d - 0.08));
+    g.gain.linearRampToValueAtTime(0, t + d);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(t);
+    osc.stop(t + d + 0.02);
+  }
+
   private noise(): number {
     this.noiseSeed = (Math.imul(this.noiseSeed, 1664525) + 1013904223) | 0;
     return (this.noiseSeed >>> 8) / 8388608 - 1;

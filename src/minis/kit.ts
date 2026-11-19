@@ -5,7 +5,7 @@ import { COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX, type ModeDef } from '../config
 import { ICON_PAUSE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 
-export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity';
+export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity' | 'ear';
 
 export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'reaction', name: 'Reaction', blurb: 'See it, press it.' },
@@ -17,6 +17,7 @@ export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'judgement', name: 'Judgement', blurb: 'Size things up at a glance.' },
   { id: 'reasoning', name: 'Reasoning', blurb: 'Think fast and stay right.' },
   { id: 'dexterity', name: 'Dexterity', blurb: 'Fingers that find and press any key.' },
+  { id: 'ear', name: 'Ear', blurb: 'Hear pitch: higher, in tune, which note, which chord.' },
 ];
 
 /** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either; 'type' needs a full keyboard. */
@@ -86,6 +87,8 @@ export interface MiniEnv {
   latency?: number;
   /** Play a sound `delayMs` from now on the audio clock, for rhythms that must be exact. */
   soundAt?(id: number, delayMs: number): void;
+  /** A plucked note at any pitch, optionally scheduled ahead on the audio clock (ear training). */
+  note?(hz: number, ms: number, delayMs?: number): void;
   /** Play a pure tone (listening drills). */
   tone?(hz: number, ms: number, pan?: number): void;
 }

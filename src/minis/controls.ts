@@ -142,4 +142,11 @@ export const CONTROLS: Record<string, Control[]> = {
   recall: [['A–Z', 'type a word'], ['Space', 'next word'], ['Enter', 'done']],
   crack: [['1–5', 'pick shapes'], ['Enter', 'try']],
   plan: [['1–6', 'add a job'], ['Backspace', 'undo']],
+  intune: [['1–2', 'the one in tune'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  octave: [['1–5', 'the octave'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  note: [['1–9', 'the note'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  interval: [['1–9', 'the interval'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  chord: [['1–7', 'the chord'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  contour: [['1–3', 'the shape'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  scale: [['L', 'major'], ['R', 'minor']],
 };

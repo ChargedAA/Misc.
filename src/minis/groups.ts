@@ -97,7 +97,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Size and amount', desc: 'Lengths, counts, midpoints and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop'] },
-      { name: 'By ear and clock', desc: 'Judge what you hear, and how long things last', ids: ['pitch', 'tune', 'duration'] },
+      { name: 'Time', desc: 'How long things last', ids: ['duration'] },
       { name: 'Risk', desc: 'Weigh a bigger reward against the chance of losing it', ids: ['pump'] },
     ],
     routine: ['longer', 'tilt', 'more'],
@@ -127,6 +127,16 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     ],
     routine: ['hunt', 'chords', 'type'],
     benchmark: 'hunt',
+  },
+  ear: {
+    about: 'Hear pitch: which is higher, which is in tune, which note, interval or chord.',
+    groups: [
+      { name: 'Higher or lower', desc: 'Fine differences in pitch', ids: ['pitch', 'intune', 'tune'] },
+      { name: 'Name it', desc: 'Octaves, notes and the distance between them', ids: ['octave', 'note', 'interval'] },
+      { name: 'Harmony and melody', desc: 'Chords, scales and the shape of a tune', ids: ['chord', 'scale', 'contour'] },
+    ],
+    routine: ['pitch', 'interval', 'chord'],
+    benchmark: 'intune',
   },
 };
 

@@ -185,7 +185,7 @@ export function columnsHtml(cols: Col[], dir: number): string {
 
 export const GROUPS: { id: string; name: string; desc: string; skills: Skill[] }[] = [
   { id: 'body', name: 'Reflexes', desc: 'Reaction, speed, timing, coordination, dexterity', skills: ['reaction', 'speed', 'timing', 'coordination', 'dexterity'] },
-  { id: 'mind', name: 'Mind', desc: 'Memory, attention, judgement, reasoning', skills: ['memory', 'attention', 'judgement', 'reasoning'] },
+  { id: 'mind', name: 'Mind', desc: 'Memory, attention, judgement, reasoning, ear', skills: ['memory', 'attention', 'judgement', 'reasoning', 'ear'] },
 ];
 
 export interface MenuCtx {
@@ -231,12 +231,13 @@ const SKILL_KEYS: Record<string, [string, string]> = {
   attention: ['KeyN', 'N'],
   judgement: ['KeyM', 'M'],
   reasoning: ['Comma', ','],
+  ear: ['Period', '.'],
 };
 
 export function startMenu(c: MenuCtx): Menu {
   return {
     title: 'TENSION',
-    sub: `Train nine skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
+    sub: `Train ten skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
       { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },

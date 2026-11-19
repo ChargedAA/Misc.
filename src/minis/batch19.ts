@@ -719,7 +719,7 @@ export const BATCH19: MiniDef[] = [
   {
     id: 'pitch',
     name: 'Pitch',
-    skill: 'judgement',
+    skill: 'ear',
     blurb: 'Two tones. Was the second higher or lower? By ear alone.',
     how: 'Two tones play, one after the other. Answer with the left hand if the second was lower, the right if it was higher (or tap that side). Get it right and the difference shrinks. Scored on the smallest step you can reliably hear. Needs sound on.',
     input: 'both',
