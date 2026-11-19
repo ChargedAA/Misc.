@@ -26,6 +26,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'aim', 'whack', 'reflex'] },
       { name: 'Hold back', desc: 'Stop a press you have already started', ids: ['stop', 'dodge'] },
+      { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch'] },
       { name: 'Runs', desc: 'Steer a rolling ball; the window to react is the difficulty', ids: ['lanes', 'hurdles', 'rush'] },
     ],
     routine: ['snap', 'choice', 'stop'],
@@ -55,6 +56,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole'] },
+      { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
       { name: 'Full runs', desc: 'Everything at once, until you fall', ids: ['climb', 'zigzag'] },
     ],
@@ -75,7 +77,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   attention: {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
-      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch'] },
+      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
@@ -135,6 +137,10 @@ export const DURATION: Record<string, string> = {
   roll: '12 s',
   steady: '15 s',
   sets: '45 s',
+  swerve: 'until three hits',
+  catch: 'until three lives are gone',
+  sort: 'until three wrong',
+  shield: 'until three hits',
   matrix: '2 to 4 min',
   balance: '2 to 4 min',
   series: '2 min',
