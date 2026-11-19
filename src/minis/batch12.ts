@@ -551,7 +551,7 @@ class Again implements Mini {
         { label: 'accuracy', value: pct((this.hits + this.crs) / (n || 1)) },
         { label: 'median time when right', value: this.rts.length ? `${Math.round(median(this.rts))} ms` : '–' },
       ],
-      saved: n >= 10,
+      rts: this.rts, saved: n >= 10,
     };
   }
 }

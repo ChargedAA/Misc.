@@ -21,6 +21,8 @@ export interface Submission {
   inputs: number;
   durationMs: number;
   rts?: number[];
+  /** True when the headline itself is a reaction time, so it must agree with `rts`. */
+  rtHeadline?: boolean;
   /** The client's own fair-play flags; any at all and the run is refused. */
   flags: string[];
 }
@@ -82,7 +84,7 @@ export function refuse(s: Submission): string | null {
     const sd = Math.sqrt(rts.reduce((a, t) => a + (t - med) ** 2, 0) / rts.length);
     if (rts.length >= 10 && sd < 4) return 'reactions too uniform to be human';
     // A reaction headline far better than the reaction times it came from has been edited.
-    if (s.unit === 'ms' && s.lower && s.value < med * 0.5 - 20) return 'headline does not match the reaction times';
+    if (s.rtHeadline && s.unit === 'ms' && s.lower && s.value < med * 0.5 - 20) return 'headline does not match the reaction times';
   }
   if (inputsPerSecond(s) > 30) return 'more inputs per second than hands can make';
   return null;

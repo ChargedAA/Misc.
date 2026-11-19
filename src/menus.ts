@@ -240,6 +240,7 @@ export function startMenu(c: MenuCtx): Menu {
     title: 'TENSION',
     sub: `Train ten skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
+      { label: 'Find', act: 'go', arg: 'search', code: 'KeyF', keyName: 'F' },
       { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
       { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
@@ -377,6 +378,59 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
     });
   }
   return { title: def.name.toUpperCase(), sub: g.about, items, wide: true };
+}
+
+/** Words people search with that a skill's drills may not say themselves. */
+const SEARCH_TAGS: Record<string, string> = {
+  ear: 'pitch music sound tone hearing listen notes',
+  reaction: 'reflex fast quick react',
+  speed: 'tapping tap rate cps fast',
+  timing: 'rhythm beat tempo music',
+  coordination: 'steer balance hands control',
+  dexterity: 'typing keyboard fingers',
+  memory: 'remember recall',
+  attention: 'focus vigilance',
+  judgement: 'estimate perception',
+  reasoning: 'logic puzzle maths math',
+};
+
+/** Rank games for a search: name first, then skill and group, then the description. */
+export function searchGames(q: string): Entry[] {
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const scored: { e: Entry; s: number }[] = [];
+  for (const sk of SKILLS) {
+    const g = GUIDES[sk.id];
+    for (const e of gamesOf([sk.id])) {
+      const name = e.name.toLowerCase();
+      const group = g.groups.find((x) => x.ids.includes(e.id))?.name.toLowerCase() ?? '';
+      const rest = `${sk.name} ${group} ${e.blurb} ${SEARCH_TAGS[sk.id] ?? ''}`.toLowerCase();
+      let s = 0;
+      for (const w of words) {
+        const ws = name === w ? 100 : name.startsWith(w) ? 60 : name.includes(w) ? 35 : new RegExp(`\\b${w.replace(/[^a-z0-9]/g, '')}`).test(rest) ? 12 : rest.includes(w) ? 5 : 0;
+        if (!ws) {
+          s = 0;
+          break;
+        }
+        s += ws;
+      }
+      if (s) scored.push({ e, s });
+    }
+  }
+  return scored.sort((a, b) => b.s - a.s || a.e.name.localeCompare(b.e.name)).map((x) => x.e);
+}
+
+export function searchMenu(c: MenuCtx, q: string): Menu {
+  const found = searchGames(q).slice(0, 30);
+  const total = gamesOf(SKILLS.map((k) => k.id)).length;
+  const skillName = (id: string) => SKILLS.find((k) => k.id === id)?.name ?? '';
+  return {
+    title: 'FIND',
+    sub: q ? `${found.length || 'No'} match${found.length === 1 ? '' : 'es'}` : `Search ${total} drills by name, skill or what they train`,
+    extra: `<div class="lbform search"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="type a name, skill or idea: pitch, balance, typing…" value="${esc(q)}" aria-label="Search drills"></div>${q && !found.length ? '<p class="muted">Nothing matches. Try a skill (reaction, ear) or a kind of task (rhythm, maze, chord).</p>' : ''}`,
+    items: found.map((e) => ({ label: e.name, desc: e.blurb, meta: `${skillName(e.skill)}${bestOf(c, e.id) ? `${DOT}${bestOf(c, e.id)}` : ''}`, act: 'go', arg: `game:${e.id}`, code: 'Unidentified', keyName: '' })),
+    wide: true,
+  };
 }
 
 /** A game with difficulty levels: pick one first. */
@@ -536,6 +590,45 @@ function changeLine(vals: number[], lower: boolean, fmt: (v: number) => string):
   return `first ${k} sessions ${fmt(first)}, last ${k} ${fmt(last)}: ${pct >= 0 ? 'better' : 'worse'} by ${Math.abs(Math.round(pct))}%`;
 }
 
+/** The deeper sections of a game's stats: response times, practice and the last breakdown. */
+function depthHtml(recs: RunRecord[], word: string): string {
+  let out = '';
+  const withRt = recs.filter((r) => r.rt && r.rt.n >= 3);
+  if (withRt.length) {
+    const meds = withRt.map((r) => r.rt!.median);
+    const sds = withRt.map((r) => r.rt!.sd);
+    const fastest = Math.min(...withRt.map((r) => r.rt!.best));
+    const last = withRt[withRt.length - 1]!.rt!;
+    const cvLast = last.median > 0 ? last.sd / last.median : 0;
+    out += `<h2>${word === 'reaction' ? 'Reaction' : 'Response'} time <span>${withRt.length} session${withRt.length === 1 ? '' : 's'} measured</span></h2>
+    <div class="big">
+      <div class="stat"><div class="v">${Math.round(Math.min(...meds))}<small> ms</small></div><div class="l">best median</div></div>
+      <div class="stat"><div class="v">${Math.round(last.median)}<small> ms</small></div><div class="l">median, last session</div></div>
+      <div class="stat"><div class="v">${Math.round(fastest)}<small> ms</small></div><div class="l">fastest single ${word}</div></div>
+    </div>
+    <p class="muted">Last session: ${last.n} measured, spread ±${Math.round(last.sd)} ms (${cvLast < 0.15 ? 'very steady' : cvLast < 0.3 ? 'steady' : 'uneven: some slow ones'}).</p>
+    <p class="muted">${changeLine(meds, true, (v) => `${Math.round(v)} ms`)}</p>
+    <div class="grid">
+      <div class="card"><div class="l">median ${word} time</div><div class="v">${Math.round(last.median)}<small>ms</small></div>${trendSvg(meds, 'median')}</div>
+      <div class="card"><div class="l">consistency (spread)</div><div class="v">±${Math.round(last.sd)}<small>ms</small></div>${trendSvg(sds, 'spread')}</div>
+    </div>`;
+  }
+  // Practice: how much, how recently.
+  const week = Date.now() - 7 * 86400000;
+  const secs = recs.reduce((a, r) => a + (r.dur ?? 0), 0);
+  const thisWeek = recs.filter((r) => r.at >= week).length;
+  const days = new Set(recs.map((r) => new Date(r.at).toDateString())).size;
+  out += `<h2>Practice</h2><table>
+    <tr><td>sessions this week</td><td>${thisWeek}</td></tr>
+    <tr><td>days practised</td><td>${days}</td></tr>
+    ${secs ? `<tr><td>time played</td><td>${secs >= 3600 ? `${(secs / 3600).toFixed(1)} h` : `${Math.max(1, Math.round(secs / 60))} min`}</td></tr>` : ''}
+    <tr><td>first played</td><td>${shortDate(recs[0]!.at)}</td></tr>
+  </table>`;
+  const lastLines = [...recs].reverse().find((r) => r.lines?.length)?.lines;
+  if (lastLines) out += `<h2>Last session in detail</h2><table>${lastLines.map((l) => `<tr><td>${esc(l.label)}</td><td>${esc(l.value)}</td></tr>`).join('')}</table>`;
+  return out;
+}
+
 export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
   const e = entry(id)!;
   const usesKeys = picksKeys(id, e.input);
@@ -569,7 +662,7 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
     <div class="grid">
       <div class="card"><div class="l">${p.label}</div><div class="v">${vals.length ? fmt(vals[vals.length - 1]!) : '–'}<small>last</small></div>${trendSvg(vals, p.label)}</div>
       <div class="card"><div class="l">score</div><div class="v">${fmtInt(scores[scores.length - 1]!)}<small>best ${fmtInt(Math.max(...scores))}</small></div>${trendSvg(scores, 'score')}</div>
-    </div>`;
+    </div>${depthHtml(recs, e.skill === 'reaction' || /react/i.test(p.label) ? 'reaction' : 'response')}`;
   }
   const table = recs.length
     ? `<h2>Recent sessions</h2><table><tr><th>when</th>${usesKeys ? '<th>keys</th>' : ''}${e.def?.levels ? '<th>window</th>' : ''}<th>${e.def ? (recs[recs.length - 1]!.vlabel ?? 'result') : 'score'}</th><th>score</th></tr>${recs

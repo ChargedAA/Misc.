@@ -50,6 +50,7 @@ abstract class Threshold implements Mini {
   private at = 0;
   private correct = 0;
   private hist: number[] = [];
+  private rts: number[] = [];
   private held = 0;
   private cx = 0;
 
@@ -91,6 +92,7 @@ abstract class Threshold implements Mini {
     if (this.state === 2 || side === 0 || ts < this.t0) return;
     this.lastOk = side === this.answerSide;
     if (this.lastOk) this.correct++;
+    if (this.lastOk) this.rts.push(ts - this.t0);
     this.hist.push(this.diff);
     this.st.update(this.lastOk);
     this.env.sound(this.lastOk ? SND_CATCH : SND_FALSE);
@@ -146,6 +148,7 @@ abstract class Threshold implements Mini {
         { label: `${label} (last 12)`, value: this.i ? `${this.fmt(thr)}` : '–' },
         { label: 'correct', value: `${this.correct} of ${this.i}` },
       ],
+      rts: this.rts,
       saved: this.i >= 10,
     };
   }
@@ -483,7 +486,7 @@ class Sum implements Mini {
         { label: 'median time per answer', value: this.times.length ? `${(median(this.times) / 1000).toFixed(2)} s` : '–' },
         { label: 'level reached', value: String(this.level + 1) },
       ],
-      saved: this.right + this.wrong >= 5,
+      rts: this.times, saved: this.right + this.wrong >= 5,
     };
   }
 }
@@ -809,7 +812,7 @@ class Series implements Mini {
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
         { label: 'level reached', value: String(this.level + 1) },
       ],
-      saved: this.i >= 4,
+      rts: this.times, saved: this.i >= 4,
     };
   }
 }

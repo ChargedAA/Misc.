@@ -523,7 +523,7 @@ export function miniResultsHtml(
     .filter((l) => !(measured && l.value.replace(/\s/g, '').startsWith(value.replace(/\s/g, '')) && !/\d/.test(l.value.replace(/\s/g, '').charAt(value.replace(/\s/g, '').length))))
     .map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`)
     .join('')}</table>
-  ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
+  ${hist && hist.counts.length ? `<h2>${/react/i.test(r.primary.label) || entry(id)?.skill === 'reaction' ? 'Reaction' : 'Response'} times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${foot(actions)}
 </section>`;
 }

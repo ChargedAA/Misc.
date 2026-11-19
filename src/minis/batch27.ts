@@ -382,7 +382,7 @@ class Fly implements Mini {
         { label: 'median time per fly', value: ms(median(this.times)) },
         { label: 'missed swipes', value: String(this.misses) },
       ],
-      saved: this.swats + this.misses >= 5,
+      rts: this.times, saved: this.swats + this.misses >= 5,
     };
   }
 }
@@ -519,7 +519,7 @@ class Radar implements Mini {
         { label: 'friendlies tapped', value: String(this.wrong) },
         { label: 'median time to tap', value: ms(median(this.times)) },
       ],
-      saved: this.caught + this.escaped >= 4,
+      rts: this.times, saved: this.caught + this.escaped >= 4,
     };
   }
 }

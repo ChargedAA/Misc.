@@ -27,7 +27,7 @@ test('runs a person could not produce are refused', () => {
   assert.match(refuse(good({ flags: ['scripted'] }))!, /fair-play/);
   assert.match(refuse(good({ rts: [80, 85, 90, 95, 88, 92] }))!, /humanly|impossible/);
   assert.match(refuse(good({ rts: [200, 200, 200, 200, 200, 200, 200, 200, 200, 200] }))!, /uniform/);
-  assert.match(refuse(good({ value: 90 }))!, /does not match/);
+  assert.match(refuse(good({ value: 90, rtHeadline: true }))!, /does not match/);
   assert.match(refuse(good({ unit: '/s', value: 40, rts: [] }))!, /taps/);
   assert.match(refuse(good({ inputs: 2 }))!, /not enough/);
   assert.match(refuse(good({ durationMs: 1000 }))!, /duration/);
@@ -70,4 +70,10 @@ test('the API: submit, read back, refuse junk', async () => {
   assert.equal(list.entries.length, 1);
   assert.equal(list.entries[0].name, 'Ada');
   assert.equal(list.entries[0].device, undefined, 'device ids are not published');
+});
+
+test('a reaction headline must agree with its reaction times; other ms headlines need not', () => {
+  assert.match(refuse(good({ value: 80, rtHeadline: true }))!, /does not match/);
+  // Stream's headline is the letter speed (ms per letter), unrelated to how fast the X was hit.
+  assert.equal(refuse(good({ value: 80, rtHeadline: false })), null);
 });

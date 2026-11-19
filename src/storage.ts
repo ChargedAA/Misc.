@@ -101,6 +101,10 @@ export interface RunRecord {
   target?: number;
   /** Games with difficulty levels: the level played (0 = progressing). */
   level?: number;
+  /** How long the session took, in seconds. */
+  dur?: number;
+  /** The results' breakdown lines; kept on each game's latest session only, to save space. */
+  lines?: { label: string; value: string }[];
 }
 
 const SETTINGS_KEY = 'tension.settings.v1';
@@ -190,6 +194,8 @@ export function loadHistory(): RunRecord[] {
 
 export function addRecord(r: RunRecord): RunRecord[] {
   const h = loadHistory();
+  // Only the latest session of a game keeps its breakdown.
+  if (r.lines && r.game) for (const x of h) if (x.game === r.game && x.lines) delete x.lines;
   h.push(r);
   if (h.length > HISTORY_MAX) h.splice(0, h.length - HISTORY_MAX);
   write(HISTORY_KEY, h);

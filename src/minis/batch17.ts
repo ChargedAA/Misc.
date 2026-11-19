@@ -711,7 +711,7 @@ class Route implements Mini {
         { label: 'routes', value: String(this.round) },
         { label: 'median decision time', value: ms(this.rts.length ? [...this.rts].sort((x, y) => x - y)[this.rts.length >> 1]! : 0) },
       ],
-      saved: this.round >= 2,
+      rts: this.rts, saved: this.round >= 2,
     };
   }
 }

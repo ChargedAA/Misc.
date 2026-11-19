@@ -315,7 +315,7 @@ class Flow implements Mini {
         { label: 'right', value: `${this.right} of ${this.trial}` },
         { label: 'median decision time', value: ms(median(this.rts)) },
       ],
-      saved: this.trial >= 12,
+      rts: this.rts, saved: this.trial >= 12,
     };
   }
 }

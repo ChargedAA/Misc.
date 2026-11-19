@@ -17,6 +17,7 @@ import {
   handLabel,
   header,
   mean,
+  median,
   message,
   ms,
   pct,
@@ -815,6 +816,7 @@ class Stream implements Mini {
   private fas = 0;
   private crs = 0;
   private fastest = 300;
+  private rts: number[] = [];
   private feedback = '';
   private held = 0;
 
@@ -858,7 +860,9 @@ class Stream implements Mini {
     this.pressed = true;
     const k = this.item(ts);
     // A hit if the X was on screen within the last 800 ms.
-    this.pressedOk = this.targetAt >= 0 && k >= this.targetAt && ts - (this.start0 + this.targetAt * this.rate.level) <= 800;
+    const since = ts - (this.start0 + this.targetAt * this.rate.level);
+    this.pressedOk = this.targetAt >= 0 && k >= this.targetAt && since <= 800;
+    if (this.pressedOk) this.rts.push(since);
     this.env.sound(this.pressedOk ? SND_CATCH : SND_FALSE);
   }
 
@@ -932,7 +936,9 @@ class Stream implements Mini {
         { label: 'X caught', value: `${this.hits} of ${this.hits + this.misses}` },
         { label: 'false alarms', value: `${this.fas} of ${this.fas + this.crs}` },
         { label: 'fastest stream with the X caught', value: this.fastest < 300 ? `${this.fastest} ms per letter` : '–' },
+        { label: 'reaction to the X (median)', value: this.rts.length ? `${Math.round(median(this.rts))} ms` : '–' },
       ],
+      rts: this.rts,
       saved: this.run >= 5,
     };
   }

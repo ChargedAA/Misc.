@@ -58,7 +58,7 @@ import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, leaderboardHtml, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -381,6 +381,8 @@ function buildMenu(n: NavEntry): Menu {
     }
     case 'custom':
       return customMenu(c, n.arg);
+    case 'search':
+      return searchMenu(c, n.arg);
     default:
       return startMenu(c);
   }
@@ -394,6 +396,17 @@ function showMenu(dir = 0): void {
   ui.show(columnsHtml(nav.map((n) => ({ menu: buildMenu(n), sel: n.sel })), dir));
   const lb = uiRoot.querySelector<HTMLElement>('#lb');
   if (lb) void fillBoard(lb);
+  const q = uiRoot.querySelector<HTMLInputElement>('#q');
+  if (q) {
+    q.addEventListener('input', () => {
+      nav[nav.length - 1]!.arg = q.value;
+      showMenu();
+    });
+    if (!nav[nav.length - 1]!.sel) {
+      q.focus();
+      q.setSelectionRange(q.value.length, q.value.length);
+    }
+  }
 }
 
 /** Load a game's leaderboard into its stats page. */
@@ -420,7 +433,7 @@ async function submitScore(r: MiniResult, game: string, keys: number, durationMs
     const res = await fetch('/api/scores', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ device: settings.device, name: settings.lbName, game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags }),
+      body: JSON.stringify({ device: settings.device, name: settings.lbName, game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rtHeadline: /react/i.test(r.primary.label), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags }),
     });
     const out = (await res.json()) as { ok: boolean; rank?: number; reason?: string };
     note(out.ok ? (out.rank && out.rank <= 100 ? `Leaderboard: #${out.rank}` : 'Leaderboard: not in the top 100 yet') : `Leaderboard: not accepted (${out.reason})`);
@@ -924,6 +937,8 @@ function finishMini(): void {
   // on the score, so the two can never disagree. The first session is a baseline, not a best.
   const isBest = r.saved && cmp.best !== null && Number.isFinite(r.primary.value) && (r.primary.lower ? (r.primary.zeroOk || r.primary.value > 0) && r.primary.value < cmp.best : r.primary.value > cmp.best);
   if (isBest) sfx.play(SND_BURST_OK);
+  const rtsNow = (r.rts ?? []).filter((t) => Number.isFinite(t) && t >= 0);
+  const stNow = rtStats(rtsNow, rtsNow.length);
   if (r.saved) {
     history = addRecord({
       kind: 'mini',
@@ -939,10 +954,13 @@ function finishMini(): void {
       lower: r.primary.lower,
       level: lvl,
       len: lenNow === 1 ? undefined : lenNow,
+      rt: rtsNow.length >= 3 ? { n: rtsNow.length, avg: stNow.avg, median: stNow.median, best: stNow.best, sd: stNow.sd, miss: 0, early: 0 } : undefined,
+      dur: Math.round((performance.now() - clockShift() - miniStartAt) / 1000),
+      lines: r.lines.slice(0, 8).map((l) => ({ label: l.label, value: l.value })),
     });
   }
-  const rts = r.rts ?? [];
-  const st = rtStats(rts, rts.length);
+  const rts = rtsNow;
+  const st = stNow;
   screen = 'miniResults';
   inputLockUntil = performance.now() + 750;
   let step = null;
@@ -1372,10 +1390,31 @@ function onKeyDown(e: KeyboardEvent): void {
   const code = e.code;
   // Typing in a text field (the leaderboard name) is typing, not shortcuts.
   if (e.target instanceof HTMLInputElement) {
+    if (e.target.id === 'q') {
+      // The search box: arrows and Enter reach the results, Escape goes back.
+      const first = uiRoot.querySelector<HTMLButtonElement>('.col.active [data-act="go"]');
+      if (code === 'Enter' && first) {
+        e.preventDefault();
+        first.click();
+      } else if (code === 'ArrowDown' && first) {
+        e.preventDefault();
+        first.focus();
+      } else if (code === 'Escape') {
+        e.preventDefault();
+        back();
+      }
+      return;
+    }
     if (code === 'Enter') {
       e.preventDefault();
       onAction('lbname', '');
     } else if (code === 'Escape') e.target.blur();
+    return;
+  }
+  // From any menu, / opens search.
+  if (screen === 'menu' && code === 'Slash' && nav[nav.length - 1]!.kind !== 'search') {
+    e.preventDefault();
+    go('search');
     return;
   }
 

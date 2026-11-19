@@ -1,7 +1,7 @@
 # TENSION
 
-A minimal training suite: 175 small games for reaction, speed, timing, memory,
-attention, coordination, judgement, reasoning and dexterity. Near-black, thin lines, one accent colour. Every
+A minimal training suite: 182 small games for reaction, speed, timing, memory,
+attention, coordination, judgement, reasoning, dexterity and ear (pitch). Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
 ```bash
@@ -10,7 +10,7 @@ npm run dev
 ```
 
 The home screen leads with **Daily** (`Space`): one drill per skill, the same
-set for everyone that day. Below it are the eight skills, the Reflexes skills on
+set for everyone that day. Below it are the ten skills, the Reflexes skills on
 the left hand's keys and the Mind skills on the right hand's:
 
 | Left hand | | Right hand | |
@@ -19,9 +19,11 @@ the left hand's keys and the Mind skills on the right hand's:
 | `X` | Speed | `N` | Attention |
 | `C` | Timing | `M` | Judgement |
 | `V` | Coordination | `,` | Reasoning |
-| `A` | Dexterity (the whole keyboard) | | |
+| `A` | Dexterity (the whole keyboard) | `.` | Ear (pitch, intervals, chords) |
 
-`R` Random, `S` Stats and `O` Settings sit in the header. Everywhere, `Space`
+`F` Find, `R` Random, `S` Stats and `O` Settings sit in the header. **Find**
+(also `/` from any menu) searches every drill by name, skill or idea (pitch,
+balance, typing); arrows and `Enter` pick a result. Everywhere, `Space`
 is the main action, `Esc` goes back, letters pick list items, and named actions
 use their initial (`S` stats, `P` practice, `L` length, `R` restart, `F` finish,
 `Q` quit, `N` skip). Descriptions appear when you hover over an item.
@@ -37,7 +39,8 @@ Shift keys or arrows), then **Start** (`Space`), **Practice** (`P`, plays it
 through but saves nothing) and **Stats** (`S`).
 
 **Random** plays three, five or ten random drills, one of each skill, or random
-drills endlessly. In sets, each drill opens with a ready card (the same steps
+drills endlessly, with settings for what they draw from: skills to leave out,
+and whether to skip drills that need sound, the keyboard or a mouse. In sets, each drill opens with a ready card (the same steps
 and controls) so the clock never runs while you read; `Space` starts it and `X`
 skips it. Sets always play the standard length.
 
@@ -215,7 +218,6 @@ not saved; neither are practice runs.
 | First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap, 2+ keys |
 | Merge | Cars stream past the junction. Pull out into the first safe gap. | keys or tap |
 | Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
-| Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
 | Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | tap or click |
 | Line | Put a number on a number line. | tap or click |
 | Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
@@ -226,7 +228,6 @@ not saved; neither are practice runs.
 | Align | Turn your line until it is parallel to the other, then let go. | keys, 2+ keys |
 | Closer | Which dot is nearer the cross? | keys, 2+ keys |
 | Topple | Will this stack of blocks stand or fall? | keys, 2+ keys |
-| Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
 | Hoop | Hold to charge, release to shoot. The basket moves each time. | keys or tap |
 
 ### Reasoning
@@ -270,6 +271,20 @@ not saved; neither are practice runs.
 | Arrows | Arrow-key sequences, quick and clean. | keys |
 | Reverse | Type the word backwards. | keys |
 | Combo | Land a combo of letters, arrows and Space before the clock runs out. | keys |
+
+### Ear
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
+| Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
+| In tune | A reference note, then two more: which one matches it? | tap or click |
+| Octave | Middle C for reference, then a note: which octave is it in? | tap or click |
+| Note | C for reference, then a note: name it. | tap or click |
+| Interval | Two notes: how far apart? | tap or click |
+| Chord | Three notes at once: major, minor, diminished or augmented? | tap or click |
+| Contour | A short melody: which shape did it make? | tap or click |
+| Scale | A scale goes up: major or minor? | keys, 2+ keys |
 
 ## Why these games
 
@@ -365,11 +380,29 @@ and your best. Everything is kept in `localStorage`. **Stats** shows your day
 streak, sessions per skill this week, and the games you have played; each game
 has its own page with its tracked number and score over time (with a 5-session
 moving average), best, average of the last five, change since your first
-sessions, and recent sessions, filterable by key count. History can be exported
+sessions, and recent sessions, filterable by key count. Drills that time your
+answers (Stream, Find, the Ear quizzes, the true/false and threshold drills and
+more) also show median reaction or response time, its spread and both over
+time; every game shows practice totals and the last session in full detail. History can be exported
 as JSON from Settings.
 
 Reaction times run from the frame a stimulus was drawn (`performance.now()`) to
 the input's `event.timeStamp`, so they include display and input latency.
+
+## Leaderboards and fair play
+
+Set a name in Settings to join the shared leaderboards; without one nothing is
+sent. Each game has boards per length and key count, shown on its stats page.
+Runs are checked twice. In the browser, a run is not saved, and goes on no
+board, if its input came from a script (untrusted events), the browser is
+under automation, the page's timing functions were replaced, the game clock ran
+at a different speed from the wall clock, or the timing is beyond human: taps
+evenly spaced to 1%, keys held for identical lengths, more than 30 presses a
+second, or reaction after reaction under 100 ms. The server
+(`netlify/functions/scores.ts`, rules in `src/board.ts`) checks again: names,
+units, plausible values, enough real input, reaction times that agree with a
+reaction headline, and a rate limit per device. Scores live in Netlify Blobs.
+`npm run dev` answers the same API from memory, so it can be tried locally.
 
 ## Tech
 

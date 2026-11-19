@@ -621,7 +621,7 @@ class Topple implements Mini {
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time to decide', value: this.rts.length ? `${Math.round(median(this.rts))} ms` : '–' },
       ],
-      saved: this.i >= 6,
+      rts: this.rts, saved: this.i >= 6,
     };
   }
 }
@@ -1348,7 +1348,7 @@ class Pattern implements Mini {
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time to answer', value: this.rts.length ? `${(median(this.rts) / 1000).toFixed(1)} s` : '–' },
       ],
-      saved: this.i >= 4,
+      rts: this.rts, saved: this.i >= 4,
     };
   }
 }

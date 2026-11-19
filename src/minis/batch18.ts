@@ -804,7 +804,7 @@ class Shadow implements Mini {
         { label: 'median time to catch a flash', value: ms(median(this.rts)) },
         { label: 'presses with no flash', value: String(this.falses) },
       ],
-      saved: this.allFrames > 600,
+      rts: this.rts, saved: this.allFrames > 600,
     };
   }
 }

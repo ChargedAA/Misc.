@@ -746,7 +746,7 @@ class Chords implements Mini {
         { label: 'chords landed', value: `${this.right} of ${this.i}` },
         { label: 'median time to land one', value: ms(median(this.rts)) },
       ],
-      saved: this.i >= 4 && this.right >= 2,
+      rts: this.rts, saved: this.i >= 4 && this.right >= 2,
     };
   }
 }

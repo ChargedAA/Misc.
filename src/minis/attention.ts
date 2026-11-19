@@ -363,7 +363,7 @@ class Find implements Mini {
         { label: 'median time each', value: ms(median(this.times)) },
         { label: 'biggest board', value: `${this.count} items` },
       ],
-      saved: this.found + this.errors >= 5,
+      rts: this.times, saved: this.found + this.errors >= 5,
     };
   }
 }

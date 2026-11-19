@@ -1411,3 +1411,8 @@ table.board tr.me td {
   color: var(--line);
   font-weight: 500;
 }
+
+/* Items with no key of their own (search results, long lists) show no empty badge. */
+.kb:empty {
+  visibility: hidden;
+}

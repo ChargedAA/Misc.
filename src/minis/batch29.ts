@@ -58,6 +58,7 @@ abstract class EarQuiz implements Mini {
   protected byAnswer = new Map<string, [number, number]>();
   private rects: Rect[] = [];
   private playEnds = 0;
+  private rts: number[] = [];
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
@@ -80,6 +81,8 @@ abstract class EarQuiz implements Mini {
     const rec = this.byAnswer.get(key) ?? [0, 0];
     this.byAnswer.set(key, [rec[0] + (ok ? 1 : 0), rec[1] + 1]);
     if (ok) this.right++;
+    // Answer time counts from when the sound finished.
+    if (ok && ts >= this.playEnds) this.rts.push(ts - this.playEnds);
     this.onAnswer(ok);
     this.env.sound(ok ? SND_CATCH : SND_FALSE);
     this.i++;
@@ -167,6 +170,7 @@ abstract class EarQuiz implements Mini {
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'hardest for you', value: worst ? `${worst[0]} (${worst[1][0]} of ${worst[1][1]})` : '–' },
       ],
+      rts: this.rts,
       saved: this.i >= 4,
     };
   }

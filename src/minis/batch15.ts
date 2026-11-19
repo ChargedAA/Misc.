@@ -555,7 +555,7 @@ class Tangle implements Mini {
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
         { label: 'most lines', value: String(this.n) },
       ],
-      saved: this.i >= 4,
+      rts: this.times, saved: this.i >= 4,
     };
   }
 }

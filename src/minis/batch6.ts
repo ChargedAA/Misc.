@@ -435,7 +435,7 @@ class Flicker implements Mini {
         { label: 'median time to find', value: med ? `${(med / 1000).toFixed(1)} s` : '–' },
         { label: 'wrong taps', value: String(this.wrong) },
       ],
-      saved: this.i >= 3,
+      rts: this.times, saved: this.i >= 3,
     };
   }
 }

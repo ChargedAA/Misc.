@@ -205,7 +205,7 @@ class Relate implements Mini {
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
         { label: 'shapes at the end', value: String(this.items.level) },
       ],
-      saved: this.i >= 4,
+      rts: this.times, saved: this.i >= 4,
     };
   }
 }
@@ -381,7 +381,7 @@ class Matrix implements Mini {
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
         { label: 'level reached', value: String(this.level + 1) },
       ],
-      saved: this.i >= 4,
+      rts: this.times, saved: this.i >= 4,
     };
   }
 }
@@ -588,7 +588,7 @@ class Balance implements Mini {
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
         { label: 'level reached', value: String(this.level + 1) },
       ],
-      saved: this.i >= 4,
+      rts: this.times, saved: this.i >= 4,
     };
   }
 }

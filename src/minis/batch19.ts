@@ -292,7 +292,7 @@ class Compass implements Mini {
         { label: 'most turns', value: String(this.len) },
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
       ],
-      saved: this.right + this.wrong >= 5,
+      rts: this.times, saved: this.right + this.wrong >= 5,
     };
   }
 }
@@ -710,7 +710,7 @@ class Letters implements Mini {
         { label: 'skipped', value: String(this.skipped) },
         { label: 'median time per word', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
       ],
-      saved: this.solved + this.skipped >= 2,
+      rts: this.times, saved: this.solved + this.skipped >= 2,
     };
   }
 }
