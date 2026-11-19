@@ -55,8 +55,8 @@ import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { clamp, clockShift, keysFor, lengthScaleNow, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
-import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { Ui, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -354,7 +354,7 @@ function buildMenu(n: NavEntry): Menu {
     case 'random':
       return randomMenu();
     case 'endless':
-      return endlessMenu(c);
+      return randomMenu();
     case 'gamekeys': {
       const [id, lv] = n.arg.split(':');
       return gameMenu(c, id!, Number(lv) || 0);
@@ -488,6 +488,7 @@ function showReady(): void {
       how: e.def ? e.def.how : '',
       controls: e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, settings.bindings[keys]!)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`,
       length: durationOf(id),
+      hands: e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, settings.bindings[keys]!),
     }),
   );
 }

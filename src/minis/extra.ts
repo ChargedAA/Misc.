@@ -1135,7 +1135,7 @@ export const EXTRA: MiniDef[] = [
     name: 'Juggle',
     skill: 'coordination',
     blurb: 'Every key keeps its own ball in the air.',
-    how: 'Each string has a ball. Press its key as it falls into the shaded zone to send it back up (lower is better). Pressing too early knocks it down faster. A new ball joins every twelve seconds; three drops and it is over.',
+    how: 'Each of your keys has a ball, bouncing above a line labelled with the key. Press a ball\'s key while it falls through the shaded zone near the bottom to bounce it back up; the lower you catch it, the better. Pressing too early knocks it down faster. A new ball joins every twelve seconds. Three drops end it.',
     input: 'keys',
     make: () => new Juggle(),
   },

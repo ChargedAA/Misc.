@@ -20,20 +20,24 @@ the left hand's keys and the Mind skills on the right hand's:
 | `C` | Timing | `M` | Judgement |
 | `V` | Coordination | `,` | Reasoning |
 
-`R` Random, `E` Endless, `S` Stats and `O` Settings sit in the header.
+`R` Mix, `S` Stats and `O` Settings sit in the header.
 
-A skill's page starts with a three-drill **routine** (`Space`) and a
-**benchmark** (`Enter`), then lists every drill grouped by what it trains, each
-on its own key. A drill's page shows what it is, how to play, the exact
-controls and how long it takes, with a 1-6 key selector, **Start** (`Z`),
-**Stats** (`X`) and **Practice** (`C`, plays it through but saves nothing).
-Menus open as columns beside each other; `Esc` goes back.
+One page at a time, with the path back above it; `Esc` goes back.
 
-In Daily, Random, routines and Endless, each drill opens with a ready card
-(what it is, how to play, controls) so the clock never runs while you read;
-`Space` starts it and `X` skips it. **Endless** runs random drills until you
-stop, or the reaction runs Lanes, Hurdles and Rush at a set difficulty
-(Progressing, 700 to 300 ms, or Custom).
+A skill's page starts with a three-drill **routine** (`Space`), then lists every
+drill grouped by what it trains, each on its own key. A drill's page gives
+numbered steps naming your actual keys, the controls, a **length** choice
+(short, standard or long, showing the real round count; `L` cycles it), a key
+count only for the games where it matters, then **Start** (`Z`), **Stats**
+(`X`) and **Practice** (`C`, plays it through but saves nothing).
+
+**Mix** plays three, five or ten random drills, one of each skill, or random
+drills endlessly. In sets, each drill opens with a ready card (the same steps
+and controls) so the clock never runs while you read; `Space` starts it and `X`
+skips it. Sets always play the standard length.
+
+In a drill, `Esc` pauses: the game clock and the sound stop. Resume, restart,
+finish and score it, or quit.
 
 Results lead with the drill's own number in its units, say which direction is
 better, compare with last time and your best, and draw bars where the parts

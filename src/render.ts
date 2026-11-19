@@ -123,10 +123,12 @@ export class View {
     this.right = this.ox + (BOARD_W / 2) * this.scale;
 
     const ctx = this.ctx;
-    this.fontHud = `500 ${Math.round(14 * dpr)}px ${FONT}`;
-    this.fontTiny = `500 ${Math.round(10.5 * dpr)}px ${FONT}`;
-    this.fontBig = `300 ${Math.round(44 * dpr)}px ${FONT}`;
-    this.fontPad = `500 ${Math.round(12 * dpr)}px ${FONT}`;
+    // In-game text is sized to be read at a glance mid-game, a little smaller on small screens.
+    const k = Math.max(0.82, Math.min(1, Math.min(cw, ch) / dpr / 720));
+    this.fontHud = `500 ${Math.round(18 * k * dpr)}px ${FONT}`;
+    this.fontTiny = `500 ${Math.round(14.5 * k * dpr)}px ${FONT}`;
+    this.fontBig = `300 ${Math.round(56 * k * dpr)}px ${FONT}`;
+    this.fontPad = `500 ${Math.round(14 * k * dpr)}px ${FONT}`;
     this.fontMono = `${Math.round(11 * dpr)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     this.advHud = this.measureDigits(this.fontHud);
     this.advTiny = this.measureDigits(this.fontTiny);

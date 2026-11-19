@@ -645,7 +645,7 @@ export const COORDINATION: MiniDef[] = [
     name: 'Strings',
     skill: 'coordination',
     blurb: 'Pluck notes on time: streams, chords, holds. Endless.',
-    how: 'Notes fall down your strings. Press the string’s key as each note reaches the line. Joined notes are chords: press together. Long ones are holds: keep the key down to the end. Misses slacken the strings; when they go slack the run is over.',
+    how: 'Each of your keys has a vertical line (a string), labelled with the key underneath. Notes slide down the strings: press a string\'s key as its note reaches the line at the bottom. Joined notes are chords: press those keys together. Long notes are holds: keep the key down until the note ends. Misses slacken the strings; when they go slack the run is over.',
     input: 'keys',
     make: () => new Strings(),
   },

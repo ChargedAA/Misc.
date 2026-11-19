@@ -21,6 +21,8 @@ import {
   keysLine,
   overview,
   shortDate,
+  handKeys,
+  stepsHtml,
   weekBySkill,
   type Metric,
 } from './ui.ts';
@@ -91,11 +93,15 @@ export interface Col {
 
 function itemsOf(m: Menu): { shown: Item[]; page: number; pages: number } {
   // A list longer than six pages with Space, unless its items carry their own keys or Space is one of them.
+  // No paging: a list too long for the six home-row keys takes keys from the rows above.
   const own = m.items.some((it) => it.slot === 6 || it.code);
   if (own || m.items.length <= PER_PAGE) return { shown: m.items, page: 0, pages: 1 };
-  const pages = Math.ceil(m.items.length / PER_PAGE);
-  const page = Math.min(m.page ?? 0, pages - 1);
-  return { shown: m.items.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE), page, pages };
+  let k = 0;
+  const shown = m.items.map((it) => {
+    const key = LIST_KEYS[k++];
+    return key ? { ...it, code: key[0], keyName: key[1] } : it;
+  });
+  return { shown, page: 0, pages: 1 };
 }
 
 function keyOf(it: Item, i: number): { code: string; name: string } {
@@ -109,7 +115,7 @@ function kb(name: string): string {
 }
 
 /** The open column: full detail, and it owns the keys. */
-function activeCol(m: Menu, dir: number, canBack: boolean): string {
+function activeCol(m: Menu, dir: number, canBack: boolean, crumbs = ''): string {
   const { shown, page, pages } = itemsOf(m);
   // An Enter default that is also one of the items rides on that item instead of a separate button.
   const twin = m.enter ? shown.find((it) => it.act === m.enter!.act && (it.arg ?? '') === (m.enter!.arg ?? '')) : undefined;
@@ -119,6 +125,7 @@ function activeCol(m: Menu, dir: number, canBack: boolean): string {
     ? `<div class="tools">${m.tools.map((t) => `<button data-act="${t.act}" data-arg="${t.arg ?? ''}" data-key="${t.code}">${kb(t.keyName)}${t.label}</button>`).join('')}</div>`
     : '';
   return `<section class="col active${m.wide ? ' wide' : ''}${cls}">
+  ${crumbs}
   <header class="mhead">
     ${canBack ? '<button class="mback" data-act="back" data-key="Escape Backspace">\u2190<span class="k">esc</span></button>' : tools}
     <h1>${m.title}</h1>
@@ -155,38 +162,22 @@ function itemsHtml(shown: Item[], twin: Item | undefined, split: boolean): strin
   return `<div class="items">${lead.join('')}</div><div class="isplit">${groups.map((g) => `<div class="items">${g.join('')}</div>`).join('')}</div>`;
 }
 
-/** A column further up the path: compact, with the chosen item lit. Clicking an item re-opens from there. */
-function parentCol(c: Col, level: number, old: boolean): string {
-  const { shown } = itemsOf(c.menu);
-  return `<section class="col parent${old ? ' old' : ''}">
-  <h2 class="ctitle"><button data-act="crumb" data-arg="${level}">${c.menu.title}</button></h2>
-  <div class="citems">${shown
-    .map((it, i) => {
-      const k = keyOf(it, i);
-      const on = c.sel !== undefined && it.arg === c.sel;
-      return `${it.heading ? `<h3 class="chead">${it.heading}</h3>` : ''}<button class="citem${on ? ' on' : ''}" data-act="pick" data-arg="${level}|${it.act}|${it.arg ?? ''}"${it.disabled ? ' disabled' : ''}>${kb(k.name)}${it.label}</button>`;
-    })
-    .join('')}</div>
-</section>`;
-}
-
 /**
- * The whole menu: the path so far as columns, the newest one open. Desktop shows the
- * last three; a phone shows only the open one, with a breadcrumb back up the path.
- * `dir`: 1 a column was opened, -1 one was closed, 0 redrawn in place.
+ * The whole menu: the open page, with a breadcrumb back up the path.
+ * `dir`: 1 a page was opened, -1 one was closed, 0 redrawn in place.
  */
 export function columnsHtml(cols: Col[], dir: number): string {
   const n = cols.length;
+  // The path back up: parent pages only, since the page's own title follows.
   const crumbs =
     n > 1
       ? `<nav class="crumbs">${cols
           .slice(0, -1)
           .map((c, i) => `<button data-act="crumb" data-arg="${i}">${c.menu.title}</button>`)
-          .join('<span>\u203a</span>')}<span>\u203a</span><b>${cols[n - 1]!.menu.title}</b></nav>`
+          .join('<span>\u203a</span>')}</nav>`
       : '';
-  return `<div class="cols${n > 3 ? ' deep' : ''}">
-  ${crumbs}
-  <div class="colrow">${cols.map((c, i) => (i === n - 1 ? activeCol(c.menu, dir, n > 1) : parentCol(c, i, i < n - 3))).join('')}</div>
+  return `<div class="cols">
+  <div class="colrow">${activeCol(cols[n - 1]!.menu, dir, n > 1, crumbs)}</div>
 </div>`;
 }
 
@@ -229,10 +220,6 @@ function gamesOf(skills: readonly string[]): Entry[] {
   return ENTRIES.filter((e) => skills.includes(e.skill));
 }
 
-function inputLabel(e: Entry): string {
-  return e.input === 'pointer' ? 'tap' : e.input === 'both' ? 'key or tap' : e.input === 'type' ? 'keyboard' : 'keys';
-}
-
 /** Home keys: the left hand for the Reflexes skills, the right hand for the Mind skills. */
 const SKILL_KEYS: Record<string, [string, string]> = {
   reaction: ['KeyZ', 'Z'],
@@ -259,8 +246,7 @@ export function startMenu(c: MenuCtx): Menu {
     title: 'TENSION',
     sub: `Train eight skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
-      { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
-      { label: 'Endless', act: 'go', arg: 'endless', code: 'KeyE', keyName: 'E' },
+      { label: 'Mix', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
       { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
     ],
@@ -298,24 +284,6 @@ export function startMenu(c: MenuCtx): Menu {
   };
 }
 
-function MINIS_COUNT(): number {
-  return ENTRIES.filter((e) => e.def).length;
-}
-
-/** Endless: runs of random games, and the reaction runs with difficulty levels. */
-export function endlessMenu(c: MenuCtx): Menu {
-  return {
-    title: 'ENDLESS',
-    sub: 'Random games one after another until you stop, or a reaction run at a set difficulty',
-    items: [
-      { label: 'Everything', desc: `Any of the ${MINIS_COUNT()} games, one after another`, act: 'quick', arg: 'endless:all' },
-      ...GROUPS.map((g) => ({ label: `${g.name} only`, desc: g.desc, act: 'quick', arg: `endless:${g.id}` })),
-      ...ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: bestOf(c, e.id) || 'difficulty', act: 'go', arg: `game:${e.id}` })),
-    ],
-    enter: { label: 'Everything', act: 'quick', arg: 'endless:all' },
-  };
-}
-
 export function dailyMenu(c: MenuCtx): Menu {
   const done = c.daily.filter((id) => c.today[id]).length;
   const row = (id: string, i: number) => {
@@ -343,19 +311,21 @@ export function dailyMenu(c: MenuCtx): Menu {
   };
 }
 
+/** Mixed sessions: a few random drills, or endless until you stop. */
 export function randomMenu(): Menu {
   return {
-    title: 'RANDOM',
-    sub: 'Random games back to back, each about a minute',
+    title: 'MIX',
+    sub: 'Random drills back to back, each about a minute. A ready card before each one.',
     items: [
-      { label: 'Three games', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
-      { label: 'Five games', desc: 'About five minutes', act: 'quick', arg: 'all:5' },
-      { label: 'Ten games', desc: 'About ten minutes', act: 'quick', arg: 'all:10' },
-      { label: 'Three reflex games', desc: 'Reaction, speed, timing, coordination', act: 'quick', arg: 'body:3' },
-      { label: 'Three mind games', desc: 'Memory, attention, judgement, reasoning', act: 'quick', arg: 'mind:3' },
-      { label: 'One of each skill', desc: `Eight games, a fresh draw each time`, act: 'quick', arg: 'each:8' },
+      { label: 'Three drills', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
+      { label: 'Five drills', desc: 'About five minutes', act: 'quick', arg: 'all:5' },
+      { label: 'Ten drills', desc: 'About ten minutes', act: 'quick', arg: 'all:10' },
+      { label: 'One of each skill', desc: 'Eight drills, a fresh draw each time', act: 'quick', arg: 'each:8' },
+      { heading: 'Endless', label: 'Everything', desc: 'Random drills until you stop', act: 'quick', arg: 'endless:all' },
+      { label: 'Reflexes only', desc: 'Reaction, speed, timing, coordination', act: 'quick', arg: 'endless:body' },
+      { label: 'Mind only', desc: 'Memory, attention, judgement, reasoning', act: 'quick', arg: 'endless:mind' },
     ],
-    enter: { label: 'Three games', act: 'quick', arg: 'all:3' },
+    enter: { label: 'Three drills', act: 'quick', arg: 'all:3' },
   };
 }
 
@@ -382,15 +352,6 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
   const name = (id: string) => entry(id)?.name ?? id;
   const items: Item[] = [
     { label: 'Routine', desc: `${g.routine.map(name).join(', ')}${DOT}about ${g.routine.length} minutes`, act: 'routine', arg: sk, code: 'Space', keyName: 'SPACE', hero: true },
-    {
-      label: `Benchmark: ${name(g.benchmark)}`,
-      desc: 'The same drill and setup every time, so your progress shows',
-      meta: bestOf(c, g.benchmark),
-      act: 'go',
-      arg: `game:${g.benchmark}`,
-      code: 'Enter',
-      keyName: 'ENTER',
-    },
   ];
   // Every drill of the skill, grouped by what it trains; any not yet grouped go last.
   const grouped = new Set(g.groups.flatMap((x) => x.ids));
@@ -406,7 +367,7 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
         headingNote: i === 0 ? grp.desc : undefined,
         label: e.name,
         desc: e.blurb,
-        meta: bestOf(c, e.id) || inputLabel(e),
+        meta: bestOf(c, e.id),
         act: 'go',
         arg: `game:${e.id}`,
         code: key?.[0] ?? 'Unidentified',
@@ -468,17 +429,16 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
   const skill = SKILLS.find((k) => k.id === e.skill)!;
   const group = GUIDES[e.skill].groups.find((g) => g.ids.includes(id));
-  const extra = `<p class="mblurb">${e.blurb}</p>
+  const extra = `${stepsHtml(how, e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, c.settings.bindings[keys]!))}
   <dl class="facts">
-    <dt>How</dt><dd>${how}</dd>
     <dt>Controls</dt><dd>${controls}</dd>
-    <dt>Length</dt><dd>${ROUNDS[id] ? `${roundsLabel(id, lenScale)}${lenScale === 1 ? `${DOT}${durationOf(id)}` : ''}` : durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>
+    ${ROUNDS[id] ? (lvName ? `<dt>Difficulty</dt><dd>${lvName}</dd>` : '') : `<dt>Length</dt><dd>${durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>`}
   </dl>
   ${
     ROUNDS[id]
       ? `<div class="counts small lengths" aria-label="Length">${LENGTHS.map(
           (l) => `<button data-act="length" data-arg="${id}:${l.scale}" aria-pressed="${l.scale === lenScale}">${l.label}<small>${roundsLabel(id, l.scale)}</small></button>`,
-        ).join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length<span class="kbonly">${DOT}press L to change</span></span></div>`
+        ).join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length${DOT}standard is ${durationOf(id)}<span class="kbonly">${DOT}L to change</span></span></div>`
       : ''
   }
   ${
@@ -490,7 +450,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   }`;
   return {
     title: e.name.toUpperCase(),
-    sub: `${skill.name}${group ? `${DOT}${group.name}` : ''}`,
+    sub: group ? group.name : skill.name,
     extra,
     items: [
       { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'KeyZ Space', keyName: 'Z', hero: true },
@@ -537,9 +497,7 @@ export function settingsMenu(c: MenuCtx, note = ''): Menu {
       { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
       { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
       { label: 'Volume', desc: 'Press to step through 25, 50, 75 and 100%', meta: `${Math.round((c.settings.volume ?? 0.8) * 100)}%`, act: 'volume' },
-      { label: 'Sound check', desc: 'Tap along to clicks for 12 seconds; the rhythm games then allow for how late sound reaches you here', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
-      { label: 'Audio delay, less', desc: 'Fine-tune by hand: 10 ms less', act: 'audiodelay', arg: '-' },
-      { label: 'Audio delay, more', desc: 'Fine-tune by hand: 10 ms more', act: 'audiodelay', arg: '+' },
+      { label: 'Sound check', desc: 'Tap along to clicks for 12 seconds, so the rhythm games allow for how late sound reaches you', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
       { label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
       { label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
       { label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },

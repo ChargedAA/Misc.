@@ -262,7 +262,7 @@ export interface Arena {
 /** The free area below the header and above any touch pads. */
 export function arena(v: View, touch: TouchLayout): Arena {
   const dpr = v.dpr;
-  const top = 92 * dpr;
+  const top = 104 * dpr;
   let bottom = v.h - 40 * dpr;
   if (touch.active && touch.pads.length > 0) {
     let padTop = v.h;
@@ -298,8 +298,8 @@ export function header(
   v.text(leftLabel, lx, ty, v.fontTiny, 'left');
   v.text(rightLabel, rx, ty, v.fontTiny, 'right');
   ctx.fillStyle = COL_LINE;
-  v.text(leftValue, lx, ty + 22 * dpr, v.fontHud, 'left');
-  v.text(rightValue, rx, ty + 22 * dpr, v.fontHud, 'right');
+  v.text(leftValue, lx, ty + 28 * dpr, v.fontHud, 'left');
+  v.text(rightValue, rx, ty + 28 * dpr, v.fontHud, 'right');
   if (strikesLeft >= 0) {
     const q = 4 * dpr;
     ctx.lineWidth = dpr;
@@ -307,10 +307,10 @@ export function header(
       const sx = v.ox + (i - (strikesMax - 1) / 2) * 16 * dpr;
       if (i < strikesLeft) {
         ctx.fillStyle = COL_LINE;
-        ctx.fillRect(sx - q, ty + 10 * dpr, q * 2, q * 2);
+        ctx.fillRect(sx - q, ty + 14 * dpr, q * 2, q * 2);
       } else {
         ctx.strokeStyle = COL_DIM;
-        ctx.strokeRect(sx - q + 0.5, ty + 10 * dpr + 0.5, q * 2 - 1, q * 2 - 1);
+        ctx.strokeRect(sx - q + 0.5, ty + 14 * dpr + 0.5, q * 2 - 1, q * 2 - 1);
       }
     }
   }
@@ -331,7 +331,7 @@ export function message(v: View, a: Arena, text: string, sub = '', color = COL_L
   v.text(text, a.cx, a.cy, v.fontHud, 'center');
   if (sub) {
     v.ctx.fillStyle = COL_MID;
-    v.text(sub, a.cx, a.cy + 22 * v.dpr, v.fontTiny, 'center');
+    v.text(sub, a.cx, a.cy + 28 * v.dpr, v.fontTiny, 'center');
   }
 }
 

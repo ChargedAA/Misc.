@@ -960,7 +960,7 @@ export const BATCH6: MiniDef[] = [
     name: 'Drum',
     skill: 'coordination',
     blurb: 'Read a left/right/both pattern. Play it in time.',
-    how: 'A bar of eight steps shows which hand plays on each step (both means together). After a count of four, play it in time. Clear a bar at 80% and the next is busier and faster.',
+    how: 'A bar of eight steps shows which hand plays on each step: a dot in the top row is the left hand, the bottom row the right, both rows means both together. Four clicks count you in, then the click keeps going while you play the bar in time with it. Get 75% of the notes and the next bar is busier and faster. Each note shows whether you were early or late.',
     input: 'keys',
     minKeys: 2,
     make: () => new Drum(),

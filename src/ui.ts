@@ -177,6 +177,31 @@ export function pauseHtml(muted: boolean): string {
 </section>`;
 }
 
+const NUMBER_WORD = /^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)\b/i;
+
+/**
+ * A game's How text as numbered steps, one sentence each. A sentence that only states the
+ * standard number of rounds is left out: the Length line shows the real count.
+ */
+export function stepsHtml(how: string, hands?: { left: string; right: string }): string {
+  // Name the actual keys the first time each hand is mentioned: "left hand (Z)".
+  if (hands) {
+    const seen = new Set<string>();
+    how = how.replace(/\b(left|right)(-hand)?( hand| key)?\b(?! \()/gi, (m, side: string, dash: string | undefined, noun: string | undefined) => {
+      if (!dash && !noun) return m;
+      const k = side.toLowerCase();
+      if (seen.has(k)) return m;
+      seen.add(k);
+      return `${m} <span class="kb">${k === 'left' ? hands.left : hands.right}</span>`;
+    });
+  }
+  const parts = how
+    .split(/(?<=[.!?])\s+(?=[A-Z(\u201c"])/)
+    .map((x) => x.trim())
+    .filter((x) => x && !(NUMBER_WORD.test(x) && x.split(/\s+/).length <= 5));
+  return `<ol class="steps">${parts.map((x) => `<li>${x}</li>`).join('')}</ol>`;
+}
+
 /** The pause card for a drill: the clock and the sound stop until you choose. */
 export function miniPauseHtml(name: string, inSet: boolean, practice: boolean): string {
   return `<section class="screen ready">
@@ -412,7 +437,7 @@ export function miniResultsHtml(
   r: MiniResult,
   hist: Histogram | null,
   rtMedian: number,
-  best: boolean,
+  _best: boolean,
   daily: DailyStep | null = null,
   cmp: Compare | null = null,
 ): string {
@@ -453,7 +478,10 @@ export function miniResultsHtml(
   ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
   ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
-  <table>${r.saved ? `<tr><td>score</td><td>${fmtInt(r.score)}${best ? `${DOT}personal best` : ''}</td></tr>` : ''}${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
+  <table>${r.lines
+    .filter((l) => !(measured && l.value.replace(/\s/g, '').startsWith(value.replace(/\s/g, '')) && !/\d/.test(l.value.replace(/\s/g, '').charAt(value.replace(/\s/g, '').length))))
+    .map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`)
+    .join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
   ${foot(actions)}
 </section>`;
@@ -515,6 +543,15 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
 </section>`;
 }
 
+/** The keys of each hand at a key count: "Z" and "M", or "Z X" and "N M". */
+export function handKeys(keys: number, b: Bindings): { left: string; right: string } {
+  const m = getMode(keys);
+  return {
+    left: b.left.slice(0, m.left).map(keyLabel).join(' ') || '–',
+    right: b.right.slice(0, m.right).map(keyLabel).join(' ') || b.left.slice(0, m.left).map(keyLabel).join(' '),
+  };
+}
+
 export interface ReadyInfo {
   label: string;
   index: number;
@@ -526,6 +563,7 @@ export interface ReadyInfo {
   how: string;
   controls: string;
   length: string;
+  hands?: { left: string; right: string };
 }
 
 /** The card before each drill of a set. */
@@ -534,9 +572,8 @@ export function readyHtml(r: ReadyInfo): string {
   <p class="rpos">${r.label}${DOT}${r.total ? `${r.index} of ${r.total}` : `drill ${r.index}`}</p>
   <h1>${r.name.toUpperCase()}</h1>
   <p class="msub">${r.skill}</p>
-  <p class="mblurb">${r.blurb}</p>
+  ${r.how ? stepsHtml(r.how, r.hands) : `<p class="mblurb">${r.blurb}</p>`}
   <dl class="facts">
-    ${r.how ? `<dt>How</dt><dd>${r.how}</dd>` : ''}
     <dt>Controls</dt><dd>${r.controls}</dd>
     <dt>Length</dt><dd>${r.length}</dd>
   </dl>

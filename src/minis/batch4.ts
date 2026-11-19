@@ -915,7 +915,7 @@ export const BATCH4: MiniDef[] = [
     name: 'Spot',
     skill: 'memory',
     blurb: 'Look, look away, look again. Did anything change?',
-    how: 'A set of shapes appears, disappears, and comes back. Sometimes one has changed shape or shade. Left hand: same. Right hand: changed. The set grows as you get it right; the game estimates how many items you can hold (K).',
+    how: 'A set of shapes appears for a moment, disappears, then comes back. Sometimes one has changed shape or shade. Right hand if something changed, left hand if all the same. The set grows as you get it right; the result is how many items you can hold in mind at once.',
     input: 'keys',
     minKeys: 2,
     make: () => new Spot(),

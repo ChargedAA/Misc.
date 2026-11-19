@@ -621,7 +621,7 @@ export const MORE: MiniDef[] = [
     name: 'Choice',
     skill: 'reaction',
     blurb: 'Press whichever string lights. More strings, more thinking.',
-    how: 'One of the active strings lights orange; press its key. Blocks go from one string up to all of them, showing how much each extra choice slows you down.',
+    how: 'Each of your keys has a vertical line (a string), labelled with the key underneath. One string lights orange: press that key as fast as you can. It starts with one string and adds more each block, so you see how much each extra choice slows you.',
     input: 'keys',
     minKeys: 2,
     make: () => new Choice(),
