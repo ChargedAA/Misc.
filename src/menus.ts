@@ -449,6 +449,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
     items: [
       { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'KeyZ Space', keyName: 'Z', hero: true },
       { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyX', keyName: 'X' },
+      { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyC', keyName: 'C' },
     ],
     enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
     after: best ? `<p class="best">${bestLine(id, best)}</p>` : '',

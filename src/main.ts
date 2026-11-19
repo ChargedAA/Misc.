@@ -110,6 +110,8 @@ let queueLabel = 'Daily set';
 let miniDef: MiniDef | null = null;
 /** Presses, taps and typed keys in the current mini-game. */
 let miniInputs = 0;
+/** A practice run: played and shown, never saved. */
+let practicing = false;
 /** Key count of the session in progress. */
 let activeKeys = settings.keys.climb ?? 2;
 /** Key count shown on the rebinding screen. */
@@ -692,6 +694,16 @@ function finishMini(): void {
   // A session with no input at all, or too short to save, counts for nothing:
   // no score, no best, no history, no streak.
   if (miniInputs === 0) r.saved = false;
+  if (practicing) {
+    // Practice: show how it went, keep nothing.
+    stopLoop();
+    screen = 'miniResults';
+    inputLockUntil = performance.now() + 750;
+    const rts0 = r.rts ?? [];
+    const st0 = rtStats(rts0, rts0.length);
+    ui.show(miniResultsHtml(miniDef.id, r, rts0.length >= 3 ? histogram(rts0, rts0.length, 20) : null, st0.median, false, { index: 0, total: 0, nextName: null, label: '', practice: true }, null));
+    return;
+  }
   r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
   const pointerOnly = !usesKeyCount(miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
@@ -853,6 +865,13 @@ function onAction(action: string, arg: string): void {
     }
     case 'play': {
       const [id, n, lv] = arg.split(':');
+      practicing = false;
+      playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
+      break;
+    }
+    case 'practice': {
+      const [id, n, lv] = arg.split(':');
+      practicing = true;
       playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
       break;
     }
@@ -883,6 +902,15 @@ function onAction(action: string, arg: string): void {
       break;
     }
     case 'again':
+      practicing = false;
+      startGame(lastGame);
+      break;
+    case 'practiceagain':
+      practicing = true;
+      startGame(lastGame);
+      break;
+    case 'forreal':
+      practicing = false;
       startGame(lastGame);
       break;
     case 'daily':
@@ -898,6 +926,7 @@ function onAction(action: string, arg: string): void {
       endRun();
       break;
     case 'readygo':
+      practicing = false;
       if (dailyQueue) startGame(dailyQueue[dailyIdx]! as GameId);
       break;
     case 'skip':

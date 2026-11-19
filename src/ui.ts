@@ -330,6 +330,8 @@ export interface DailyStep {
   nextName: string | null;
   /** 'Daily set', or the name of a skill set. */
   label: string;
+  /** A practice run: shown, not saved. */
+  practice?: boolean;
 }
 
 export interface Compare {
@@ -373,7 +375,13 @@ export function miniResultsHtml(
   const p = r.primary;
   const e = entry(id);
   const skill = SKILLS.find((k) => k.id === e?.skill)?.name ?? '';
-  const actions: [string, string, string, string][] = daily
+  const actions: [string, string, string, string][] = daily?.practice
+    ? [
+        ['Practise again', 'practiceagain', 'z', 'KeyZ Enter'],
+        ['Play it for real', 'forreal', 'x', 'KeyX'],
+        ['Back', 'menu', 'c', 'KeyC Escape Backspace'],
+      ]
+    : daily
     ? daily.nextName
       ? [
           [`Next: ${daily.nextName}`, 'dailynext', 'z', 'KeyZ Enter'],
@@ -387,17 +395,18 @@ export function miniResultsHtml(
     : AGAIN;
   // Lower-is-better numbers are never really zero: zero means it was not measured.
   const measured = Number.isFinite(p.value) && (p.zeroOk || !(p.lower && p.value <= 0));
-  const value = r.saved && measured ? fmtPrimary(p.value, p) : '\u2013';
+  const practice = !!daily?.practice;
+  const value = (r.saved || practice) && measured ? fmtPrimary(p.value, p) : '\u2013';
   // Split the unit off so the number can be large and the unit small.
   const m = /^(.*?)(\s?[^\d\s\u2013.,-][^\d]*)?$/.exec(value);
   const num = m?.[1] && m[2] ? m[1] : value;
   const unit = m?.[1] && m[2] ? m[2].trim() : '';
   return `<section class="screen result">
-  <p class="rpos">${skill}${daily ? `${DOT}${daily.label} ${daily.index}${daily.total ? ` of ${daily.total}` : ''}` : ''}</p>
+  <p class="rpos">${skill}${daily?.practice ? `${DOT}practice` : daily ? `${DOT}${daily.label} ${daily.index}${daily.total ? ` of ${daily.total}` : ''}` : ''}</p>
   <h1>${(e?.name ?? id).toUpperCase()}</h1>
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
-  ${r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
   <table>${r.saved ? `<tr><td>score</td><td>${fmtInt(r.score)}${best ? `${DOT}personal best` : ''}</td></tr>` : ''}${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
@@ -624,7 +633,7 @@ export function keysHtml(s: Settings, keys: number, listening: string): string {
   <h1>KEYS</h1>
   ${keySeg(keys, 'bindmode')}
   <div class="slots">${rows}</div>
-  <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, shared by all three games.</p>
+  <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, used by every drill. Menus always use Z X C V B N M and their neighbours.</p>
   ${foot([
     ['Back', 'menu', 'esc', 'Escape Backspace'],
     ['Reset these keys', 'resetkeys', ''],
