@@ -23,7 +23,7 @@ function inRect(r: Rect, x: number, y: number): boolean {
 }
 
 /** A 3x4 keypad (1-9, del, 0, ok) drawn at the bottom; returns the key rectangles. */
-function keypad(v: View, cx: number, bottom: number, u: number, active: boolean, labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '<', '0', 'ok']): [number, number, number, number, string][] {
+export function keypad(v: View, cx: number, bottom: number, u: number, active: boolean, labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '<', '0', 'ok']): [number, number, number, number, string][] {
   const ctx = v.ctx;
   const kw = Math.min(64 * u, v.w / 6);
   const kh = kw * 0.6;
