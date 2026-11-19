@@ -5,7 +5,7 @@ import { COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX, type ModeDef } from '../config
 import { ICON_CLOSE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 
-export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning';
+export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity';
 
 export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'reaction', name: 'Reaction', blurb: 'See it, press it.' },
@@ -16,6 +16,7 @@ export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'coordination', name: 'Coordination', blurb: 'Several things at once.' },
   { id: 'judgement', name: 'Judgement', blurb: 'Size things up at a glance.' },
   { id: 'reasoning', name: 'Reasoning', blurb: 'Think fast and stay right.' },
+  { id: 'dexterity', name: 'Dexterity', blurb: 'Fingers that find and press any key.' },
 ];
 
 /** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either; 'type' needs a full keyboard. */

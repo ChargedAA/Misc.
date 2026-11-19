@@ -114,6 +114,17 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     routine: ['sum', 'series', 'relate'],
     benchmark: 'matrix',
   },
+  dexterity: {
+    about: 'The whole keyboard: find any key blind, press chords, type fast, and keep fingers independent.',
+    groups: [
+      { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
+      { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
+      { name: 'Typing', desc: 'Words at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse'] },
+      { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo'] },
+    ],
+    routine: ['hunt', 'chords', 'type'],
+    benchmark: 'hunt',
+  },
 };
 
 /** Drills that are not about a minute long. */

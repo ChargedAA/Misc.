@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MODES, SLOT_REFLEX } from '../src/config.ts';
 import { MINIS } from '../src/minis/index.ts';
-import { ms } from '../src/minis/kit.ts';
+import { SKILLS, ms } from '../src/minis/kit.ts';
 import { Rng } from '../src/rng.ts';
 import type { View } from '../src/render.ts';
 import type { TouchLayout } from '../src/touch.ts';
@@ -69,7 +69,7 @@ function slots(id: number): number[] {
   return out;
 }
 
-const TYPED = [...'0123456789'].map((d) => `Digit${d}`).concat([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((c) => `Key${c}`), ['Enter', 'Backspace']);
+const TYPED = [...'0123456789'].map((d) => `Digit${d}`).concat([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((c) => `Key${c}`), ['Enter', 'Backspace', 'Space', 'Semicolon', 'Comma', 'Period', 'Slash', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
 
 test('every mini-game survives random play in every key mode it allows', () => {
   const view = fakeView();
@@ -152,7 +152,7 @@ test('the daily set is quick: one drill per skill and none of the long ones, eve
   const { LONG } = await import('../src/minis/groups.ts');
   for (let d = 0; d < 400; d++) {
     const set = dailySet(new Date(2026, 0, 1 + d));
-    assert.equal(set.length, 8);
+    assert.equal(set.length, SKILLS.length);
     for (const id of set) assert.ok(!LONG.has(id), `${id} is too long for the daily set`);
   }
 });
