@@ -151,7 +151,7 @@ class Lights implements Mini {
   result(): MiniResult {
     const med = median(this.rts);
     return {
-      score: this.rts.length ? Math.round(Math.max(0, 500 - med) * 4 + this.rts.length * 10 - this.jumps * 30) : 0,
+      score: this.rts.length ? Math.max(0, Math.round(Math.max(0, 500 - med) * 4 + this.rts.length * 10 - this.jumps * 30)) : 0,
       primary: { label: 'median start', value: med, unit: 'ms', lower: true },
       lines: [
         { label: 'median start', value: ms(med) },
@@ -286,7 +286,7 @@ class Clock implements Mini {
   result(): MiniResult {
     const total = this.hits + this.misses;
     return {
-      score: Math.max(0, this.hits * 80 - this.fas * 20 + Math.round(Math.max(0, 900 - median(this.rts)) / 3)),
+      score: this.hits ? Math.max(0, this.hits * 80 - this.fas * 20 + Math.round(Math.max(0, 900 - median(this.rts)) / 3)) : 0,
       primary: { label: 'skips caught', value: total ? (this.hits / total) * 100 : 0, unit: '%' },
       lines: [
         { label: 'skips caught', value: `${this.hits} of ${total}` },

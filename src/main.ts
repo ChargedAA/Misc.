@@ -106,6 +106,8 @@ let endlessScope: string | null = null;
 /** 'Daily set', or e.g. 'Memory set' for three random games of one skill. */
 let queueLabel = 'Daily set';
 let miniDef: MiniDef | null = null;
+/** Presses, taps and typed keys in the current mini-game. */
+let miniInputs = 0;
 /** Key count of the session in progress. */
 let activeKeys = settings.keys.climb ?? 2;
 /** Key count shown on the rebinding screen. */
@@ -398,9 +400,10 @@ function nextDaily(): void {
     startGame(dailyQueue[dailyIdx]!);
     return;
   }
-  const total = dailyRows.reduce((s, r) => s + r.score, 0);
+  const total = dailyRows.reduce((s, r) => s + (r.saved ? r.score : 0), 0);
   let bestTotal = 0;
-  if (queueLabel === 'Daily set') {
+  // A day counts only if at least one stage was played properly.
+  if (queueLabel === 'Daily set' && dailyRows.some((r) => r.saved)) {
     for (const r of history) if (r.kind === 'mini' && r.game === 'daily') bestTotal = Math.max(bestTotal, r.score ?? 0);
     history = addRecord({ kind: 'mini', game: 'daily', at: Date.now(), mode: 0, time: 0, score: total, value: total, vlabel: 'day total', unit: '' });
   }
@@ -455,7 +458,7 @@ function pickNext(recent: readonly string[]): string {
 /** End an endless run (or any set) early and show what it came to. */
 function endRun(): void {
   if (!dailyQueue) return;
-  const total = dailyRows.reduce((sum, r) => sum + r.score, 0);
+  const total = dailyRows.reduce((sum, r) => sum + (r.saved ? r.score : 0), 0);
   const label = queueLabel;
   dailyQueue = null;
   endlessScope = null;
@@ -476,6 +479,7 @@ function startGame(game: GameId): void {
     // Pointer games take taps anywhere, so they show no pads.
     if (e.input !== 'keys') touch.padsOff();
     miniDef = e.def;
+    miniInputs = 0;
     mini = e.def.make();
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
@@ -648,6 +652,10 @@ function finishMini(): void {
   stopLoop();
   if (!mini || !miniDef) return;
   const r = mini.result();
+  // A session with no input at all, or too short to save, counts for nothing:
+  // no score, no best, no history, no streak.
+  if (miniInputs === 0) r.saved = false;
+  r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
   const pointerOnly = !usesKeyCount(miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
   const prev = bestFor(miniDef.id, activeKeys);
@@ -686,7 +694,7 @@ function finishMini(): void {
   if (dailyQueue) {
     // An endless run always has a next game.
     if (endlessScope && dailyIdx + 1 >= dailyQueue.length) dailyQueue.push(pickNext(dailyQueue));
-    dailyRows.push({ name: miniDef.name, skill: miniDef.skill, score: r.score, primary: `${r.primary.label} ${formatPrimary(r.primary)}`, best: isBest });
+    dailyRows.push({ id: miniDef.id, name: miniDef.name, skill: miniDef.skill, score: r.score, primary: r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : '', best: isBest, saved: r.saved });
     const next = dailyQueue[dailyIdx + 1];
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
@@ -912,6 +920,7 @@ function press(slot: number, ts: number): void {
     else if (out === OUT_START) sfx.play(SND_UI);
     else sfx.play(slot >= 3 ? SND_TAP_R : SND_TAP_L);
   } else if (screen === 'mini' && mini) {
+    miniInputs++;
     mini.press(slot, ts);
   } else if (screen === 'burst') {
     if (slot === SLOT_REFLEX) return;
@@ -951,6 +960,7 @@ function onKeyDown(e: KeyboardEvent): void {
   }
 
   if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e))) {
+    miniInputs++;
     e.preventDefault();
     return;
   }
@@ -1050,6 +1060,7 @@ function onPointerDown(e: PointerEvent): void {
     return;
   }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
+    miniInputs++;
     mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e));
     return;
   }

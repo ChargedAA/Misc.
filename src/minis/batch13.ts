@@ -454,7 +454,7 @@ class Except implements Mini {
   result(): MiniResult {
     const caught = this.nogos - this.commissions;
     return {
-      score: Math.round(Math.max(0, caught) * 40 + (this.gos - this.omissions) * 3 + Math.max(0, 500 - median(this.rts))),
+      score: this.rts.length ? Math.round(Math.max(0, caught) * 40 + (this.gos - this.omissions) * 3 + Math.max(0, 500 - median(this.rts))) : 0,
       primary: { label: 'threes held back', value: this.nogos ? (caught / this.nogos) * 100 : 0, unit: '%' },
       lines: [
         { label: 'threes held back', value: `${Math.max(0, caught)} of ${this.nogos}` },

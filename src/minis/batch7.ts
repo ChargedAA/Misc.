@@ -138,14 +138,14 @@ class Sets implements Mini {
     const last = this.rates[this.rates.length - 1] ?? 0;
     const drop = peak ? 1 - last / peak : 0;
     return {
-      score: Math.round(mean(this.rates) * 40 + (1 - drop) * 100),
+      score: peak > 0 ? Math.round(mean(this.rates) * 40 + (1 - drop) * 100) : 0,
       primary: { label: 'average over the sets', value: mean(this.rates), unit: '/s', decimals: 1 },
       lines: [
         { label: 'sets', value: this.rates.map((r) => r.toFixed(1)).join('  ') || '–' },
         { label: 'best set', value: `${peak.toFixed(1)} taps/s` },
         { label: 'drop from best to last', value: pct(Math.max(0, drop)) },
       ],
-      saved: this.rates.length >= 2,
+      saved: this.rates.length >= 2 && peak > 0,
     };
   }
 }
@@ -603,7 +603,7 @@ class Longer implements Mini {
     const tail = this.hist.slice(-12);
     const thr = tail.length ? mean(tail) : 0;
     return {
-      score: Math.round(this.correct * 10 + (thr ? Math.max(0, 25 - thr) * 20 : 0)),
+      score: this.correct ? Math.round(this.correct * 10 + (thr ? Math.max(0, 25 - thr) * 20 : 0)) : 0,
       primary: { label: 'smallest reliable difference', value: thr, unit: '%', lower: true, decimals: 1 },
       lines: [
         { label: 'difference you can tell (last 12)', value: `${thr.toFixed(1)}%` },

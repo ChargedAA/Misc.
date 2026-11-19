@@ -197,7 +197,7 @@ class Relate implements Mini {
 
   result(): MiniResult {
     return {
-      score: this.right * 50 + this.items.level * 40,
+      score: this.right ? this.right * 50 + (this.items.level - 3) * 40 : 0,
       primary: { label: 'right', value: this.right, unit: `/ ${RELATE_N}` },
       lines: [
         { label: 'right', value: `${this.right} of ${this.i}` },

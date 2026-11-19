@@ -358,39 +358,49 @@ export function miniResultsHtml(
     : AGAIN;
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${fmtInt(r.score)}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
-    <div class="stat"><div class="v">${fmtPrimary(p.value, p)}</div><div class="l">${p.label}</div></div>
+    <div class="stat"><div class="v">${r.saved ? fmtPrimary(p.value, p) : '\u2013'}</div><div class="l">${p.label}</div></div>
+    <div class="stat"><div class="v">${r.saved ? fmtInt(r.score) : '\u2013'}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
     <div class="stat"><div class="v">${name}</div><div class="l">game</div></div>
   </div>
   ${r.saved ? compareLine(p, cmp) : ''}
   <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
-  ${r.saved ? '' : '<p class="muted">Too short to save.</p>'}
+  ${r.saved ? '' : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
   ${daily ? `<p class="muted">${daily.label}: game ${daily.index}${daily.total ? ` of ${daily.total}` : ''}</p>` : ''}
   ${foot(actions)}
 </section>`;
 }
 
 export interface DailyRow {
+  id: string;
   name: string;
   skill: string;
   score: number;
   primary: string;
   best: boolean;
+  /** False when the stage was too short to count. */
+  saved: boolean;
 }
 
 export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: number, label = 'Daily set'): string {
   const daily = label === 'Daily set';
+  const done = rows.filter((r) => r.saved).length;
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${fmtInt(total)}</div><div class="l">${daily ? 'today' : label.toLowerCase()}${daily && total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
-    <div class="stat"><div class="v">${rows.length}</div><div class="l">games</div></div>
+    <div class="stat"><div class="v">${done ? fmtInt(total) : '\u2013'}</div><div class="l">${daily ? 'today' : label.toLowerCase()}${daily && done && total >= bestTotal && total > 0 ? `${DOT}best day` : ''}</div></div>
+    <div class="stat"><div class="v">${done} / ${rows.length}</div><div class="l">completed</div></div>
     <div class="stat"><div class="v">${rows.filter((r) => r.best).length}</div><div class="l">personal bests</div></div>
   </div>
   <table>
     <tr><th></th><th>skill</th><th>result</th><th>score</th></tr>
-    ${rows.map((r) => `<tr><td>${r.name}${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.primary}</td><td>${fmtInt(r.score)}</td></tr>`).join('')}
+    ${rows
+      .map(
+        (r) =>
+          `<tr${r.saved ? '' : ' class="dim"'}><td><button class="lnk" data-act="gamestats" data-arg="${r.id}">${r.name}</button>${r.best ? ' \u00b7 best' : ''}</td><td>${r.skill}</td><td>${r.saved ? r.primary : 'incomplete: too short to count'}</td><td>${r.saved ? fmtInt(r.score) : '\u2013'}</td></tr>`,
+      )
+      .join('')}
   </table>
+  ${done < rows.length ? `<p class="muted">Incomplete stages score nothing and are not saved.${daily && !done ? ' Nothing counted, so today does not count toward your streak.' : ''}</p>` : ''}
   <p class="muted">${daily ? 'The set changes every day. Same games for everyone on a given date.' : label === 'Endless run' ? 'Random games until you stop.' : 'A fresh draw every time.'}</p>
   ${foot([['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']])}
 </section>`;

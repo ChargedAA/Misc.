@@ -754,3 +754,26 @@ table td + td {
   color: var(--mid);
   margin-left: 8px;
 }
+
+.warn {
+  color: var(--line);
+  font-size: 13px;
+  border-left: 2px solid var(--line);
+  padding: 6px 0 6px 12px;
+  margin: 18px 0;
+}
+
+tr.dim td {
+  color: var(--mid);
+}
+
+.lnk {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--dim);
+  text-underline-offset: 3px;
+}
+
+.lnk:hover {
+  text-decoration-color: var(--line);
+}

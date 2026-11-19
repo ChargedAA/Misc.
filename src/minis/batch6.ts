@@ -283,7 +283,7 @@ class Where implements Mini {
   result(): MiniResult {
     const m = mean(this.errs);
     return {
-      score: this.i ? Math.round(Math.max(0, 0.3 - m) * 3000 + this.k.level * 50) : 0,
+      score: this.i ? Math.max(0, Math.round(Math.max(0, 0.3 - m) * 3000 + (this.k.level - 3) * 50)) : 0,
       primary: { label: 'average miss', value: Math.round(m * 1000) / 10, unit: '%', lower: true, decimals: 1 },
       lines: [
         { label: 'average miss (share of the board)', value: `${(m * 100).toFixed(1)}%` },

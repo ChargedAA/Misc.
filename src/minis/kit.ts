@@ -176,7 +176,8 @@ export function foreperiod(min: number, mean: number, max: number): number {
   return min + Math.min(max - min, -Math.log(1 - Math.random()) * mean);
 }
 
-export const ms = (v: number): string => `${Math.round(v)} ms`;
+/** Milliseconds, or a dash when nothing was measured (a real 0 ms never happens). */
+export const ms = (v: number): string => (Number.isFinite(v) && v > 0 ? `${Math.round(v)} ms` : '\u2013');
 export const pct = (v: number): string => `${Math.round(v * 100)}%`;
 
 // --- Layout and drawing ------------------------------------------------------

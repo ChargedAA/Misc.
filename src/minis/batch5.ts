@@ -608,7 +608,7 @@ class Alert implements Mini {
     const lapses = this.rts.filter((r) => r >= 500).length;
     const fastest = [...ok].sort((x, y) => x - y).slice(0, Math.max(1, Math.round(ok.length / 10)));
     return {
-      score: ok.length ? Math.round(Math.max(0, 600 - med) * 3 - lapses * 50 - this.falses * 30 + ok.length * 10) : 0,
+      score: ok.length ? Math.max(0, Math.round(Math.max(0, 600 - med) * 3 - lapses * 50 - this.falses * 30 + ok.length * 10)) : 0,
       primary: { label: 'median', value: med, unit: 'ms', lower: true },
       lines: [
         { label: 'median', value: ms(med) },

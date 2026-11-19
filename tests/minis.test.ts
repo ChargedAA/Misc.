@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MODES, SLOT_REFLEX } from '../src/config.ts';
 import { MINIS } from '../src/minis/index.ts';
+import { ms } from '../src/minis/kit.ts';
 import { Rng } from '../src/rng.ts';
 import type { View } from '../src/render.ts';
 import type { TouchLayout } from '../src/touch.ts';
@@ -136,4 +137,12 @@ test('mini-game ids are unique and every game explains itself', () => {
     assert.ok(d.how.length > 40, `${d.id} needs a how-to`);
     assert.ok(d.blurb.length > 10);
   }
+});
+
+test('a game with nothing measured shows dashes, not zeros', () => {
+  // The framework drops any session with no input at all (see finishMini); here we check the
+  // formatting half of that promise: unmeasured times read as a dash.
+  assert.equal(ms(0), '\u2013');
+  assert.equal(ms(Number.NaN), '\u2013');
+  assert.equal(ms(241.6), '242 ms');
 });

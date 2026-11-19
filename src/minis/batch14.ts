@@ -521,7 +521,7 @@ class Even implements Mini {
 
   result(): MiniResult {
     return {
-      score: Math.round(this.best * 120 + Math.max(0, 0.15 - mean(this.cvs)) * 1000),
+      score: this.best ? Math.round(this.best * 120 + Math.max(0, 0.15 - mean(this.cvs)) * 1000) : 0,
       primary: { label: 'fastest even pace', value: this.best, unit: '/s', decimals: 1 },
       lines: [
         { label: 'fastest pace held evenly', value: this.best ? `${this.best.toFixed(1)} presses a second` : '–' },

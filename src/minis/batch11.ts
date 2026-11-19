@@ -547,7 +547,8 @@ class Guess implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now - this.t0 > 1100) this.state = 1;
     if (this.state === 1 && now - this.t0 > 30000) {
-      this.ratios.push(this.typed ? Number(this.typed) / this.n : 0.5);
+      // Out of time: only an estimate actually typed counts.
+      if (this.typed) this.ratios.push(Number(this.typed) / this.n);
       this.round++;
       this.state = 2;
       this.at = now + 1500;
