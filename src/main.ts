@@ -52,6 +52,7 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
+import { GUIDES } from './minis/groups.ts';
 import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
@@ -328,7 +329,7 @@ function buildMenu(n: NavEntry): Menu {
     case 'group':
       return groupMenu(c, n.arg);
     case 'skill':
-      return skillMenu(c, n.arg, n.page);
+      return skillMenu(c, n.arg);
     case 'game':
       return gameMenu(c, n.arg);
     case 'stats':
@@ -751,6 +752,26 @@ function assignKey(code: string): void {
   showKeys();
 }
 
+/** Set the key count a game is played with, from its page. */
+function setKeys(game: GameId, n: number): void {
+  const e = entry(game);
+  if (!e || !usesKeyCount(e.input) || n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
+  settings.keys[game] = n;
+  saveSettings(settings);
+  sfx.play(SND_UI);
+  showMenu();
+}
+
+/** Play a fixed list of games back to back, like the daily set. */
+function startList(ids: string[], label: string): void {
+  endlessScope = null;
+  dailyQueue = [...ids];
+  queueLabel = label;
+  dailyIdx = 0;
+  dailyRows = [];
+  startGame(dailyQueue[0]!);
+}
+
 /** Start a game with a key count (and difficulty, if it has levels), remembering both for next time. */
 function playWith(game: GameId, n: number, level?: number): void {
   const e = entry(game);
@@ -783,6 +804,16 @@ function onAction(action: string, arg: string): void {
       nav[nav.length - 1]!.page = Number(arg) | 0;
       showMenu(1);
       break;
+    case 'keycount': {
+      const [id, n] = arg.split(':');
+      setKeys(id as GameId, Number(n));
+      break;
+    }
+    case 'routine': {
+      const g = GUIDES[arg as keyof typeof GUIDES];
+      if (g) startList(g.routine, `${SKILLS.find((k) => k.id === arg)?.name ?? 'Skill'} routine`);
+      break;
+    }
     case 'play': {
       const [id, n, lv] = arg.split(':');
       playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
@@ -1008,11 +1039,7 @@ function onKeyDown(e: KeyboardEvent): void {
   // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
   if (!Number.isNaN(digit)) {
     const top = nav[nav.length - 1]!;
-    if (screen === 'menu' && top.kind === 'game' && digit >= 1 && digit <= 6 && !entry(top.arg)?.def?.levels) playWith(top.arg as GameId, digit);
-    else if (screen === 'menu' && top.kind === 'gamekeys' && digit >= 1 && digit <= 6) {
-      const [id, lv] = top.arg.split(':');
-      playWith(id as GameId, digit, Number(lv) || 0);
-    }
+    if (screen === 'menu' && (top.kind === 'game' || top.kind === 'gamekeys') && digit >= 1 && digit <= 6) setKeys(top.arg.split(':')[0] as GameId, digit);
     else if (screen === 'menu' && top.kind === 'gamestats' && digit >= 0 && digit <= 6) onAction('gsfilter', String(digit));
     else if (screen === 'keys' && digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
     else if (digit === 0) toggleMute();

@@ -1,11 +1,11 @@
-// Menus: every screen outside a game is a short list of at most six items,
-// each on one of the keys the hands already rest on (Z X C B N M). Space turns
-// the page when a list is longer, Escape goes back, Enter does the screen's
-// default. Screens slide in from the side they were reached from.
+// Menus: a path of columns. Each column is a short list; every option has a key, mostly the
+// keys the hands already rest on (Z X C B N M, then their neighbours). The newest column owns
+// the keys, Escape goes back, and columns slide in from the side they were reached from.
 
 import { MODES } from './config.ts';
 import { ENTRIES, entry, type Entry } from './minis/index.ts';
 import { SKILLS, usesKeyCount, type MiniResult, type Skill } from './minis/kit.ts';
+import { GUIDES, durationOf } from './minis/groups.ts';
 import { trendSvg } from './charts.ts';
 import type { RunRecord, Settings } from './storage.ts';
 import {
@@ -28,6 +28,13 @@ export const MENU_KEYS = ['KeyZ', 'KeyX', 'KeyC', 'KeyB', 'KeyN', 'KeyM', 'Space
 const KEY_NAMES = ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'];
 const PER_PAGE = 6;
 
+/** Keys for long lists, in reach order: the bottom row, then the home row, then the top row. */
+export const LIST_KEYS: [string, string][] = [
+  ['KeyZ', 'Z'], ['KeyX', 'X'], ['KeyC', 'C'], ['KeyV', 'V'], ['KeyB', 'B'], ['KeyN', 'N'], ['KeyM', 'M'], ['Comma', ','], ['Period', '.'], ['Slash', '/'],
+  ['KeyA', 'A'], ['KeyS', 'S'], ['KeyD', 'D'], ['KeyF', 'F'], ['KeyG', 'G'], ['KeyH', 'H'], ['KeyJ', 'J'], ['KeyK', 'K'], ['KeyL', 'L'], ['Semicolon', ';'],
+  ['KeyQ', 'Q'], ['KeyW', 'W'], ['KeyE', 'E'], ['KeyR', 'R'], ['KeyT', 'T'], ['KeyY', 'Y'], ['KeyU', 'U'], ['KeyI', 'I'], ['KeyO', 'O'], ['KeyP', 'P'],
+];
+
 export interface Item {
   label: string;
   desc?: string;
@@ -37,8 +44,25 @@ export interface Item {
   disabled?: boolean;
   /** Which key (0-5 for Z to M, 6 for Space), if not the item's position. */
   slot?: number;
+  /** Or an explicit key code and the label shown for it. */
+  code?: string;
+  keyName?: string;
+  /** A group heading shown just above this item, and a note beside it in the open column. */
+  heading?: string;
+  headingNote?: string;
+  /** Drawn larger: the main thing to do on this screen. */
+  hero?: boolean;
   /** Marked as the current choice (the last key count used, say). */
   current?: boolean;
+}
+
+/** A small control in a column's header (Stats, Settings and so on). */
+export interface Tool {
+  label: string;
+  act: string;
+  arg?: string;
+  code: string;
+  keyName: string;
 }
 
 export interface Menu {
@@ -52,7 +76,10 @@ export interface Menu {
   after?: string;
   /** Enter: the screen's default action. */
   enter?: { label: string; act: string; arg?: string };
+  tools?: Tool[];
   wide?: boolean;
+  /** Lay the item groups side by side on wide screens (items before the first heading span the width). */
+  split?: boolean;
 }
 
 /** One column of the menu: a menu and, if a deeper column is open, the item chosen in it. */
@@ -62,12 +89,22 @@ export interface Col {
 }
 
 function itemsOf(m: Menu): { shown: Item[]; page: number; pages: number } {
-  // A list longer than six pages with Space, unless Space is one of its options.
-  const spaceTaken = m.items.some((it) => it.slot === 6);
-  if (spaceTaken || m.items.length <= PER_PAGE) return { shown: m.items, page: 0, pages: 1 };
+  // A list longer than six pages with Space, unless its items carry their own keys or Space is one of them.
+  const own = m.items.some((it) => it.slot === 6 || it.code);
+  if (own || m.items.length <= PER_PAGE) return { shown: m.items, page: 0, pages: 1 };
   const pages = Math.ceil(m.items.length / PER_PAGE);
   const page = Math.min(m.page ?? 0, pages - 1);
   return { shown: m.items.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE), page, pages };
+}
+
+function keyOf(it: Item, i: number): { code: string; name: string } {
+  if (it.code) return { code: it.code, name: it.keyName ?? it.code };
+  const k = it.slot ?? i;
+  return { code: MENU_KEYS[k]!, name: KEY_NAMES[k]! };
+}
+
+function kb(name: string): string {
+  return `<span class="kb${name.length > 2 ? ' wide' : ''}">${name}</span>`;
 }
 
 /** The open column: full detail, and it owns the keys. */
@@ -77,20 +114,17 @@ function activeCol(m: Menu, dir: number, canBack: boolean): string {
   const twin = m.enter ? shown.find((it) => it.act === m.enter!.act && (it.arg ?? '') === (m.enter!.arg ?? '')) : undefined;
   const enter = twin ? undefined : m.enter;
   const cls = dir > 0 ? ' fwd' : dir < 0 ? ' bwd' : '';
+  const tools = m.tools?.length
+    ? `<div class="tools">${m.tools.map((t) => `<button data-act="${t.act}" data-arg="${t.arg ?? ''}" data-key="${t.code}">${kb(t.keyName)}${t.label}</button>`).join('')}</div>`
+    : '';
   return `<section class="col active${m.wide ? ' wide' : ''}${cls}">
   <header class="mhead">
-    ${canBack ? '<button class="mback" data-act="back" data-key="Escape Backspace">\u2190<span class="k">esc</span></button>' : ''}
+    ${canBack ? '<button class="mback" data-act="back" data-key="Escape Backspace">\u2190<span class="k">esc</span></button>' : tools}
     <h1>${m.title}</h1>
     ${m.sub ? `<p class="msub">${m.sub}</p>` : ''}
   </header>
   ${m.extra ?? ''}
-  <div class="items">${shown
-    .map((it, i) => {
-      const k = it.slot ?? i;
-      const codes = `${MENU_KEYS[k]}${it === twin ? ' Enter' : ''}`;
-      return `<button class="item${it.current ? ' cur' : ''}" data-act="${it.act}" data-arg="${it.arg ?? ''}" data-key="${codes}"${it.disabled ? ' disabled' : ''}><span class="kb${k === 6 ? ' wide' : ''}">${KEY_NAMES[k]}</span><span class="n">${it.label}</span>${it.meta ? `<span class="m">${it.meta}</span>` : ''}${it.desc ? `<span class="d">${it.desc}</span>` : ''}</button>`;
-    })
-    .join('')}</div>
+  ${itemsHtml(shown, twin, !!m.split)}
   ${
     pages > 1 || enter
       ? `<div class="mfoot">${enter ? `<button data-act="${enter.act}" data-arg="${enter.arg ?? ''}" data-key="Enter">${enter.label}<span class="k">enter</span></button>` : ''}${
@@ -102,6 +136,24 @@ function activeCol(m: Menu, dir: number, canBack: boolean): string {
 </section>`;
 }
 
+function itemHtml(it: Item, i: number, twin: Item | undefined): string {
+  const k = keyOf(it, i);
+  const codes = `${k.code}${it === twin ? ' Enter' : ''}`;
+  return `${it.heading ? `<h3 class="ihead">${it.heading}${it.headingNote ? `<span>${it.headingNote}</span>` : ''}</h3>` : ''}<button class="item${it.current ? ' cur' : ''}${it.hero ? ' hero' : ''}" data-act="${it.act}" data-arg="${it.arg ?? ''}" data-key="${codes}"${it.disabled ? ' disabled' : ''}>${kb(k.name)}<span class="n">${it.label}</span>${it.meta ? `<span class="m">${it.meta}</span>` : ''}${it.desc ? `<span class="d">${it.desc}</span>` : ''}</button>`;
+}
+
+function itemsHtml(shown: Item[], twin: Item | undefined, split: boolean): string {
+  if (!split) return `<div class="items">${shown.map((it, i) => itemHtml(it, i, twin)).join('')}</div>`;
+  // Items before the first heading lead across the width; each heading starts a group.
+  const lead: string[] = [];
+  const groups: string[][] = [];
+  shown.forEach((it, i) => {
+    if (it.heading) groups.push([]);
+    (groups.length ? groups[groups.length - 1]! : lead).push(itemHtml(it, i, twin));
+  });
+  return `<div class="items">${lead.join('')}</div><div class="isplit">${groups.map((g) => `<div class="items">${g.join('')}</div>`).join('')}</div>`;
+}
+
 /** A column further up the path: compact, with the chosen item lit. Clicking an item re-opens from there. */
 function parentCol(c: Col, level: number, old: boolean): string {
   const { shown } = itemsOf(c.menu);
@@ -109,9 +161,9 @@ function parentCol(c: Col, level: number, old: boolean): string {
   <h2 class="ctitle"><button data-act="crumb" data-arg="${level}">${c.menu.title}</button></h2>
   <div class="citems">${shown
     .map((it, i) => {
-      const k = it.slot ?? i;
+      const k = keyOf(it, i);
       const on = c.sel !== undefined && it.arg === c.sel;
-      return `<button class="citem${on ? ' on' : ''}" data-act="pick" data-arg="${level}|${it.act}|${it.arg ?? ''}"${it.disabled ? ' disabled' : ''}><span class="kb${k === 6 ? ' wide' : ''}">${KEY_NAMES[k]}</span>${it.label}</button>`;
+      return `${it.heading ? `<h3 class="chead">${it.heading}</h3>` : ''}<button class="citem${on ? ' on' : ''}" data-act="pick" data-arg="${level}|${it.act}|${it.arg ?? ''}"${it.disabled ? ' disabled' : ''}>${kb(k.name)}${it.label}</button>`;
     })
     .join('')}</div>
 </section>`;
@@ -167,19 +219,61 @@ function inputLabel(e: Entry): string {
   return e.input === 'pointer' ? 'tap' : e.input === 'both' ? 'key or tap' : e.input === 'type' ? 'keyboard' : 'keys';
 }
 
+/** Home keys: the left hand for the Reflexes skills, the right hand for the Mind skills. */
+const SKILL_KEYS: Record<string, [string, string]> = {
+  reaction: ['KeyZ', 'Z'],
+  speed: ['KeyX', 'X'],
+  timing: ['KeyC', 'C'],
+  coordination: ['KeyV', 'V'],
+  memory: ['KeyB', 'B'],
+  attention: ['KeyN', 'N'],
+  judgement: ['KeyM', 'M'],
+  reasoning: ['Comma', ','],
+};
+
 export function startMenu(c: MenuCtx): Menu {
-  const sessions = c.history.filter((r) => r.game !== 'daily').length;
+  const played = (sk: string) => gamesOf([sk]).filter((e) => c.bests[e.id]).length;
   return {
     title: 'TENSION',
-    sub: `${ENTRIES.length} games${DOT}${SKILLS.length} skills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
-    items: [
-      { label: 'Daily', desc: `${c.daily.length} games, one per skill`, meta: c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : 'today', act: 'go', arg: 'daily' },
-      ...GROUPS.map((g) => ({ label: g.name, desc: g.desc, meta: `${gamesOf(g.skills).length} games`, act: 'go', arg: `group:${g.id}` })),
-      { label: 'Random', desc: 'A run of random games, short or long', act: 'go', arg: 'random' },
-      { label: 'Stats', desc: sessions ? `${sessions} sessions${c.streak ? `${DOT}${c.streak} day streak` : ''}` : 'Nothing yet', act: 'go', arg: 'stats' },
-      { label: 'Settings', desc: `Keys${DOT}sound ${c.settings.muted ? 'off' : 'on'}${DOT}history`, act: 'go', arg: 'settings' },
-      { label: 'Endless', desc: 'Games one after another until you stop, or a reaction run', act: 'go', arg: 'endless', slot: 6 },
+    sub: `Train eight skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
+    tools: [
+      { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
+      { label: 'Endless', act: 'go', arg: 'endless', code: 'KeyE', keyName: 'E' },
+      { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
+      { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
     ],
+    items: [
+      {
+        label: 'Daily',
+        desc: `${c.daily.length} drills, one per skill, about ${c.daily.length} minutes. The same set for everyone today.`,
+        meta: c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : 'today',
+        act: 'go',
+        arg: 'daily',
+        code: 'Space',
+        keyName: 'SPACE',
+        hero: true,
+      },
+      ...GROUPS.flatMap((g) =>
+        g.skills.map((sk, i) => {
+          const def = SKILLS.find((k) => k.id === sk)!;
+          const n = gamesOf([sk]).length;
+          const p = played(sk);
+          return {
+            heading: i === 0 ? `${g.name}${DOT}${i === 0 && g.id === 'body' ? 'left hand' : 'right hand'}` : undefined,
+            label: def.name,
+            desc: GUIDES[sk].about,
+            meta: `${n} drills${p ? `${DOT}${p} played` : ''}`,
+            act: 'go',
+            arg: `skill:${sk}`,
+            code: SKILL_KEYS[sk]![0],
+            keyName: SKILL_KEYS[sk]![1],
+          };
+        }),
+      ),
+    ],
+    enter: { label: 'Daily', act: 'go', arg: 'daily' },
+    split: true,
+    wide: true,
   };
 }
 
@@ -244,21 +338,45 @@ export function groupMenu(c: MenuCtx, id: string): Menu {
   };
 }
 
-export function skillMenu(c: MenuCtx, sk: string, page: number): Menu {
+export function skillMenu(c: MenuCtx, sk: string): Menu {
   const def = SKILLS.find((k) => k.id === sk)!;
-  return {
-    title: def.name.toUpperCase(),
-    sub: def.blurb,
-    page,
-    items: gamesOf([sk]).map((e) => ({
-      label: e.name,
-      desc: e.blurb,
-      meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : inputLabel(e),
+  const g = GUIDES[def.id];
+  const name = (id: string) => entry(id)?.name ?? id;
+  const items: Item[] = [
+    { label: 'Routine', desc: `${g.routine.map(name).join(', ')}${DOT}about ${g.routine.length} minutes`, act: 'routine', arg: sk, code: 'Space', keyName: 'SPACE', hero: true },
+    {
+      label: `Benchmark: ${name(g.benchmark)}`,
+      desc: 'The same drill and setup every time, so your progress shows',
+      meta: c.bests[g.benchmark] ? `best ${fmtInt(c.bests[g.benchmark]!)}` : '',
       act: 'go',
-      arg: `game:${e.id}`,
-    })),
-    enter: { label: 'Three at random', act: 'quick', arg: `${sk}:3` },
-  };
+      arg: `game:${g.benchmark}`,
+      code: 'Enter',
+      keyName: 'ENTER',
+    },
+  ];
+  // Every drill of the skill, grouped by what it trains; any not yet grouped go last.
+  const grouped = new Set(g.groups.flatMap((x) => x.ids));
+  const groups = [...g.groups, { name: 'More', desc: '', ids: gamesOf([sk]).map((e) => e.id).filter((id) => !grouped.has(id)) }];
+  let k = 0;
+  for (const grp of groups) {
+    grp.ids.forEach((id, i) => {
+      const e = entry(id);
+      if (!e || e.skill !== sk) return;
+      const key = LIST_KEYS[k++];
+      items.push({
+        heading: i === 0 ? grp.name : undefined,
+        headingNote: i === 0 ? grp.desc : undefined,
+        label: e.name,
+        desc: e.blurb,
+        meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : inputLabel(e),
+        act: 'go',
+        arg: `game:${e.id}`,
+        code: key?.[0] ?? 'Unidentified',
+        keyName: key?.[1] ?? '',
+      });
+    });
+  }
+  return { title: def.name.toUpperCase(), sub: g.about, items, wide: true };
 }
 
 /** A game with difficulty levels: pick one first. */
@@ -296,6 +414,7 @@ export function customMenu(c: MenuCtx, id: string): Menu {
   };
 }
 
+/** A drill's page: what it is, how to play, the setup, and Start, together. */
 export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const e = entry(id)!;
   if (e.def?.levels && level === undefined) return levelMenu(c, e);
@@ -304,28 +423,35 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const keys = c.settings.keys[id] ?? 2;
   const min = e.minKeys ?? 1;
   const usesKeys = usesKeyCount(e.input);
-  const how = e.def ? `${e.def.how}${usesKeys ? `<br>Keys: ${keysLine(keys, c.settings.bindings[keys]!)}` : ''}` : controlsHint(id, keys, c.settings.bindings[keys]!);
+  const how = e.def ? e.def.how : controlsHint(id, keys, c.settings.bindings[keys]!);
+  const controls = e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, c.settings.bindings[keys]!)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`;
   const best = c.bestFor(id, keys);
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
-  // With keys, each option is a key count and starts the game at once; the last one used is marked.
-  const items: Item[] = usesKeys
-    ? MODES.map((m) => ({
-        label: `${m.id} key${m.id === 1 ? '' : 's'}`,
-        desc: keysLine(m.id, c.settings.bindings[m.id]!).replace(/&nbsp;/g, ' '),
-        meta: m.id === keys ? 'last used' : '',
-        act: 'play',
-        arg: `${id}:${m.id}${lv}`,
-        disabled: m.id < min,
-        current: m.id === keys,
-      }))
-    : [{ label: 'Start', desc: e.input === 'type' ? 'Needs a keyboard' : 'Click or tap', act: 'play', arg: `${id}:${keys}${lv}` }];
-  items.push({ label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, slot: 6 });
+  const skill = SKILLS.find((k) => k.id === e.skill)!;
+  const group = GUIDES[e.skill].groups.find((g) => g.ids.includes(id));
+  const extra = `<p class="mblurb">${e.blurb}</p>
+  <dl class="facts">
+    <dt>How</dt><dd>${how}</dd>
+    <dt>Controls</dt><dd>${controls}</dd>
+    <dt>Length</dt><dd>${durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>
+  </dl>
+  ${
+    usesKeys
+      ? `<div class="counts small" aria-label="How many keys">${MODES.map(
+          (m) => `<button data-act="keycount" data-arg="${id}:${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
+        ).join('')}<span class="lbl">keys${DOT}press 1 to 6</span></div>`
+      : ''
+  }`;
   return {
-    title: lvName ? lvName.toUpperCase() : e.name.toUpperCase(),
-    sub: lvName ? `${e.name}${DOT}how many keys?` : `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
-    items,
-    enter: { label: `Start${usesKeys ? ` with ${keys} key${keys === 1 ? '' : 's'}` : ''}`, act: 'play', arg: `${id}:${keys}${lv}` },
-    after: `<p class="hint">${how}</p>${best ? `<p class="best">${bestLine(id, best)}</p>` : ''}`,
+    title: e.name.toUpperCase(),
+    sub: `${skill.name}${group ? `${DOT}${group.name}` : ''}`,
+    extra,
+    items: [
+      { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'KeyZ Space', keyName: 'Z', hero: true },
+      { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyX', keyName: 'X' },
+    ],
+    enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
+    after: best ? `<p class="best">${bestLine(id, best)}</p>` : '',
   };
 }
 
