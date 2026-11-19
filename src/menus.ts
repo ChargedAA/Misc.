@@ -529,12 +529,17 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
   };
 }
 
-export function settingsMenu(c: MenuCtx): Menu {
+export function settingsMenu(c: MenuCtx, note = ''): Menu {
   return {
     title: 'SETTINGS',
+    extra: note ? `<p class="cmp">${note}</p>` : '',
     items: [
       { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
       { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
+      { label: 'Volume', desc: 'Press to step through 25, 50, 75 and 100%', meta: `${Math.round((c.settings.volume ?? 0.8) * 100)}%`, act: 'volume' },
+      { label: 'Sound check', desc: 'Tap along to clicks for 12 seconds; the rhythm games then allow for how late sound reaches you here', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
+      { label: 'Audio delay, less', desc: 'Fine-tune by hand: 10 ms less', act: 'audiodelay', arg: '-' },
+      { label: 'Audio delay, more', desc: 'Fine-tune by hand: 10 ms more', act: 'audiodelay', arg: '+' },
       { label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
       { label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
       { label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },

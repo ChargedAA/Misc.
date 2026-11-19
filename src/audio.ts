@@ -62,8 +62,16 @@ export class Sfx {
     }
     const ctx = this.ctx;
     this.master = ctx.createGain();
-    this.master.gain.value = this.muted ? 0 : 1;
-    this.master.connect(ctx.destination);
+    this.master.gain.value = this.muted ? 0 : this.volume;
+    // A gentle limiter, so sounds that land together never clip.
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -9;
+    lim.knee.value = 6;
+    lim.ratio.value = 12;
+    lim.attack.value = 0.002;
+    lim.release.value = 0.12;
+    this.master.connect(lim);
+    lim.connect(ctx.destination);
     for (let i = 0; i < 3; i++) {
       if (typeof ctx.createStereoPanner === 'function') {
         const p = ctx.createStereoPanner();
@@ -77,9 +85,17 @@ export class Sfx {
     this.build(ctx);
   }
 
+  /** Master volume, 0 to 1. */
+  volume = 0.8;
+
   setMuted(m: boolean): void {
     this.muted = m;
-    if (this.master && this.ctx) this.master.gain.setValueAtTime(m ? 0 : 1, this.ctx.currentTime);
+    if (this.master && this.ctx) this.master.gain.setValueAtTime(m ? 0 : this.volume, this.ctx.currentTime);
+  }
+
+  setVolume(v: number): void {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.master && this.ctx && !this.muted) this.master.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.02);
   }
 
   /** Play a sound now, or `delayMs` from now on the audio clock (sample-accurate, unlike a frame). */
@@ -105,8 +121,8 @@ export class Sfx {
     const t = ctx.currentTime;
     const d = ms / 1000;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.22, t + 0.015);
-    g.gain.setValueAtTime(0.22, t + Math.max(0.02, d - 0.03));
+    g.gain.linearRampToValueAtTime(0.18, t + 0.015);
+    g.gain.setValueAtTime(0.18, t + Math.max(0.02, d - 0.03));
     g.gain.linearRampToValueAtTime(0, t + d);
     osc.connect(g);
     g.connect(this.pans[Math.max(0, Math.min(2, Math.round(pan) + 1))]!);
@@ -137,19 +153,46 @@ export class Sfx {
 
   private build(ctx: AudioContext): void {
     const TAU = Math.PI * 2;
-    const tick = (f: number, gain: number): Synth => (t) =>
-      (Math.sin(TAU * f * t) * 0.8 + this.noise() * 0.2) * Math.exp(-t / 0.0035) * gain;
-    this.make(ctx, SND_TAP_L, 0.022, -1, tick(1750, 0.16));
-    this.make(ctx, SND_TAP_R, 0.022, 1, tick(2150, 0.16));
-    this.make(ctx, SND_TAP_WEAK, 0.02, 0, tick(820, 0.1));
-    this.make(ctx, SND_UI, 0.018, 0, tick(1300, 0.08));
-    for (let i = 0; i < 5; i++) this.make(ctx, SND_RING + i, 0.03, 0, tick(2300 * Math.pow(1.122, i), 0.085));
+    const rate = ctx.sampleRate;
+    // A soft attack (1.5 ms) keeps every onset crisp enough to time to, without a click.
+    const att = (t: number) => Math.min(1, t / 0.0015);
+    /** A struck tone: a sine that drops a little in pitch, with a quieter overtone. */
+    const strike = (f: number, decay: number, gain: number, over = 2.76, drop = 0.06): Synth => {
+      let p1 = 0;
+      let p2 = 0;
+      return (t) => {
+        const ff = f * (1 + drop * Math.exp(-t / 0.01));
+        p1 += (TAU * ff) / rate;
+        p2 += (TAU * ff * over) / rate;
+        return (Math.sin(p1) + 0.25 * Math.sin(p2) * Math.exp(-t / (decay * 0.4))) * Math.exp(-t / decay) * att(t) * gain;
+      };
+    };
+    /** Woody: a struck tone with a short filtered-noise knock on top. */
+    const wood = (f: number, decay: number, gain: number): Synth => {
+      const tone = strike(f, decay, gain, 2.4, 0.12);
+      let lp = 0;
+      return (t, i) => {
+        lp += (this.noise() - lp) * 0.25;
+        return tone(t, i) + lp * Math.exp(-t / 0.004) * gain * 0.6;
+      };
+    };
+    /** Two struck notes, the second `gap` seconds after the first. */
+    const two = (a: Synth, b: Synth, gap: number): Synth => (t, i) => a(t, i) + (t > gap ? b(t - gap, i) : 0);
+
+    // Your own presses: short and woody, left a little lower than right.
+    this.make(ctx, SND_TAP_L, 0.06, -1, wood(392, 0.018, 0.22));
+    this.make(ctx, SND_TAP_R, 0.06, 1, wood(466, 0.018, 0.22));
+    this.make(ctx, SND_TAP_WEAK, 0.05, 0, wood(262, 0.012, 0.14));
+    this.make(ctx, SND_UI, 0.04, 0, strike(1047, 0.012, 0.07));
+    // Pickups: a rising run on a pentatonic scale.
+    const penta = [0, 2, 4, 7, 9];
+    for (let i = 0; i < 5; i++) this.make(ctx, SND_RING + i, 0.2, 0, strike(880 * Math.pow(2, penta[i]! / 12), 0.06, 0.12, 3.01));
 
     // Plucked tones (Karplus-Strong): a noise burst through a damped delay line.
     const scale = [0, 2, 4, 7, 9, 12, 14];
     for (let i = 0; i < 7; i++) {
       const f = 330 * Math.pow(2, scale[i]! / 12);
-      const period = Math.max(2, Math.round(ctx.sampleRate / f));
+      const period = Math.max(2, Math.round(rate / f));
       const line = new Float32Array(period);
       for (let j = 0; j < period; j++) line[j] = this.noise() * 0.5;
       let idx = 0;
@@ -158,56 +201,54 @@ export class Sfx {
         const next = (idx + 1) % period;
         line[idx] = (a + line[next]!) * 0.5 * 0.996;
         idx = next;
-        return a * 0.32 * Math.min(1, (0.5 - t) / 0.05);
+        return a * 0.3 * Math.min(1, (0.5 - t) / 0.05);
       });
     }
-    this.make(ctx, SND_BEAT, 0.03, 0, tick(1000, 0.2));
-    this.make(ctx, SND_BEAT_UP, 0.03, 0, tick(1500, 0.24));
+    // Metronome: a woodblock with a sharp, clear onset; the first beat of a bar higher.
+    this.make(ctx, SND_BEAT, 0.09, 0, wood(784, 0.03, 0.3));
+    this.make(ctx, SND_BEAT_UP, 0.09, 0, wood(1175, 0.032, 0.32));
 
-    // Surge: a short upward whip.
+    // Surge: a short upward whoosh.
     let ph = 0;
-    this.make(ctx, SND_SURGE, 0.14, 0, (t) => {
-      const f = 260 + 900 * (t / 0.14);
-      ph += (TAU * f) / ctx.sampleRate;
-      const env = Math.min(1, t / 0.012) * Math.exp(-t / 0.05);
-      return (Math.sin(ph) * 0.7 + this.noise() * 0.3) * env * 0.2;
+    let lpS = 0;
+    this.make(ctx, SND_SURGE, 0.16, 0, (t) => {
+      const f = 220 + 700 * (t / 0.16);
+      ph += (TAU * f) / rate;
+      lpS += (this.noise() - lpS) * 0.08;
+      const env = Math.min(1, t / 0.02) * Math.exp(-t / 0.05);
+      return (Math.sin(ph) * 0.5 + lpS * 0.8) * env * 0.18;
     });
 
-    // Reflex caught: a crisp two-part click.
-    this.make(ctx, SND_CATCH, 0.05, 0, (t) => {
-      const a = Math.sin(TAU * 3200 * t) * Math.exp(-t / 0.004);
-      const u = t - 0.018;
-      const b = u > 0 ? Math.sin(TAU * 4300 * u) * Math.exp(-u / 0.006) : 0;
-      return (a + b) * 0.2;
-    });
+    // Right: a bright two-note chime, up a fifth.
+    this.make(ctx, SND_CATCH, 0.3, 0, two(strike(880, 0.07, 0.13, 3.01), strike(1319, 0.11, 0.12, 3.01), 0.045));
 
-    // Lurch: a dull knock.
+    // Lurch / hit: a dull, low knock.
     let lp = 0;
-    this.make(ctx, SND_LURCH, 0.16, 0, (t) => {
-      lp += (this.noise() - lp) * 0.12;
-      return (lp * 1.6 * Math.exp(-t / 0.02) + Math.sin(TAU * 150 * t) * Math.exp(-t / 0.045)) * 0.34;
+    this.make(ctx, SND_LURCH, 0.18, 0, (t) => {
+      lp += (this.noise() - lp) * 0.06;
+      return (lp * 1.2 * Math.exp(-t / 0.015) + Math.sin(TAU * 130 * t) * Math.exp(-t / 0.05)) * att(t) * 0.32;
     });
 
-    // False start: a short flat blip.
-    this.make(ctx, SND_FALSE, 0.07, 0, (t) => (Math.sin(TAU * 240 * t) > 0 ? 1 : -1) * Math.exp(-t / 0.025) * 0.07);
+    // Wrong: a soft, low, slightly sour double note. Unmistakable, not a buzzer.
+    let w1 = 0;
+    let w2 = 0;
+    this.make(ctx, SND_FALSE, 0.2, 0, (t) => {
+      w1 += (TAU * 196) / rate;
+      w2 += (TAU * 185) / rate;
+      return (Math.sin(w1) + Math.sin(w2)) * 0.5 * Math.exp(-t / 0.06) * att(t) * 0.22;
+    });
 
-    // Fail thud: falling sine with a soft noise transient.
+    // Fail: a falling tone with a soft knock.
     let lp2 = 0;
     let phase = 0;
-    const rate = ctx.sampleRate;
-    this.make(ctx, SND_FALL, 0.42, 0, (t) => {
-      const f = 42 + 78 * Math.exp(-t / 0.07);
+    this.make(ctx, SND_FALL, 0.5, 0, (t) => {
+      const f = 55 + 110 * Math.exp(-t / 0.09);
       phase += (TAU * f) / rate;
-      lp2 += (this.noise() - lp2) * 0.06;
-      return (Math.sin(phase) * Math.exp(-t / 0.11) + lp2 * 1.4 * Math.exp(-t / 0.018)) * 0.5;
+      lp2 += (this.noise() - lp2) * 0.04;
+      return (Math.sin(phase) * Math.exp(-t / 0.14) + lp2 * Math.exp(-t / 0.015)) * att(t) * 0.42;
     });
 
-    // Heavy pull cleared: two rising blips.
-    this.make(ctx, SND_BURST_OK, 0.11, 0, (t) => {
-      const a = Math.sin(TAU * 1250 * t) * Math.exp(-t / 0.012);
-      const u = t - 0.05;
-      const b = u > 0 ? Math.sin(TAU * 1880 * u) * Math.exp(-u / 0.016) : 0;
-      return (a + b) * 0.13;
-    });
+    // Cleared / best: three rising notes.
+    this.make(ctx, SND_BURST_OK, 0.4, 0, two(two(strike(659, 0.06, 0.12, 3.01), strike(880, 0.06, 0.12, 3.01), 0.06), strike(1319, 0.14, 0.12, 3.01), 0.12));
   }
 }

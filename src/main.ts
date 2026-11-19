@@ -53,6 +53,7 @@ import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, quick } from './minis/groups.ts';
+import { SoundCheck } from './minis/soundcheck.ts';
 import { clamp, clockShift, keysFor, lengthScaleNow, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
@@ -84,6 +85,7 @@ const ui = new Ui(document.getElementById('ui')!, onAction);
 
 const settings = loadSettings();
 sfx.muted = settings.muted;
+sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
 
 let screen: Screen = 'menu';
@@ -346,7 +348,7 @@ function buildMenu(n: NavEntry): Menu {
     case 'gamestats':
       return gameStatsMenu(c, n.arg, gsFilter);
     case 'settings':
-      return settingsMenu(c);
+      return settingsMenu(c, soundCheckNote);
     case 'daily':
       return dailyMenu(c);
     case 'random':
@@ -724,6 +726,10 @@ function finishBurst(): void {
 function finishMini(): void {
   stopLoop();
   if (!mini || !miniDef) return;
+  if (mini instanceof SoundCheck) {
+    finishSoundCheck(mini);
+    return;
+  }
   const r = mini.result();
   // A session with no input at all, or too short to save, counts for nothing:
   // no score, no best, no history, no streak.
@@ -796,6 +802,39 @@ function showKeys(): void {
   stopLoop();
   screen = 'keys';
   ui.show(keysHtml(settings, bindKeys, listening));
+}
+
+const SOUND_CHECK: MiniDef = { id: 'soundcheck', name: 'Sound check', skill: 'timing', blurb: '', how: '', input: 'keys', make: () => new SoundCheck() };
+
+/** Tap along to clicks; the typical lateness beyond what the browser reports becomes the audio offset. */
+function startSoundCheck(): void {
+  sfx.unlock();
+  applyKeys(2);
+  pointerSlot.fill(0);
+  ui.hide();
+  practicing = false;
+  miniDef = SOUND_CHECK;
+  miniInputs = 0;
+  setClockShift(0);
+  setLengthScale(1);
+  mini = new SoundCheck();
+  mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), muted: settings.muted }, performance.now());
+  screen = 'mini';
+  startLoop();
+}
+
+let soundCheckNote = '';
+
+function finishSoundCheck(m: SoundCheck): void {
+  const d = m.delay();
+  mini = null;
+  if (Number.isFinite(d)) {
+    // Games already allow for the delay the browser reports; keep only what is left over.
+    settings.audioOffset = Math.round(clamp(d - sfx.latencyMs(), -60, 300));
+    saveSettings(settings);
+    soundCheckNote = `Measured: your taps land ${Math.round(d)} ms after each click starts. Allowing ${settings.audioOffset} ms on top of the ${Math.round(sfx.latencyMs())} ms the browser reports.`;
+  } else soundCheckNote = 'Not enough taps on the clicks to measure. Try again, tapping on every click.';
+  showMenu();
 }
 
 function toggleMute(): void {
@@ -998,6 +1037,27 @@ function onAction(action: string, arg: string): void {
       break;
     case 'mute':
       toggleMute();
+      break;
+    case 'volume': {
+      const steps = [0.25, 0.5, 0.75, 1];
+      const cur = settings.volume ?? 0.8;
+      const next = steps.find((v) => v > cur + 0.01) ?? steps[0]!;
+      settings.volume = next;
+      sfx.setVolume(next);
+      saveSettings(settings);
+      sfx.play(SND_CATCH);
+      showMenu();
+      break;
+    }
+    case 'audiodelay':
+      settings.audioOffset = clamp((settings.audioOffset ?? 0) + (arg === '-' ? -10 : 10), -60, 300);
+      saveSettings(settings);
+      sfx.play(SND_UI);
+      showMenu();
+      break;
+    case 'soundcheck':
+      soundCheckNote = '';
+      startSoundCheck();
       break;
     case 'menu':
       dailyQueue = null;
