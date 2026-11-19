@@ -20,6 +20,7 @@ import { BATCH18 } from './batch18.ts';
 import { BATCH19 } from './batch19.ts';
 import { BATCH20 } from './batch20.ts';
 import { SKILLS } from './kit.ts';
+import { quick } from './groups.ts';
 import { COORDINATION } from './coord.ts';
 import { EXTRA } from './extra.ts';
 import { MEMORY } from './memory.ts';
@@ -58,7 +59,7 @@ export function dailySet(date: Date = new Date()): string[] {
   for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
   const out: string[] = [];
   for (const { id: sk } of SKILLS) {
-    const pool = MINIS.filter((d) => d.skill === sk);
+    const pool = MINIS.filter((d) => d.skill === sk && quick(d.id));
     if (!pool.length) continue;
     h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
     out.push(pool[h % pool.length]!.id);

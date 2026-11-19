@@ -146,3 +146,13 @@ test('a game with nothing measured shows dashes, not zeros', () => {
   assert.equal(ms(Number.NaN), '\u2013');
   assert.equal(ms(241.6), '242 ms');
 });
+
+test('the daily set is quick: one drill per skill and none of the long ones, every day', async () => {
+  const { dailySet } = await import('../src/minis/index.ts');
+  const { LONG } = await import('../src/minis/groups.ts');
+  for (let d = 0; d < 400; d++) {
+    const set = dailySet(new Date(2026, 0, 1 + d));
+    assert.equal(set.length, 8);
+    for (const id of set) assert.ok(!LONG.has(id), `${id} is too long for the daily set`);
+  }
+});

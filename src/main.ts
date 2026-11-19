@@ -52,7 +52,7 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES, durationOf } from './minis/groups.ts';
+import { GUIDES, durationOf, quick } from './minis/groups.ts';
 import { clamp, usesKeyCount, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
@@ -436,10 +436,10 @@ function startQuick(spec: string): void {
   const skill = SKILLS.find((k) => k.id === scope);
   let queue: string[];
   // Sets use the mini-games only: Climb, Reflex and Burst have their own result screens.
-  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(MINIS.filter((e) => e.skill === k.id))[0]!.id));
+  if (scope === 'each') queue = shuffled(SKILLS.map((k) => shuffled(MINIS.filter((e) => e.skill === k.id && quick(e.id)))[0]!.id));
   else if (endlessScope) queue = [pickNext([])];
   else {
-    const pool = MINIS.filter((e) => scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope)).map((e) => e.id);
+    const pool = MINIS.filter((e) => quick(e.id) && (scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope))).map((e) => e.id);
     queue = shuffled(pool).slice(0, count);
   }
   if (!queue.length) return;
@@ -453,7 +453,7 @@ function startQuick(spec: string): void {
 /** The next game of an endless run: random, within its scope, and none of the last eight. */
 function pickNext(recent: readonly string[]): string {
   const group = GROUPS.find((g) => g.id === endlessScope);
-  const pool = MINIS.filter((e) => !group || group.skills.includes(e.skill)).map((e) => e.id);
+  const pool = MINIS.filter((e) => quick(e.id) && (!group || group.skills.includes(e.skill))).map((e) => e.id);
   const fresh = pool.filter((id) => !recent.slice(-8).includes(id));
   const from = fresh.length ? fresh : pool;
   return from[Math.floor(Math.random() * from.length)]!;

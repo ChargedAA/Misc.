@@ -162,6 +162,14 @@ export const DURATION: Record<string, string> = {
   tangle: '2 min',
 };
 
+/** Drills too long for a quick session: kept out of Daily, Random and Endless runs. */
+export const LONG = new Set(['probe', 'plan', 'crack', 'matrix', 'balance', 'back', 'alert', 'clock', 'stream', 'series', 'tangle']);
+
+/** Whether a drill suits a quick mixed session. */
+export function quick(id: string): boolean {
+  return !LONG.has(id);
+}
+
 export function durationOf(id: string): string {
   return DURATION[id] ?? 'about 1 min';
 }
