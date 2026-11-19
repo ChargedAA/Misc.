@@ -21,6 +21,7 @@ import {
   keysLine,
   overview,
   shortDate,
+  weekBySkill,
   type Metric,
 } from './ui.ts';
 
@@ -246,6 +247,14 @@ const SKILL_KEYS: Record<string, [string, string]> = {
 
 export function startMenu(c: MenuCtx): Menu {
   const played = (sk: string) => gamesOf([sk]).filter((e) => c.bests[e.id]).length;
+  // Once there is a week of history, each skill says how much it got this week, so gaps show.
+  const week = weekBySkill(c.history);
+  const active = Object.keys(week).length > 0;
+  const metaOf = (sk: string, n: number) => {
+    if (!active) return `${n} drills${played(sk) ? `${DOT}${played(sk)} played` : ''}`;
+    const w = week[sk] ?? 0;
+    return w ? `${w} this week` : 'not this week';
+  };
   return {
     title: 'TENSION',
     sub: `Train eight skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
@@ -270,12 +279,11 @@ export function startMenu(c: MenuCtx): Menu {
         g.skills.map((sk, i) => {
           const def = SKILLS.find((k) => k.id === sk)!;
           const n = gamesOf([sk]).length;
-          const p = played(sk);
           return {
             heading: i === 0 ? `${g.name}${DOT}${i === 0 && g.id === 'body' ? 'left hand' : 'right hand'}` : undefined,
             label: def.name,
             desc: GUIDES[sk].about,
-            meta: `${n} drills${p ? `${DOT}${p} played` : ''}`,
+            meta: metaOf(sk, n),
             act: 'go',
             arg: `skill:${sk}`,
             code: SKILL_KEYS[sk]![0],

@@ -636,6 +636,17 @@ export function streak(history: RunRecord[], now = Date.now()): number {
   return n;
 }
 
+/** Sessions per skill in the last seven days. */
+export function weekBySkill(history: RunRecord[], now = Date.now()): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const r of history) {
+    if (r.game === 'daily' || now - r.at >= 7 * DAY) continue;
+    const sk = skillOf(r);
+    if (sk) out[sk] = (out[sk] ?? 0) + 1;
+  }
+  return out;
+}
+
 export function overview(history: RunRecord[]): string {
   const now = Date.now();
   const week = history.filter((r) => now - r.at < 7 * DAY && r.game !== 'daily');
