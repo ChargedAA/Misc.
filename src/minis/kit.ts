@@ -97,6 +97,8 @@ export interface Mini {
   release?(slot: number, ts: number): void;
   /** Any other key (games that type, like Digits). Return true if it was used. */
   typeKey?(code: string, ts: number): boolean;
+  /** A key let go, for typing games that need held keys. */
+  typeKeyUp?(code: string, ts: number): void;
   /** A click or tap at canvas device pixels (pointer games). */
   pointer?(x: number, y: number, ts: number): void;
   /** The pointer moved (mouse, or a finger dragging), in canvas pixels. */

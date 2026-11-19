@@ -1357,6 +1357,7 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function onKeyUp(e: KeyboardEvent): void {
+  if (screen === 'mini' && mini?.typeKeyUp) mini.typeKeyUp(e.code, stamp(e) - clockShift());
   const slot = keymap.get(e.code);
   if (slot !== undefined) release(slot, stamp(e));
 }

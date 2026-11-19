@@ -26,6 +26,7 @@ import { BATCH24 } from './batch24.ts';
 import { BATCH25 } from './batch25.ts';
 import { BATCH26 } from './batch26.ts';
 import { BATCH27 } from './batch27.ts';
+import { BATCH28 } from './batch28.ts';
 import { SKILLS } from './kit.ts';
 import { quick } from './groups.ts';
 import { COORDINATION } from './coord.ts';
@@ -52,7 +53,7 @@ const BUILT_IN: Entry[] = [
   { id: 'burst', name: 'Burst', skill: 'speed', blurb: 'Hold a rising tap rate for five seconds.', input: 'keys', minKeys: 1 },
 ];
 
-export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7, ...BATCH8, ...BATCH9, ...BATCH10, ...BATCH11, ...BATCH12, ...BATCH13, ...BATCH14, ...BATCH15, ...BATCH16, ...BATCH17, ...BATCH18, ...BATCH19, ...BATCH20, ...BATCH21, ...BATCH22, ...BATCH23, ...BATCH24, ...BATCH25, ...BATCH26, ...BATCH27];
+export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7, ...BATCH8, ...BATCH9, ...BATCH10, ...BATCH11, ...BATCH12, ...BATCH13, ...BATCH14, ...BATCH15, ...BATCH16, ...BATCH17, ...BATCH18, ...BATCH19, ...BATCH20, ...BATCH21, ...BATCH22, ...BATCH23, ...BATCH24, ...BATCH25, ...BATCH26, ...BATCH27, ...BATCH28];
 
 export const ENTRIES: Entry[] = [
   ...BUILT_IN,
