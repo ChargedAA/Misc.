@@ -188,12 +188,11 @@ class Clock implements Mini {
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
-    // About nine skips, never in the first ten ticks, never close together.
+    // About one skip per sixteen ticks, never in the first ten ticks, never close together.
+    // Placed by walking forward in random strides, so it always finishes whatever the length.
     const skips = new Set<number>();
-    while (skips.size < 9) {
-      const s = rint(10, scaled(CLOCK_STEPS) - 3);
-      if ([...skips].every((x) => Math.abs(x - s) > 6)) skips.add(s);
-    }
+    const steps = scaled(CLOCK_STEPS);
+    for (let s = 10 + rint(0, 8); s < steps - 3; s += rint(9, 23)) skips.add(s);
     let p = 0;
     for (let i = 0; i < scaled(CLOCK_STEPS); i++) {
       const sk = skips.has(i);

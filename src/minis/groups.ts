@@ -259,17 +259,39 @@ export const ROUNDS: Record<string, [number, string]> = {
   where: [15, 'trials'],
 };
 
-/** The length choices a game offers: scale and label. */
-export const LENGTHS: readonly { scale: number; label: string }[] = [
-  { scale: 0.5, label: 'Short' },
-  { scale: 1, label: 'Standard' },
-  { scale: 2, label: 'Long' },
-];
+/**
+ * The length choices a game offers. Positive values scale the standard round count; a
+ * negative value is a time limit in seconds; 0 is endless.
+ */
+export function lengthsFor(id: string): { value: number; label: string }[] {
+  const r = ROUNDS[id];
+  if (!r) return [];
+  const timedGame = r[1] === 's';
+  return [
+    { value: 0.5, label: 'Short' },
+    { value: 1, label: 'Standard' },
+    { value: 2, label: 'Long' },
+    ...(timedGame ? [] : [{ value: -60, label: '1 min' }, { value: -180, label: '3 min' }]),
+    { value: 0, label: 'Endless' },
+  ];
+}
 
-/** "15 trials" / "60 s" at a scale. */
-export function roundsLabel(id: string, scale: number): string {
+/** What a length value means for a game: "15 trials", "60 s", "1 min, as many as you can", "until you stop". */
+export function roundsLabel(id: string, value: number): string {
   const r = ROUNDS[id];
   if (!r) return '';
-  const n = Math.max(2, Math.round(r[0] * scale));
+  if (value === 0) return 'until you stop';
+  if (value < 0) return 'as many as fit';
+  const n = Math.max(2, Math.round(r[0] * value));
   return r[1] === 's' ? `${n} s` : `${n} ${r[1]}`;
+}
+
+/** Turn a length value into the game's scale and, for timed round games, a time limit (ms). */
+export function lengthPlan(id: string, value: number): { scale: number; limitMs: number } {
+  const r = ROUNDS[id];
+  if (!r || value === 1) return { scale: 1, limitMs: 0 };
+  if (value > 0) return { scale: value, limitMs: 0 };
+  if (value === 0) return { scale: 200, limitMs: 0 };
+  // Timed: a timed drill just runs for that long; a round game plays rounds until the clock ends it.
+  return r[1] === 's' ? { scale: -value / r[0], limitMs: 0 } : { scale: 200, limitMs: -value * 1000 };
 }

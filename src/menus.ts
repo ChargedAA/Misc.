@@ -5,7 +5,7 @@
 import { MODES } from './config.ts';
 import { ENTRIES, entry, type Entry } from './minis/index.ts';
 import { SKILLS, keysFor, picksKeys, type MiniResult, type Skill } from './minis/kit.ts';
-import { GUIDES, LENGTHS, ROUNDS, durationOf, roundsLabel } from './minis/groups.ts';
+import { GUIDES, ROUNDS, durationOf, lengthsFor, roundsLabel } from './minis/groups.ts';
 import { trendSvg } from './charts.ts';
 import type { RunRecord, Settings } from './storage.ts';
 import {
@@ -426,9 +426,9 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   </dl>
   ${
     ROUNDS[id]
-      ? `<div class="counts small lengths" aria-label="Length">${LENGTHS.map(
-          (l) => `<button data-act="length" data-arg="${id}:${l.scale}" aria-pressed="${l.scale === lenScale}">${l.label}<small>${roundsLabel(id, l.scale)}</small></button>`,
-        ).join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length${DOT}standard is ${durationOf(id)}<span class="kbonly">${DOT}L to change</span></span></div>`
+      ? `<div class="counts small lengths" aria-label="Length">${lengthsFor(id)
+          .map((l) => `<button data-act="length" data-arg="${id}:${l.value}" aria-pressed="${l.value === lenScale}">${l.label}<small>${roundsLabel(id, l.value)}</small></button>`)
+          .join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length${DOT}standard is ${durationOf(id)}<span class="kbonly">${DOT}L to change</span></span></div>`
       : ''
   }
   ${

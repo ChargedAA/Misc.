@@ -179,6 +179,9 @@ export function setLengthScale(v: number): void {
 export function lengthScaleNow(): number {
   return lengthScale;
 }
+/** Scale used for endless play, and for timed play of round-based games (the clock ends it). */
+export const OPEN_SCALE = 200;
+
 /** A game's standard round count or duration, scaled to the chosen length. */
 export function scaled(base: number): number {
   return Math.max(2, Math.round(base * lengthScale));
@@ -298,8 +301,8 @@ export function header(
   v.text(leftLabel, lx, ty, v.fontTiny, 'left');
   v.text(rightLabel, rx, ty, v.fontTiny, 'right');
   ctx.fillStyle = COL_LINE;
-  v.text(leftValue, lx, ty + 28 * dpr, v.fontHud, 'left');
-  v.text(rightValue, rx, ty + 28 * dpr, v.fontHud, 'right');
+  v.text(openValue(leftValue), lx, ty + 28 * dpr, v.fontHud, 'left');
+  v.text(openValue(rightValue), rx, ty + 28 * dpr, v.fontHud, 'right');
   if (strikesLeft >= 0) {
     const q = 4 * dpr;
     ctx.lineWidth = dpr;
@@ -314,6 +317,16 @@ export function header(
       }
     }
   }
+}
+
+/** In endless or timed play a round count has no end: "12 / 3000" shows as "12", and a huge countdown is left out. */
+function openValue(v: string): string {
+  if (lengthScale < OPEN_SCALE) return v;
+  const m = /^(\d+) \/ (\d+)$/.exec(v);
+  if (m && Number(m[2]) >= 400) return m[1]!;
+  const t = /^(\d+) s$/.exec(v);
+  if (t && Number(t[1]) >= 3600) return '\u2013';
+  return v;
 }
 
 /** The footer hint and touch controls. Call last. */

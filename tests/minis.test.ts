@@ -156,3 +156,40 @@ test('the daily set is quick: one drill per skill and none of the long ones, eve
     for (const id of set) assert.ok(!LONG.has(id), `${id} is too long for the daily set`);
   }
 });
+
+test('every game starts and runs at short and at endless length', async () => {
+  const { setLengthScale, OPEN_SCALE } = await import('../src/minis/kit.ts');
+  const view = fakeView();
+  useClock();
+  try {
+    for (const scale of [0.5, OPEN_SCALE]) {
+      setLengthScale(scale);
+      for (const def of MINIS) {
+        clock = 1000;
+        const rng = new Rng(hash(def.id) + scale);
+        Math.random = () => rng.next();
+        const t0 = realNow();
+        const game = def.make();
+        game.start({ mode: MODES[1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: false, level: def.levels ? 0 : undefined }, clock);
+        // A minute of play: it must not throw, and starting must stay quick even with huge counts.
+        for (let f = 0; f < 3600; f++) {
+          clock += 16.7;
+          if (Math.random() < 0.05) {
+            game.press(Math.random() < 0.5 ? 0 : 3, clock);
+            game.release?.(0, clock + 30);
+            game.release?.(3, clock + 30);
+          }
+          if (Math.random() < 0.03) game.pointer?.(Math.random() * 1280, Math.random() * 800, clock);
+          if (game.frame(clock, view, touch)) break;
+        }
+        const r = game.result();
+        assert.ok(Number.isFinite(r.score), `${def.id} at ${scale}: score`);
+        assert.ok(realNow() - t0 < 4000, `${def.id} at ${scale}: too slow`);
+      }
+    }
+  } finally {
+    setLengthScale(1);
+    restoreClock();
+    Math.random = realRandom;
+  }
+});

@@ -15,7 +15,7 @@ import {
   SND_UI,
   Sfx,
 } from './audio.ts';
-import { SLOT_REFLEX, getMode } from './config.ts';
+import { COL_MID, SLOT_REFLEX, getMode } from './config.ts';
 import { ACT_REFLEX, Runner } from './loop.ts';
 import { OUT_CORRECT, OUT_EARLY, OUT_LATE, OUT_START, OUT_WRONG, ReflexSession } from './reflex.ts';
 import { View, type Hints, type PerfStats } from './render.ts';
@@ -52,9 +52,9 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES, durationOf, quick } from './minis/groups.ts';
+import { GUIDES, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
-import { clamp, clockShift, keysFor, lengthScaleNow, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -272,6 +272,16 @@ function frame(now: number): void {
     if (done) finishBurst();
   } else if (screen === 'mini' && mini) {
     const done = mini.frame(now - clockShift(), view, touch);
+    // Timed and endless play: a countdown, or a reminder of how to stop, at the top.
+    if (miniLimit || lengthValue === 0) {
+      const left = miniLimit - (now - clockShift() - miniStartAt);
+      view.ctx.fillStyle = COL_MID;
+      view.text(miniLimit ? `${Math.floor(Math.max(0, left) / 60000)}:${String(Math.ceil(Math.max(0, left) / 1000) % 60).padStart(2, '0')} left` : 'endless · esc to finish', view.ox, 22 * view.dpr, view.fontTiny, 'center');
+      if (miniLimit && left <= 0) {
+        finishMini();
+        return;
+      }
+    }
     view.drawPerf(perf);
     if (done) finishMini();
   }
@@ -530,8 +540,12 @@ function startGame(game: GameId): void {
     miniInputs = 0;
     setClockShift(0);
     // Sets always play the standard length, so a day's set stays comparable with the last.
-    setLengthScale(dailyQueue ? 1 : (settings.lengths?.[game] ?? 1));
+    lengthValue = dailyQueue ? 1 : (settings.lengths?.[game] ?? 1);
+    const plan = lengthPlan(game, lengthValue);
+    setLengthScale(plan.scale);
+    miniLimit = plan.limitMs;
     mini = e.def.make();
+    miniStartAt = performance.now();
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan) => sfx.tone(hz, d, pan), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
@@ -579,6 +593,10 @@ function leave(): void {
 }
 
 let pausedAt = 0;
+/** The length value this drill is played at (see lengthsFor), its time limit (ms, 0 for none) and its start on the game clock. */
+let lengthValue = 1;
+let miniLimit = 0;
+let miniStartAt = 0;
 
 /** Escape in a drill: stop the game clock and the audio, and offer the ways out. */
 function pauseMini(): void {
@@ -750,7 +768,7 @@ function finishMini(): void {
   const keys = pointerOnly ? 0 : activeKeys;
   // Compare the tracked number with the last session and the best one (same key count).
   const lvl = miniDef.levels ? currentLevel : undefined;
-  const lenNow = lengthScaleNow();
+  const lenNow = lengthValue;
   const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.level === lvl && (h.len ?? 1) === lenNow && h.value !== undefined);
   const vals = earlier.map((h) => h.value!);
   const cmp = {
@@ -1071,9 +1089,9 @@ function onAction(action: string, arg: string): void {
     case 'length': {
       // Cycle or set the length a game is played at: short, standard, long.
       const [id, v] = arg.split(':');
-      const order = [1, 2, 0.5];
+      const order = lengthsFor(id!).map((l) => l.value);
       const cur = settings.lengths?.[id!] ?? 1;
-      const next = v ? Number(v) : order[(order.indexOf(cur) + 1) % order.length]!;
+      const next = v !== undefined ? Number(v) : order[(order.indexOf(cur) + 1) % order.length]!;
       settings.lengths = { ...(settings.lengths ?? {}), [id!]: next };
       saveSettings(settings);
       sfx.play(SND_UI);

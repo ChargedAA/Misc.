@@ -782,7 +782,7 @@ class Remind implements Mini {
     // Cues spread through the run, never in the first eight trials.
     const slots = shuffle([...Array(scaled(REMIND_TRIALS) - 10).keys()].map((k) => k + 8));
     for (const s of slots) {
-      if (this.cues.size >= REMIND_CUES) break;
+      if (this.cues.size >= scaled(REMIND_CUES)) break;
       if (![...this.cues].some((c) => Math.abs(c - s) < 4)) this.cues.add(s);
     }
     this.state = 0;
