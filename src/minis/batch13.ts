@@ -4,14 +4,13 @@
 //   Except (attention)    - press for every digit except 3. The rare 3 is the trap.
 //   Sync   (coordination) - both hands at exactly the same moment, then with a set gap.
 
-import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
+import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import {
   Stair,
   arena,
-  clamp,
   footer,
   handLabel,
   header,
@@ -470,15 +469,22 @@ class Except implements Mini {
 
 // --- Sync -------------------------------------------------------------------------
 
+/** How long a ball takes to fall to the line (ms). */
+const TAU = Math.PI * 2;
+/** How long a ball takes to fall to the line (ms). */
+const SYNC_FALL = 1200;
 const SYNC_TRIALS = 24;
 
 class Sync implements Mini {
   private env!: MiniEnv;
   private i = 0;
-  /** Required gap, right minus left, in ms (0 = together). */
+  /** How much later the right ball lands than the left (ms); negative means the left lands later. */
   private gap = 0;
-  private state = 0; // 0 ready, 1 go, 2 feedback
+  private state = 0; // 0 falling, 1 feedback
   private at = 0;
+  private t0 = 0;
+  private crossL = 0;
+  private crossR = 0;
   private tL = 0;
   private tR = 0;
   private errs: number[] = [];
@@ -492,10 +498,13 @@ class Sync implements Mini {
   }
 
   private arm(now: number): void {
-    // First eight: together. Then gaps, either hand first.
-    this.gap = this.i < 8 ? 0 : (Math.random() < 0.5 ? -1 : 1) * [80, 120, 160, 200][rint(0, 3)]!;
+    // First eight: together. Then one ball lags, by more as you go.
+    this.gap = this.i < 8 ? 0 : (Math.random() < 0.5 ? -1 : 1) * [100, 150, 200, 260][rint(0, 3)]!;
     this.state = 0;
-    this.at = now + 600 + Math.random() * 700;
+    this.t0 = now + 400 + Math.random() * 500;
+    const base = this.t0 + SYNC_FALL;
+    this.crossL = this.gap >= 0 ? base : base - this.gap;
+    this.crossR = this.gap >= 0 ? base + this.gap : base;
     this.tL = 0;
     this.tR = 0;
   }
@@ -503,7 +512,7 @@ class Sync implements Mini {
   press(slot: number, ts: number): void {
     this.held |= 1 << slot;
     const s = sideOf(slot);
-    if (s === 0 || this.state !== 1) return;
+    if (s === 0 || this.state !== 0 || ts < this.t0) return;
     if (s < 0 && !this.tL) {
       this.tL = ts;
       this.env.sound(SND_TAP_L);
@@ -512,17 +521,19 @@ class Sync implements Mini {
       this.tR = ts;
       this.env.sound(SND_TAP_R);
     }
-    if (this.tL && this.tR) {
-      const actual = this.tR - this.tL;
-      const err = actual - this.gap;
-      this.lastErr = err;
-      this.errs.push(Math.abs(err));
-      if (this.gap === 0) this.together.push(Math.abs(err));
-      this.env.sound(Math.abs(err) < 15 ? SND_CATCH : Math.abs(err) < 40 ? SND_TAP_WEAK : SND_FALSE);
-      this.i++;
-      this.state = 2;
-      this.at = ts + 900;
-    }
+    if (this.tL && this.tR) this.judge(ts);
+  }
+
+  private judge(now: number): void {
+    // What counts is the gap between your hands against the gap between the balls.
+    const err = this.tR - this.tL - (this.crossR - this.crossL);
+    this.lastErr = err;
+    this.errs.push(Math.abs(err));
+    if (this.gap === 0) this.together.push(Math.abs(err));
+    this.env.sound(Math.abs(err) < 20 ? SND_CATCH : Math.abs(err) < 50 ? SND_TAP_WEAK : SND_FALSE);
+    this.i++;
+    this.state = 1;
+    this.at = now + 1100;
   }
 
   release(slot: number): void {
@@ -530,17 +541,18 @@ class Sync implements Mini {
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
-    if (this.state === 0 && now >= this.at) this.state = 1;
-    if (this.state === 1 && (this.tL || this.tR) && now - Math.max(this.tL, this.tR) > 800) {
-      // Only one hand came.
-      this.lastErr = 999;
-      this.errs.push(400);
-      this.i++;
-      this.state = 2;
-      this.at = now + 900;
-      this.env.sound(SND_FALSE);
+    if (this.state === 0 && now > Math.max(this.crossL, this.crossR) + 450) {
+      if (!this.tL || !this.tR) {
+        // A hand never came.
+        this.lastErr = 999;
+        this.errs.push(300);
+        this.i++;
+        this.state = 1;
+        this.at = now + 1100;
+        this.env.sound(SND_FALSE);
+      }
     }
-    if (this.state === 2 && now >= this.at) {
+    if (this.state === 1 && now >= this.at) {
       if (this.i >= SYNC_TRIALS) return true;
       this.arm(now);
     }
@@ -549,43 +561,53 @@ class Sync implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-6);
-    header(v, touch, 'off by', recent.length ? ms(mean(recent)) : '–', 'trial', `${Math.min(this.i + 1, SYNC_TRIALS)} / ${SYNC_TRIALS}`);
-    const span = Math.min(a.right - a.left, 520 * a.u);
-    const y = a.cy;
-    // A timeline: 0 in the middle, +-250 ms at the ends. Marks show the target gap.
-    const toX = (t: number) => a.cx + clamp(t / 250, -1, 1) * (span / 2);
-    ctx.fillStyle = COL_DIM;
-    ctx.fillRect(a.cx - span / 2, y, span, dpr);
-    const tgt = this.gap;
-    const lx = toX(-tgt / 2);
-    const rx = toX(tgt / 2);
-    ctx.fillStyle = this.state === 1 ? COL_LINE : COL_MID;
-    ctx.fillRect(lx - 1.5 * dpr, y - 26 * a.u, 3 * dpr, 52 * a.u);
-    ctx.fillRect(rx - 1.5 * dpr, y - 26 * a.u, 3 * dpr, 52 * a.u);
-    v.text(handLabel(this.env, -1), lx - (tgt === 0 ? 14 * a.u : 0), y + 46 * a.u, v.fontTiny, 'center');
-    v.text(handLabel(this.env, 1), rx + (tgt === 0 ? 14 * a.u : 0), y + 46 * a.u, v.fontTiny, 'center');
-    if (this.state === 2 && this.lastErr !== 999) {
-      // Where your presses landed, relative to their midpoint.
-      const actual = this.tR - this.tL;
-      ctx.fillStyle = COL_ACCENT;
-      for (const t of [-actual / 2, actual / 2]) {
+    header(v, touch, 'hands off by', recent.length ? ms(mean(recent)) : '–', 'drop', `${Math.min(this.i + 1, SYNC_TRIALS)} / ${SYNC_TRIALS}`);
+    const top = a.top + 20 * a.u;
+    const line = a.bottom - 70 * a.u;
+    const speed = (line - top) / SYNC_FALL;
+    const off = Math.min(110 * a.u, (a.right - a.left) / 4);
+    ctx.fillStyle = COL_LINE;
+    ctx.fillRect(a.cx - off * 2, line, off * 4, dpr);
+    for (const s of [-1, 1]) {
+      const x = a.cx + s * off;
+      const cross = s < 0 ? this.crossL : this.crossR;
+      const press = s < 0 ? this.tL : this.tR;
+      // The lane.
+      ctx.fillStyle = COL_FAINT;
+      ctx.fillRect(x - dpr / 2, top, dpr, line - top);
+      // The ball: falls at a steady speed and crosses the line at its moment.
+      const t = press && this.state === 1 ? press : now;
+      const y = line - (cross - t) * speed;
+      if (t >= this.t0 && y > top - 20 * a.u) {
+        ctx.fillStyle = this.state === 1 ? COL_MID : COL_ACCENT;
         ctx.beginPath();
-        ctx.arc(toX(t), y, 5 * a.u, 0, Math.PI * 2);
+        ctx.arc(x, Math.min(y, line + 60 * a.u), 11 * a.u, 0, TAU);
         ctx.fill();
       }
+      // After the drop: where the ball was when you pressed, against the line.
+      if (this.state === 1 && press) {
+        const py = line - (cross - press) * speed;
+        ctx.fillStyle = COL_LINE;
+        ctx.fillRect(x - 18 * a.u, py - dpr, 36 * a.u, 2 * dpr);
+        ctx.fillStyle = COL_MID;
+        const d = Math.round(press - cross);
+        v.text(`${d > 0 ? '+' : ''}${d} ms`, x + (s < 0 ? -26 : 26) * a.u, py + 4 * dpr, v.fontTiny, s < 0 ? 'right' : 'left');
+      }
+      ctx.fillStyle = COL_MID;
+      v.text(handLabel(this.env, s), x, line + 28 * a.u, v.fontTiny, 'center');
     }
     ctx.fillStyle = COL_MID;
     const msg =
       this.state === 0
-        ? 'ready'
-        : this.state === 1
-          ? tgt === 0
-            ? 'both hands, together'
-            : `${tgt > 0 ? 'left' : 'right'} first, then ${Math.abs(tgt)} ms later the other`
-          : this.lastErr === 999
-            ? 'use both hands'
-            : `${Math.abs(Math.round(this.lastErr))} ms off`;
-    v.text(msg, a.cx, a.cy - 70 * a.u, v.fontHud, 'center');
+        ? this.gap === 0
+          ? 'each hand as its ball hits the line: together'
+          : 'each hand as its ball hits the line: one lands later'
+        : this.lastErr === 999
+          ? 'use both hands'
+          : Math.abs(this.lastErr) < 20
+            ? `spot on: ${Math.abs(Math.round(this.lastErr))} ms`
+            : `the gap between your hands was ${Math.abs(Math.round(this.lastErr))} ms ${this.lastErr > 0 === this.crossR >= this.crossL ? 'too long' : 'too short'}`;
+    v.text(msg, a.cx, top + 10 * a.u, v.fontTiny, 'center');
     footer(v, touch, this.held);
     return false;
   }
@@ -594,11 +616,11 @@ class Sync implements Mini {
     const m = mean(this.errs);
     return {
       score: this.errs.length ? Math.round(Math.max(0, 120 - m) * 10) : 0,
-      primary: { label: 'average error', value: m, unit: 'ms', lower: true },
+      primary: { label: 'hands off by, on average', value: m, unit: 'ms', lower: true },
       lines: [
-        { label: 'average error', value: ms(m) },
-        { label: 'together, average gap', value: this.together.length ? ms(mean(this.together)) : '–' },
-        { label: 'within 15 ms', value: pct(this.errs.filter((e) => e < 15).length / (this.errs.length || 1)) },
+        { label: 'gap between hands, average error', value: ms(m) },
+        { label: 'together drops, average error', value: this.together.length ? ms(mean(this.together)) : '–' },
+        { label: 'within 20 ms', value: pct(this.errs.filter((e) => e < 20).length / (this.errs.length || 1)) },
       ],
       saved: this.i >= 6,
     };
@@ -637,8 +659,8 @@ export const BATCH13: MiniDef[] = [
     id: 'sync',
     name: 'Sync',
     skill: 'coordination',
-    blurb: 'Both hands at exactly the same moment. Then with a set gap.',
-    how: 'When the marks light up, press with both hands at the same instant. After eight, the marks split apart: one hand first, then the other a set number of milliseconds later. Scored on how close you land.',
+    blurb: 'Two balls drop, one per hand. Press as each hits the line, together or one after the other.',
+    how: 'Two balls fall, one in each lane. Press each hand as its ball crosses the line. In the first eight they land together; after that one lands a little later, and your hands should follow the same gap. Scored on how well the gap between your two presses matches the gap between the balls.',
     input: 'keys',
     minKeys: 2,
     make: () => new Sync(),

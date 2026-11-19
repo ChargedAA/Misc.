@@ -203,6 +203,8 @@ class Choice implements Mini {
 
 // --- Gap --------------------------------------------------------------------------
 
+/** Rest between the gap and the go click (ms): always the same. */
+const GAP_REST = 1200;
 const GAP_TRIALS = 15;
 
 class Gap implements Mini {
@@ -211,22 +213,33 @@ class Gap implements Mini {
   private interval = 800;
   private state = 0; // 0 demo, 1 waiting for press, 2 feedback
   private at = 0;
+  /** Click times: the gap twice (three clicks), then the go click to measure from. */
+  private clicks: number[] = [];
   private third = 0;
   private errs: number[] = [];
   private last = 0;
   private held = 0;
-  private flash = 0;
+  private fired = 0;
+  private exact = false;
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
-    this.arm(now + 800);
+    this.exact = !!env.soundAt && !env.muted;
+    this.arm(now + 800, now);
   }
 
-  private arm(at: number): void {
-    this.interval = Math.round(350 + Math.random() * 1450);
+  private arm(at: number, now: number): void {
+    this.interval = Math.round(400 + Math.random() * 1200);
     this.state = 0;
     this.at = at;
-    this.third = at + this.interval + 900 + Math.random() * 500;
+    this.clicks = [at, at + this.interval, at + this.interval * 2];
+    // A fixed rest, the same every time, so the only thing that changes is the gap itself.
+    this.third = this.clicks[2]! + GAP_REST;
+    this.fired = 0;
+    if (this.exact) {
+      for (const c of this.clicks) this.env.soundAt!(SND_BEAT, c - now);
+      this.env.soundAt!(SND_BEAT_UP, this.third - now);
+    }
   }
 
   press(slot: number, ts: number): void {
@@ -243,8 +256,10 @@ class Gap implements Mini {
   }
 
   private hit(ts: number): void {
-    if (this.state !== 1 || ts < this.third) return;
-    const got = ts - this.third;
+    // The go click was heard late by the output delay, and so the press is measured from then.
+    const heard = this.third + (this.exact ? (this.env.latency ?? 0) : 0);
+    if (this.state !== 1 || ts < heard) return;
+    const got = ts - heard;
     this.last = (got - this.interval) / this.interval;
     this.errs.push(this.last);
     this.env.sound(Math.abs(this.last) < 0.05 ? SND_CATCH : SND_TAP_WEAK);
@@ -254,23 +269,14 @@ class Gap implements Mini {
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
-    // The clicks: start of the interval, its end, then the third click to measure from.
-    const t1 = this.at;
-    const t2 = this.at + this.interval;
     if (this.state === 0) {
-      if (now >= t1 && this.flash < t1) {
-        this.flash = t1;
-        this.env.sound(SND_BEAT_UP);
+      // Without scheduled audio, fire the clicks from frames.
+      const times = [...this.clicks, this.third];
+      while (this.fired < times.length && now >= times[this.fired]!) {
+        if (!this.exact) this.env.sound(this.fired === 3 ? SND_BEAT_UP : SND_BEAT);
+        this.fired++;
       }
-      if (now >= t2 && this.flash < t2) {
-        this.flash = t2;
-        this.env.sound(SND_BEAT_UP);
-      }
-      if (now >= this.third) {
-        this.flash = this.third;
-        this.env.sound(SND_BEAT);
-        this.state = 1;
-      }
+      if (now >= this.third) this.state = 1;
     }
     if (this.state === 1 && now - this.third > this.interval * 3 + 1000) {
       this.last = 2;
@@ -281,32 +287,33 @@ class Gap implements Mini {
     }
     if (this.state === 2 && now >= this.at) {
       if (this.i >= GAP_TRIALS) return true;
-      this.arm(now + 500);
+      this.arm(now + 500, now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
     header(v, touch, 'trial', `${Math.min(this.i + 1, GAP_TRIALS)} / ${GAP_TRIALS}`, 'average error', this.errs.length ? pct(mean(this.errs.map(Math.abs))) : '–');
-    const lit = now - this.flash < 110;
-    const r = 30 * a.u;
-    // Two markers for the interval, one for the reproduction.
-    const xs = [a.cx - 120 * a.u, a.cx, a.cx + 120 * a.u];
-    const active = this.state === 0 ? (now >= t2 ? (now >= this.third ? 2 : 1) : now >= t1 ? 0 : -1) : 2;
+    const r = 24 * a.u;
+    // Three markers for the gap played twice, a fourth (orange) for the go click.
+    const times = [...this.clicks, this.third];
+    const xs = [-1.5, -0.5, 0.5, 1.6].map((k) => a.cx + k * 90 * a.u);
     xs.forEach((x, k) => {
+      const t = times[k]!;
+      const lit = now >= t && now - t < 120;
       ctx.beginPath();
-      ctx.arc(x, a.cy - 20 * a.u, r * (k === 2 ? 0.8 : 1), 0, Math.PI * 2);
-      if (lit && k === active) {
-        ctx.fillStyle = k === 2 ? COL_ACCENT : COL_LINE;
+      ctx.arc(x, a.cy - 20 * a.u, r * (k === 3 ? 0.85 : 1), 0, Math.PI * 2);
+      if (lit) {
+        ctx.fillStyle = k === 3 ? COL_ACCENT : COL_LINE;
         ctx.fill();
       } else {
-        ctx.strokeStyle = k <= active ? COL_MID : COL_DIM;
+        ctx.strokeStyle = now >= t ? COL_MID : COL_DIM;
         ctx.lineWidth = dpr;
         ctx.stroke();
       }
     });
     ctx.fillStyle = COL_MID;
-    if (this.state === 0) v.text('remember the gap between the first two', a.cx, a.cy + 50 * a.u, v.fontTiny, 'center');
+    if (this.state === 0) v.text('the same gap, twice: remember it', a.cx, a.cy + 50 * a.u, v.fontTiny, 'center');
     else if (this.state === 1) v.text('press when the same gap has passed since the orange one', a.cx, a.cy + 50 * a.u, v.fontTiny, 'center');
     else {
       const e = this.last;
@@ -623,7 +630,7 @@ export const MORE: MiniDef[] = [
     name: 'Gap',
     skill: 'timing',
     blurb: 'Two clicks make a gap. Copy it from memory.',
-    how: 'Two white flashes (and clicks) mark a time gap. Then an orange one flashes: press when the same gap has passed since it. Scored as a percentage of the gap. Fifteen gaps.',
+    how: 'Three white clicks play the same gap twice. After a short rest an orange click goes: press when that same gap has passed since it. Scored as a percentage of the gap. Fifteen gaps.',
     input: 'both',
     make: () => new Gap(),
   },

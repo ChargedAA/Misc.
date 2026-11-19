@@ -730,14 +730,20 @@ class Drum implements Mini {
   private best = 0;
   private acc = 0;
   private accs: number[] = [];
+  /** Signed timing of every clean hit (ms, + is late), and this bar's per-note offsets. */
+  private offs: number[] = [];
+  private barOffs: number[][] = [];
+  /** True when the clicks are scheduled on the audio clock (exact), not fired by frames. */
+  private exact = false;
   private held = 0;
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
-    this.make(now + 800);
+    this.exact = !!env.soundAt && !env.muted;
+    this.make(now + 800, now);
   }
 
-  private make(at: number): void {
+  private make(at: number, now: number): void {
     const n = 8;
     const density = Math.min(0.9, 0.45 + this.level * 0.05);
     const bothP = Math.min(0.3, this.level * 0.03);
@@ -750,7 +756,14 @@ class Drum implements Mini {
     this.t0 = at;
     this.state = 0;
     this.hitMask = this.steps.map(() => 0);
+    this.barOffs = this.steps.map(() => []);
     this.lastClick = -1;
+    // Count-in on beats 1-4, then a softer click on every beat of the bar, all on the
+    // audio clock so the pulse you hear is exact.
+    if (this.exact) {
+      const st = this.step();
+      for (let k = 0; k < 8 + this.steps.length; k += 2) this.env.soundAt!(k === 0 ? SND_BEAT_UP : SND_BEAT, at - now + k * st);
+    }
   }
 
   private step(): number {
@@ -763,16 +776,32 @@ class Drum implements Mini {
     if (side === 0 || this.state !== 1) return;
     const st = this.step();
     const start = this.t0 + st * 8; // after the count-in
-    const k = Math.round((ts - start) / st);
-    const off = ts - start - k * st;
+    // Judge against when the click was heard: the press follows the sound, which is late by the output delay.
+    const t = ts - (this.exact ? (this.env.latency ?? 0) : 0);
+    const k = Math.round((t - start) / st);
+    const off = t - start - k * st;
     this.env.sound(side > 0 ? SND_TAP_R : SND_TAP_L);
-    if (k < 0 || k >= this.steps.length || Math.abs(off) > st * 0.4) {
+    if (k < 0 || k >= this.steps.length) {
       this.hitMask.push(-1);
       return;
     }
     const bit = side < 0 ? 1 : 2;
-    if ((this.steps[k]! & bit) && !(this.hitMask[k]! & bit) && Math.abs(off) < 110) this.hitMask[k]! |= bit;
-    else this.hitMask[k]! |= 4; // a wrong or extra hit
+    const win = Math.max(100, st * 0.35);
+    if (this.steps[k]! & bit && !(this.hitMask[k]! & bit) && Math.abs(off) <= win) {
+      this.hitMask[k]! |= bit;
+      this.offs.push(off);
+      this.barOffs[k]!.push(off);
+    } else if (!(this.steps[k]! & bit)) this.hitMask[k]! |= 4; // a hit where the bar has a rest
+  }
+
+  private clickFallback(now: number): void {
+    // Without scheduled audio, fire the count-in clicks from frames.
+    const st = this.step();
+    const k = Math.floor((now - this.t0) / st);
+    if (k >= 0 && k < 8 + this.steps.length && k % 2 === 0 && k !== this.lastClick) {
+      this.lastClick = k;
+      this.env.sound(k === 0 ? SND_BEAT_UP : SND_BEAT);
+    }
   }
 
   release(slot: number): void {
@@ -783,10 +812,7 @@ class Drum implements Mini {
     const st = this.step();
     if (this.state <= 1 && now >= this.t0) {
       const k = Math.floor((now - this.t0) / st);
-      if (k < 8 && k % 2 === 0 && k !== this.lastClick) {
-        this.lastClick = k;
-        this.env.sound(k === 0 ? SND_BEAT_UP : SND_BEAT);
-      }
+      if (!this.exact) this.clickFallback(now);
       if (k >= 7) this.state = 1;
       if (k >= 8 + this.steps.length + 1) {
         // Score the bar: notes hit cleanly, minus extras.
@@ -800,9 +826,9 @@ class Drum implements Mini {
           if (m & 4) extra++;
         });
         extra += this.hitMask.slice(this.steps.length).filter((x) => x === -1).length;
-        this.acc = want ? Math.max(0, (got - extra * 0.5) / want) : 1;
+        this.acc = want ? Math.max(0, (got - extra * 0.25) / want) : 1;
         this.accs.push(this.acc);
-        if (this.acc >= 0.8) {
+        if (this.acc >= 0.75) {
           this.best = Math.max(this.best, this.level);
           this.level++;
           this.env.sound(SND_CATCH);
@@ -815,7 +841,7 @@ class Drum implements Mini {
       }
     } else if (this.state === 2 && now >= this.at) {
       if (this.strikes >= 3) return true;
-      this.make(now + 300);
+      this.make(now + 300, now);
     }
     v.clear();
     const a = arena(v, touch);
@@ -848,13 +874,18 @@ class Drum implements Mini {
           ctx.fillRect(x - 2 * dpr, y - dpr / 2, 4 * dpr, dpr);
         }
       }
+      // How early or late each hit was: a tick left (early) or right (late) of the note.
+      for (const o of this.barOffs[i] ?? []) {
+        ctx.fillStyle = Math.abs(o) < 45 ? COL_LINE : COL_MID;
+        ctx.fillRect(x + clamp(o / (st * 0.35), -1, 1) * cw * 0.4 - dpr, a.cy - 3 * a.u, 2 * dpr, 6 * a.u);
+      }
       if (i === playing && this.state === 1) {
         ctx.fillStyle = COL_LINE;
         ctx.fillRect(x - cw / 2, a.cy + 52 * a.u, cw, 2 * dpr);
       }
     });
     ctx.fillStyle = COL_MID;
-    const status = this.state === 0 && now < this.t0 + st * 8 ? `${4 - Math.floor(Math.max(0, now - this.t0) / (st * 2))}` : this.state === 2 ? `${pct(this.acc)} ${this.acc >= 0.8 ? '· next' : '· again'}` : 'play';
+    const status = this.state === 0 && now < this.t0 + st * 8 ? `${4 - Math.floor(Math.max(0, now - this.t0) / (st * 2))}` : this.state === 2 ? `${pct(this.acc)} ${this.acc >= 0.75 ? '· next' : '· again'}` : 'play';
     v.text(status, a.cx, a.cy - 70 * a.u, v.fontHud, 'center');
     if (this.level === 1 && this.state === 0) v.text('read the bar, then play it after the count of four', a.cx, a.cy + 90 * a.u, v.fontTiny, 'center');
     footer(v, touch, this.held);
@@ -869,6 +900,7 @@ class Drum implements Mini {
         { label: 'highest level cleared', value: String(this.best) },
         { label: 'average accuracy', value: pct(mean(this.accs)) },
         { label: 'bars played', value: String(this.accs.length) },
+        { label: 'timing of clean hits', value: this.offs.length ? `${Math.round(Math.abs(mean(this.offs)))} ms ${mean(this.offs) >= 0 ? 'late' : 'early'} on average  ·  spread ${Math.round(median(this.offs.map((o) => Math.abs(o - mean(this.offs)))))} ms` : '–' },
       ],
       saved: this.accs.length >= 1,
     };

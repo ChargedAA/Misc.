@@ -37,6 +37,12 @@ export interface Settings {
   keys: Record<string, number>;
   muted: boolean;
   bindings: Record<number, Bindings>;
+  /** Extra audio delay to allow for (ms), e.g. Bluetooth headphones; set by the sound check. */
+  audioOffset?: number;
+  /** Master volume, 0 to 1. */
+  volume?: number;
+  /** Rounds or length chosen per game, where a game offers the choice. */
+  lengths?: Record<string, number>;
 }
 
 export interface RtSummary {

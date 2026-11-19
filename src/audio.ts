@@ -34,6 +34,14 @@ export class Sfx {
   private noiseSeed = 12345;
 
   /** Must be called from a user gesture (first key or click). */
+  /** How long after a sound is started it reaches the speakers (ms), as the browser reports it. */
+  latencyMs(): number {
+    const c = this.ctx as (AudioContext & { outputLatency?: number }) | null;
+    if (!c) return 0;
+    const ms = ((c.outputLatency ?? 0) + (c.baseLatency ?? 0)) * 1000;
+    return Number.isFinite(ms) ? Math.min(250, Math.max(0, ms)) : 0;
+  }
+
   /** Freeze the audio clock (sounds already scheduled wait too), for a pause. */
   suspend(): void {
     if (this.ctx && this.ctx.state === 'running') void this.ctx.suspend();

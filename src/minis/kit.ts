@@ -77,6 +77,11 @@ export interface MiniEnv {
   muted: boolean;
   /** For games with difficulty levels: the chosen one (0 = progressing). */
   level?: number;
+  /**
+   * Audio output delay (ms): a sound started now is heard this much later. Rhythm games
+   * judge a press against when the click was heard, not when it was started.
+   */
+  latency?: number;
   /** Play a sound `delayMs` from now on the audio clock, for rhythms that must be exact. */
   soundAt?(id: number, delayMs: number): void;
   /** Play a pure tone (listening drills). */
