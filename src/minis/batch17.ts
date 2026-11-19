@@ -9,7 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, clamp, footer, handLabel, header, mean, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, clamp, footer, handLabel, header, mean, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 // --- Tower ------------------------------------------------------------------------
 
@@ -349,7 +349,7 @@ class Merge implements Mini {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= MERGE_ROUNDS) return true;
+      if (this.round >= scaled(MERGE_ROUNDS)) return true;
       this.make(now);
     }
     if (this.state <= 1) {
@@ -378,7 +378,7 @@ class Merge implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'merged', String(this.safe), 'round', `${Math.min(this.round + 1, MERGE_ROUNDS)} / ${MERGE_ROUNDS}`, 3 - this.crashes);
+    header(v, touch, 'merged', String(this.safe), 'round', `${Math.min(this.round + 1, scaled(MERGE_ROUNDS))} / ${scaled(MERGE_ROUNDS)}`, 3 - this.crashes);
     const W = Math.min(a.right - a.left, 640 * a.u);
     const x0 = a.cx - W / 2;
     const roadY = a.cy - 10 * a.u;
@@ -414,7 +414,7 @@ class Merge implements Mini {
     const w = mean(this.waits);
     return {
       score: this.safe ? Math.max(0, this.safe * 60 - this.crashes * 40 + Math.round(Math.max(0, 6000 - w) / 30)) : 0,
-      primary: { label: 'safe merges', value: this.safe, unit: `/ ${MERGE_ROUNDS}` },
+      primary: { label: 'safe merges', value: this.safe, unit: `/ ${scaled(MERGE_ROUNDS)}` },
       lines: [
         { label: 'safe merges', value: `${this.safe} of ${this.round}` },
         { label: 'too close', value: String(this.crashes) },
@@ -499,7 +499,7 @@ class Pour implements Mini {
     }
     if (this.state === 2 && now >= this.at) {
       this.i++;
-      if (this.i >= POUR_GLASSES) return true;
+      if (this.i >= scaled(POUR_GLASSES)) return true;
       this.make();
     }
     v.clear();
@@ -507,7 +507,7 @@ class Pour implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-3);
-    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'glass', `${Math.min(this.i + 1, POUR_GLASSES)} / ${POUR_GLASSES}`);
+    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'glass', `${Math.min(this.i + 1, scaled(POUR_GLASSES))} / ${scaled(POUR_GLASSES)}`);
     const H = Math.min(a.bottom - a.top - 80 * a.u, 300 * a.u);
     const Wm = Math.min(200 * a.u, (a.right - a.left) * 0.5);
     const base = a.cy + H / 2;

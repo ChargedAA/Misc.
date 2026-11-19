@@ -29,6 +29,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -109,14 +110,14 @@ class Side implements Mini {
       this.end(now, false, 0, 'too slow');
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= SIDE_TRIALS) return true;
+      if (this.i >= scaled(SIDE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, SIDE_TRIALS)} / ${SIDE_TRIALS}`);
+    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, scaled(SIDE_TRIALS))} / ${scaled(SIDE_TRIALS)}`);
     const off = Math.min(220 * a.u, (a.right - a.left) / 2 - 40 * a.u);
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(a.cx - 2 * dpr, a.cy - 2 * dpr, 4 * dpr, 4 * dpr);
@@ -315,14 +316,14 @@ class Second implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= SECOND_TRIALS) return true;
+      if (this.i >= scaled(SECOND_TRIALS)) return true;
       this.next();
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'hold', `${(this.target / 1000).toFixed(2)} s`, 'trial', `${Math.min(this.i + 1, SECOND_TRIALS)} / ${SECOND_TRIALS}`);
+    header(v, touch, 'hold', `${(this.target / 1000).toFixed(2)} s`, 'trial', `${Math.min(this.i + 1, scaled(SECOND_TRIALS))} / ${scaled(SECOND_TRIALS)}`);
     const r = 60 * a.u;
     ctx.beginPath();
     ctx.arc(a.cx, a.cy - 20 * a.u, r, 0, TAU);
@@ -569,7 +570,7 @@ class Alert implements Mini {
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
-    const left = ALERT_MS - (now - this.t0);
+    const left = scaled(ALERT_MS) - (now - this.t0);
     if (this.state === 0 && now >= this.at) this.state = 1;
     if (this.state === 1 && this.drawnAt > 0 && now - this.drawnAt > 10000) {
       this.rts.push(10000);

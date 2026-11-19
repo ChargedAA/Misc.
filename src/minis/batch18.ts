@@ -9,7 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, clamp, footer, handLabel, header, mean, median, message, ms, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, clamp, footer, handLabel, header, mean, median, message, ms, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 const GREY = '#6c6c74';
@@ -186,14 +186,14 @@ class Probe implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= PROBE_PUZZLES) return true;
+      if (this.i >= scaled(PROBE_PUZZLES)) return true;
       this.make();
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'right', `${this.right} / ${this.asked}`, 'puzzle', `${Math.min(this.i + 1, PROBE_PUZZLES)} / ${PROBE_PUZZLES}`);
+    header(v, touch, 'right', `${this.right} / ${this.asked}`, 'puzzle', `${Math.min(this.i + 1, scaled(PROBE_PUZZLES))} / ${scaled(PROBE_PUZZLES)}`);
     const s = Math.min(78 * a.u, (a.right - a.left) / 9);
     // What is known: yes on the left, no on the right.
     const ky = a.top + 26 * a.u;
@@ -261,7 +261,7 @@ class Probe implements Mini {
   result(): MiniResult {
     return {
       score: this.right * 20 + this.perfect * 60,
-      primary: { label: 'rules cracked', value: this.perfect, unit: `/ ${PROBE_PUZZLES}` },
+      primary: { label: 'rules cracked', value: this.perfect, unit: `/ ${scaled(PROBE_PUZZLES)}` },
       lines: [
         { label: 'rules classified perfectly', value: `${this.perfect} of ${this.i}` },
         { label: 'shapes classified right', value: `${this.right} of ${this.asked}` },
@@ -395,14 +395,14 @@ class Plan implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= PLAN_PUZZLES) return true;
+      if (this.i >= scaled(PLAN_PUZZLES)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'best orders', `${this.optimal} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, PLAN_PUZZLES)} / ${PLAN_PUZZLES}`);
+    header(v, touch, 'best orders', `${this.optimal} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, scaled(PLAN_PUZZLES))} / ${scaled(PLAN_PUZZLES)}`);
     const n = this.jobs.length;
     const unit = Math.min(44 * a.u, (a.right - a.left - 120 * a.u) / 16);
     const x0 = a.cx - 7 * unit;
@@ -579,7 +579,7 @@ class Crack implements Mini {
       this.env.sound(SND_FALSE);
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= CRACK_CODES) return true;
+      if (this.i >= scaled(CRACK_CODES)) return true;
       this.make();
     }
     v.clear();
@@ -662,7 +662,7 @@ class Crack implements Mini {
   result(): MiniResult {
     return {
       score: this.solved * 80 + this.tries.reduce((s, t) => s + (CRACK_TRIES - t) * 15, 0),
-      primary: { label: 'codes cracked', value: this.solved, unit: `/ ${CRACK_CODES}` },
+      primary: { label: 'codes cracked', value: this.solved, unit: `/ ${scaled(CRACK_CODES)}` },
       lines: [
         { label: 'codes cracked', value: `${this.solved} of ${this.i}` },
         { label: 'average tries when cracked', value: this.tries.length ? mean(this.tries).toFixed(1) : '–' },
@@ -740,7 +740,7 @@ class Shadow implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > SHADOW_MS + 600) return true;
+    if (t > scaled(SHADOW_MS) + 600) return true;
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
@@ -751,7 +751,7 @@ class Shadow implements Mini {
     const Y = (this.ringY = a.cy + ty * R * 0.85);
     const ringR = 26 * a.u;
     const on = this.px >= 0 && Math.hypot(this.px - X, this.py - Y) < ringR;
-    if (t >= 0 && t <= SHADOW_MS && this.started) {
+    if (t >= 0 && t <= scaled(SHADOW_MS) && this.started) {
       this.allFrames++;
       if (on) this.onFrames++;
       // Flashes near the edge: press any key when you see one.
@@ -786,7 +786,7 @@ class Shadow implements Mini {
       ctx.fillStyle = COL_DIM;
       ctx.fillRect(a.cx - 120 * a.u, a.bottom - 6 * a.u, 240 * a.u, dpr);
       ctx.fillStyle = COL_MID;
-      ctx.fillRect(a.cx - 120 * a.u, a.bottom - 6 * a.u, 240 * a.u * clamp(t / SHADOW_MS, 0, 1), dpr);
+      ctx.fillRect(a.cx - 120 * a.u, a.bottom - 6 * a.u, 240 * a.u * clamp(t / scaled(SHADOW_MS), 0, 1), dpr);
     }
     footer(v, touch, this.held);
     return false;

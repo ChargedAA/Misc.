@@ -29,6 +29,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -82,7 +83,7 @@ class Sets implements Mini {
         this.env.sound(SND_BEAT);
       }
       if (now >= this.at) {
-        if (this.set >= SETS) return true;
+        if (this.set >= scaled(SETS)) return true;
         this.state = 1;
         this.sprintAt = this.at;
         this.at += SET_MS;
@@ -94,29 +95,29 @@ class Sets implements Mini {
       this.set++;
       this.state = 0;
       this.lastBeep = -1;
-      this.at = this.set >= SETS ? now + 600 : now + REST_MS;
+      this.at = this.set >= scaled(SETS) ? now + 600 : now + REST_MS;
       this.env.sound(SND_CATCH);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'set', `${Math.min(this.set + 1, SETS)} / ${SETS}`, 'best', this.rates.length ? `${Math.max(...this.rates).toFixed(1)} /s` : '–');
+    header(v, touch, 'set', `${Math.min(this.set + 1, scaled(SETS))} / ${scaled(SETS)}`, 'best', this.rates.length ? `${Math.max(...this.rates).toFixed(1)} /s` : '–');
     if (this.state === 1) {
       const el = Math.max(0.15, (now - this.sprintAt) / 1000);
       bigNumber(v, a.cx, a.cy - 10 * a.u, (this.taps / el).toFixed(1), 'taps / s', COL_ACCENT);
       progress(v, a.cx, a.cy + 60 * a.u, 140 * a.u, clamp((now - this.sprintAt) / SET_MS, 0, 1));
-    } else if (this.set < SETS) {
+    } else if (this.set < scaled(SETS)) {
       const left = Math.max(0, (this.at - now) / 1000);
       message(v, { ...a, cy: a.cy - 30 * a.u }, this.set === 0 ? 'get ready' : 'rest', `next sprint in ${left.toFixed(left < 3 ? 1 : 0)} s`, COL_MID);
     }
     // Bars for the sets so far.
     const bw = 34 * a.u;
     const gap = 14 * a.u;
-    const x0 = a.cx - (SETS * bw + (SETS - 1) * gap) / 2;
+    const x0 = a.cx - (scaled(SETS) * bw + (scaled(SETS) - 1) * gap) / 2;
     const base = a.bottom - 30 * a.u;
     const top = Math.max(12, ...this.rates);
-    for (let i = 0; i < SETS; i++) {
+    for (let i = 0; i < scaled(SETS); i++) {
       const x = x0 + i * (bw + gap);
       const r = this.rates[i];
       ctx.fillStyle = COL_DIM;
@@ -268,7 +269,7 @@ class Offbeat implements Mini {
 
   private tap(ts: number): void {
     const t = ts - this.t0;
-    if (t < this.period * 3.5 || t > OFF_MS) return;
+    if (t < this.period * 3.5 || t > scaled(OFF_MS)) return;
     const k = Math.round((t - this.period / 2) / this.period);
     const e = t - (k * this.period + this.period / 2);
     this.errs.push(e);
@@ -292,9 +293,9 @@ class Offbeat implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > OFF_MS + 700) return true;
+    if (t > scaled(OFF_MS) + 700) return true;
     const beat = Math.floor(t / this.period);
-    if (t >= 0 && t <= OFF_MS && beat !== this.lastBeat) {
+    if (t >= 0 && t <= scaled(OFF_MS) && beat !== this.lastBeat) {
       this.lastBeat = beat;
       this.env.sound(beat % 4 === 0 ? SND_BEAT_UP : SND_BEAT);
     }
@@ -343,7 +344,7 @@ class Offbeat implements Mini {
     ctx.fillStyle = COL_MID;
     if (t < this.period * 4) v.text('listen: tap exactly halfway between the clicks', a.cx, a.cy + 110 * a.u, v.fontTiny, 'center');
     else if (!showHand && t < 15000) v.text('hand gone: keep going by ear', a.cx, a.cy + 110 * a.u, v.fontTiny, 'center');
-    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / OFF_MS, 0, 1));
+    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / scaled(OFF_MS), 0, 1));
     footer(v, touch, this.held);
     return false;
   }
@@ -433,7 +434,7 @@ class Meet implements Mini {
       this.done(now);
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= MEET_TRIALS) return true;
+      if (this.i >= scaled(MEET_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -441,7 +442,7 @@ class Meet implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-6).map(Math.abs);
-    header(v, touch, 'trial', `${Math.min(this.i + 1, MEET_TRIALS)} / ${MEET_TRIALS}`, 'off by', recent.length ? ms(mean(recent)) : '–');
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(MEET_TRIALS))} / ${scaled(MEET_TRIALS)}`, 'off by', recent.length ? ms(mean(recent)) : '–');
     const span = Math.min(a.right - a.left, 620 * a.u);
     const x0 = a.cx - span / 2;
     const y = a.cy;
@@ -564,7 +565,7 @@ class Longer implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now - this.t0 > 5000) this.answer(-this.longer, now);
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= LONG_TRIALS) return true;
+      if (this.i >= scaled(LONG_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -572,7 +573,7 @@ class Longer implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     this.cx = a.cx;
-    header(v, touch, 'difference', `${DIFFS[this.st.level]}%`, 'trial', `${Math.min(this.i + 1, LONG_TRIALS)} / ${LONG_TRIALS}`);
+    header(v, touch, 'difference', `${DIFFS[this.st.level]}%`, 'trial', `${Math.min(this.i + 1, scaled(LONG_TRIALS))} / ${scaled(LONG_TRIALS)}`);
     const half = Math.min((a.right - a.left) / 4, 200 * a.u);
     const scale = Math.min(half * 1.5, (a.bottom - a.top) * 0.7);
     for (let s = 0; s < 2; s++) {
@@ -696,7 +697,7 @@ class More implements Mini {
     if (this.state === 0 && now - this.t0 > 750) this.state = 1;
     if (this.state === 1 && now - this.t0 > 6000) this.answer(-this.more, now);
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= MORE_TRIALS) return true;
+      if (this.i >= scaled(MORE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -704,7 +705,7 @@ class More implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     this.cx = a.cx;
-    header(v, touch, 'ratio', `${RATIOS[this.st.level]!.toFixed(2)}`, 'trial', `${Math.min(this.i + 1, MORE_TRIALS)} / ${MORE_TRIALS}`);
+    header(v, touch, 'ratio', `${RATIOS[this.st.level]!.toFixed(2)}`, 'trial', `${Math.min(this.i + 1, scaled(MORE_TRIALS))} / ${scaled(MORE_TRIALS)}`);
     const box = Math.min((a.right - a.left) / 2 - 24 * a.u, a.bottom - a.top - 60 * a.u, 300 * a.u);
     for (let s = 0; s < 2; s++) {
       const x0 = a.cx + (s ? 12 * a.u : -12 * a.u - box);
@@ -801,7 +802,7 @@ class Middle implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= MID_TRIALS) return true;
+      if (this.i >= scaled(MID_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -809,7 +810,7 @@ class Middle implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-5).map(Math.abs);
-    header(v, touch, 'trial', `${Math.min(this.i + 1, MID_TRIALS)} / ${MID_TRIALS}`, 'off by', recent.length ? pct(mean(recent)) : '–');
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(MID_TRIALS))} / ${scaled(MID_TRIALS)}`, 'off by', recent.length ? pct(mean(recent)) : '–');
     const w = a.right - a.left;
     const h = a.bottom - a.top;
     const L = this.line.len * Math.min(w, h * 1.4);

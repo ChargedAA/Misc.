@@ -30,6 +30,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const STRIKES = 3;
@@ -101,12 +102,12 @@ class Aim implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     // Thirty hits, or thirty misses for someone just clicking around.
-    if (this.hits >= AIM_TARGETS || this.misses >= AIM_TARGETS) return true;
+    if (this.hits >= scaled(AIM_TARGETS) || this.misses >= scaled(AIM_TARGETS)) return true;
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'targets', `${this.hits} / ${AIM_TARGETS}`, 'median', this.times.length ? ms(median(this.times)) : '–');
+    header(v, touch, 'targets', `${this.hits} / ${scaled(AIM_TARGETS)}`, 'median', this.times.length ? ms(median(this.times)) : '–');
     const w = a.right - a.left;
     const h = a.bottom - a.top;
     const g = (this.geo = { x0: a.left, y0: a.top, w, h, s: Math.min(w, h) });
@@ -606,14 +607,14 @@ class Rotate implements Mini {
       this.end(now, false, 0);
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= ROTATE_TRIALS) return true;
+      if (this.i >= scaled(ROTATE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'trial', `${Math.min(this.i + 1, ROTATE_TRIALS)} / ${ROTATE_TRIALS}`, 'correct', this.i ? pct((this.i - this.errors - this.slow) / this.i) : '–');
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(ROTATE_TRIALS))} / ${scaled(ROTATE_TRIALS)}`, 'correct', this.i ? pct((this.i - this.errors - this.slow) / this.i) : '–');
     const cell = Math.min(34 * a.u, (a.right - a.left) / 14);
     if (this.state === 1) {
       this.drawShape(v, this.cells, a.cx - 140 * a.u, a.cy, cell, 0, false);
@@ -725,7 +726,7 @@ class Count implements Mini {
       this.state = 3;
       this.at = now + 800;
     } else if (this.state === 3 && now >= this.at) {
-      if (this.i >= COUNT_TRIALS) return true;
+      if (this.i >= scaled(COUNT_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();

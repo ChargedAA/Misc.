@@ -64,6 +64,8 @@ export interface CpsSummary {
 }
 
 export interface RunRecord {
+  /** Length scale played (short 0.5, long 2); absent means standard. */
+  len?: number;
   /** 'run' is Climb, 'rt' is Reflex, 'cps' is Burst, 'mini' is any other game. */
   kind: 'run' | 'rt' | 'cps' | 'mini';
   /** Mini-games: which one, and its tracked number. */

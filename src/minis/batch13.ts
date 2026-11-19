@@ -25,6 +25,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const GREY = '#6c6c74';
@@ -257,14 +258,14 @@ class Link implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now - this.t0 >= this.pairs.length * this.studyMs() + 400) this.state = 1;
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= LINK_ROUNDS) return true;
+      if (this.round >= scaled(LINK_ROUNDS)) return true;
       this.make(now + 300);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'pairs', String(this.n.level), 'round', `${Math.min(this.round + 1, LINK_ROUNDS)} / ${LINK_ROUNDS}`);
+    header(v, touch, 'pairs', String(this.n.level), 'round', `${Math.min(this.round + 1, scaled(LINK_ROUNDS))} / ${scaled(LINK_ROUNDS)}`);
     const r = 24 * a.u;
     const cy = a.top + 80 * a.u;
     if (this.state === 0) {
@@ -362,7 +363,7 @@ class Except implements Mini {
   start(env: MiniEnv, now: number): void {
     this.env = env;
     // About one in nine is a 3, never two in a row.
-    for (let k = 0; k < EXCEPT_TRIALS; k++) {
+    for (let k = 0; k < scaled(EXCEPT_TRIALS); k++) {
       let d = rint(1, 9);
       if (k > 0 && d === 3 && this.digits[k - 1] === 3) d = 4;
       this.digits.push(d);
@@ -417,7 +418,7 @@ class Except implements Mini {
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'threes pressed', String(this.commissions), 'digit', `${Math.max(0, Math.min(this.i + 1, EXCEPT_TRIALS))} / ${EXCEPT_TRIALS}`);
+    header(v, touch, 'threes pressed', String(this.commissions), 'digit', `${Math.max(0, Math.min(this.i + 1, scaled(EXCEPT_TRIALS)))} / ${scaled(EXCEPT_TRIALS)}`);
     const ph = (now - this.t0) % EXCEPT_SOA;
     if (now >= this.t0 && this.i >= 0) {
       if (ph < EXCEPT_ON) {
@@ -553,7 +554,7 @@ class Sync implements Mini {
       }
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= SYNC_TRIALS) return true;
+      if (this.i >= scaled(SYNC_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -561,7 +562,7 @@ class Sync implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-6);
-    header(v, touch, 'hands off by', recent.length ? ms(mean(recent)) : '–', 'drop', `${Math.min(this.i + 1, SYNC_TRIALS)} / ${SYNC_TRIALS}`);
+    header(v, touch, 'hands off by', recent.length ? ms(mean(recent)) : '–', 'drop', `${Math.min(this.i + 1, scaled(SYNC_TRIALS))} / ${scaled(SYNC_TRIALS)}`);
     const top = a.top + 20 * a.u;
     const line = a.bottom - 70 * a.u;
     const speed = (line - top) / SYNC_FALL;

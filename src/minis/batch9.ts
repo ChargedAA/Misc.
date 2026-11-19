@@ -23,6 +23,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const SHAPES = [SHAPE_CIRCLE, SHAPE_SQUARE, SHAPE_TRIANGLE, SHAPE_DIAMOND, SHAPE_CROSS];
@@ -157,14 +158,14 @@ class Relate implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state < 2 && now - this.shownAt > 20000) this.answer(!this.truth, now);
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= RELATE_N) return true;
+      if (this.i >= scaled(RELATE_N)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     this.cx = a.cx;
-    header(v, touch, 'shapes', String(this.items.level), 'question', `${Math.min(this.i + 1, RELATE_N)} / ${RELATE_N}`);
+    header(v, touch, 'shapes', String(this.items.level), 'question', `${Math.min(this.i + 1, scaled(RELATE_N))} / ${scaled(RELATE_N)}`);
     const lh = 34 * a.u;
     const top = a.cy - (this.premises.length * lh) / 2 - 40 * a.u;
     if (this.state === 0 || !this.hide || this.state === 2) {
@@ -198,7 +199,7 @@ class Relate implements Mini {
   result(): MiniResult {
     return {
       score: this.right ? this.right * 50 + (this.items.level - 3) * 40 : 0,
-      primary: { label: 'right', value: this.right, unit: `/ ${RELATE_N}` },
+      primary: { label: 'right', value: this.right, unit: `/ ${scaled(RELATE_N)}` },
       lines: [
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
@@ -327,14 +328,14 @@ class Matrix implements Mini {
       this.at = now + 1800;
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= MATRIX_N) return true;
+      if (this.i >= scaled(MATRIX_N)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'right', `${this.right} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, MATRIX_N)} / ${MATRIX_N}`);
+    header(v, touch, 'right', `${this.right} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, scaled(MATRIX_N))} / ${scaled(MATRIX_N)}`);
     const avail = a.bottom - a.top - 30 * a.u;
     const s = Math.min(avail * 0.62 / 3, (a.right - a.left) / 4.2, 110 * a.u);
     const gx = a.cx - (s * 3) / 2;
@@ -374,7 +375,7 @@ class Matrix implements Mini {
   result(): MiniResult {
     return {
       score: this.right * 60 + this.level * 25,
-      primary: { label: 'right', value: this.right, unit: `/ ${MATRIX_N}` },
+      primary: { label: 'right', value: this.right, unit: `/ ${scaled(MATRIX_N)}` },
       lines: [
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
@@ -527,14 +528,14 @@ class Balance implements Mini {
       this.at = now + 1800;
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= BALANCE_N) return true;
+      if (this.i >= scaled(BALANCE_N)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'right', `${this.right} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, BALANCE_N)} / ${BALANCE_N}`);
+    header(v, touch, 'right', `${this.right} / ${this.i}`, 'puzzle', `${Math.min(this.i + 1, scaled(BALANCE_N))} / ${scaled(BALANCE_N)}`);
     const n = this.scales.length;
     const sw = Math.min((a.right - a.left) / n - 20 * a.u, 260 * a.u);
     const r = Math.min(9 * a.u, sw / 24);
@@ -581,7 +582,7 @@ class Balance implements Mini {
   result(): MiniResult {
     return {
       score: this.right * 60 + this.level * 25,
-      primary: { label: 'right', value: this.right, unit: `/ ${BALANCE_N}` },
+      primary: { label: 'right', value: this.right, unit: `/ ${scaled(BALANCE_N)}` },
       lines: [
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },
@@ -685,14 +686,14 @@ class Running implements Mini {
       this.env.sound(SND_TAP_WEAK);
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= RUN_ROUNDS) return true;
+      if (this.round >= scaled(RUN_ROUNDS)) return true;
       this.make(now + 300);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'last', String(this.n.level), 'round', `${Math.min(this.round + 1, RUN_ROUNDS)} / ${RUN_ROUNDS}`);
+    header(v, touch, 'last', String(this.n.level), 'round', `${Math.min(this.round + 1, scaled(RUN_ROUNDS))} / ${scaled(RUN_ROUNDS)}`);
     const ty = a.top + 60 * a.u;
     if (this.state === 0) {
       const on = now >= this.t0 && (now - this.t0) % this.gap < this.gap * 0.7;

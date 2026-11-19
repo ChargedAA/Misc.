@@ -25,6 +25,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const STRIKES = 3;
@@ -286,7 +287,7 @@ class Find implements Mini {
 
   press(slot: number, ts: number): void {
     this.held |= 1 << slot;
-    if (!this.keysOk || ts < this.trialAt || ts - this.t0 > FIND_MS) return;
+    if (!this.keysOk || ts < this.trialAt || ts - this.t0 > scaled(FIND_MS)) return;
     const side = sideOf(slot);
     if (side === 0) return;
     const t = this.items[this.target]!;
@@ -298,7 +299,7 @@ class Find implements Mini {
   }
 
   pointer(px: number, py: number, ts: number): void {
-    if (ts < this.trialAt || ts - this.t0 > FIND_MS) return;
+    if (ts < this.trialAt || ts - this.t0 > scaled(FIND_MS)) return;
     const g = this.geo;
     const cx = Math.floor((px - g.x0) / g.cell);
     const cy = Math.floor((py - g.y0) / g.cell);
@@ -309,12 +310,12 @@ class Find implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > FIND_MS + 400) return true;
+    if (t > scaled(FIND_MS) + 400) return true;
     v.clear();
     const a: Arena = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'found', String(this.found), 'time', `${Math.max(0, Math.ceil((FIND_MS - Math.max(0, t)) / 1000))} s`);
+    header(v, touch, 'found', String(this.found), 'time', `${Math.max(0, Math.ceil((scaled(FIND_MS) - Math.max(0, t)) / 1000))} s`);
     // The target, shown above the board.
     ctx.fillStyle = COL_MID;
     v.text('find', a.cx - 18 * dpr, a.top + 6 * dpr, v.fontTiny, 'right');
@@ -448,14 +449,14 @@ class Switch implements Mini {
       this.end(now, false, 0, 'too slow');
     }
     if (this.state === 2 && now >= this.next) {
-      if (this.i >= SWITCH_TRIALS) return true;
+      if (this.i >= scaled(SWITCH_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, SWITCH_TRIALS)} / ${SWITCH_TRIALS}`);
+    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, scaled(SWITCH_TRIALS))} / ${scaled(SWITCH_TRIALS)}`);
     const w = Math.min(a.right - a.left, 420 * a.u);
     const h = Math.min((a.bottom - a.top) / 2 - 20 * a.u, 150 * a.u);
     const x0 = a.cx - w / 2;

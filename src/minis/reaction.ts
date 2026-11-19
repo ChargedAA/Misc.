@@ -27,6 +27,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -100,7 +101,7 @@ class Snap implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now >= this.goAt) this.state = 1;
     if (this.state === 2 && now >= this.until) {
-      if (this.rts.length >= SNAP_TRIALS || this.early >= 25) return true;
+      if (this.rts.length >= scaled(SNAP_TRIALS) || this.early >= 25) return true;
       this.arm(now);
     }
     if (this.state === 1 && this.drawnAt > 0 && now - this.drawnAt > 2000) {
@@ -116,7 +117,7 @@ class Snap implements Mini {
     const a = arena(v, touch);
     const dpr = v.dpr;
     const ctx = v.ctx;
-    header(v, touch, 'trial', `${Math.min(this.rts.length + 1, SNAP_TRIALS)} / ${SNAP_TRIALS}`, 'median', this.rts.length ? ms(median(this.rts)) : '–');
+    header(v, touch, 'trial', `${Math.min(this.rts.length + 1, scaled(SNAP_TRIALS))} / ${scaled(SNAP_TRIALS)}`, 'median', this.rts.length ? ms(median(this.rts)) : '–');
 
     // The signal: a solid accent disc at one of three spots. Nothing moves before it.
     const r = 46 * a.u;
@@ -210,7 +211,7 @@ class Stop implements Mini {
     this.env = env;
     // A quarter stop trials, never in the first four.
     const rest: boolean[] = [];
-    for (let k = 0; k < STOP_TRIALS - 4; k++) rest.push(k < STOP_TRIALS / 4);
+    for (let k = 0; k < scaled(STOP_TRIALS) - 4; k++) rest.push(k < scaled(STOP_TRIALS) / 4);
     this.plan = [false, false, false, false, ...shuffle(rest)];
     this.fix(now + 400);
   }
@@ -283,7 +284,7 @@ class Stop implements Mini {
       }
     }
     if (this.state === 2 && now >= this.next) {
-      if (this.i >= STOP_TRIALS) return true;
+      if (this.i >= scaled(STOP_TRIALS)) return true;
       this.fix(now);
     }
 
@@ -291,7 +292,7 @@ class Stop implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'trial', `${Math.min(this.i + 1, STOP_TRIALS)} / ${STOP_TRIALS}`, 'stop delay', ms(this.ssd.level));
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(STOP_TRIALS))} / ${scaled(STOP_TRIALS)}`, 'stop delay', ms(this.ssd.level));
     const r = 54 * a.u;
     if (this.state === 0) {
       ctx.fillStyle = COL_MID;
@@ -437,7 +438,7 @@ class Flank implements Mini {
       }
     }
     if (this.state === 2 && now >= this.next) {
-      if (this.i >= FLANK_TRIALS) return true;
+      if (this.i >= scaled(FLANK_TRIALS)) return true;
       this.arm(now);
     }
 

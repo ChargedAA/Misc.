@@ -27,6 +27,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -270,7 +271,7 @@ class Glance implements Mini {
       this.state = 5;
       this.at = now + 500;
     } else if (this.state === 5 && now >= this.at) {
-      if (this.i >= GLANCE_TRIALS) return true;
+      if (this.i >= scaled(GLANCE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -446,14 +447,14 @@ class Spot implements Mini {
         else g.shape = SPOT_SHAPES[(SPOT_SHAPES.indexOf(g.shape) + 1 + Math.floor(Math.random() * 4)) % 5]!;
       }
     } else if (this.state === 3 && now >= this.at) {
-      if (this.i >= SPOT_TRIALS) return true;
+      if (this.i >= scaled(SPOT_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'items', String(this.size.level), 'trial', `${Math.min(this.i + 1, SPOT_TRIALS)} / ${SPOT_TRIALS}`);
+    header(v, touch, 'items', String(this.size.level), 'trial', `${Math.min(this.i + 1, scaled(SPOT_TRIALS))} / ${scaled(SPOT_TRIALS)}`);
     const cell = Math.min((a.right - a.left) / 5, (a.bottom - a.top - 50 * a.u) / 4, 90 * a.u);
     const x0 = a.cx - cell * 2.5;
     const y0 = a.cy - cell * 2;
@@ -680,14 +681,14 @@ class Swing implements Mini {
       this.i++;
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= SWING_TRIALS) return true;
+      if (this.i >= scaled(SWING_TRIALS)) return true;
       this.arm(now + 400);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'trial', `${Math.min(this.i + 1, SWING_TRIALS)} / ${SWING_TRIALS}`, 'hidden', pct(this.hide.level / 0.7));
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(SWING_TRIALS))} / ${scaled(SWING_TRIALS)}`, 'hidden', pct(this.hide.level / 0.7));
     const len = Math.min(a.bottom - a.top - 40 * a.u, 300 * a.u);
     const px = a.cx;
     const py = a.top + 10 * a.u;
@@ -845,14 +846,14 @@ class Stream implements Mini {
       if (k >= this.seq.length + 3) this.finish(now);
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.run >= STREAM_RUNS) return true;
+      if (this.run >= scaled(STREAM_RUNS)) return true;
       this.arm(now + 300);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'run', `${Math.min(this.run + 1, STREAM_RUNS)} / ${STREAM_RUNS}`, 'per letter', ms(this.rate.level));
+    header(v, touch, 'run', `${Math.min(this.run + 1, scaled(STREAM_RUNS))} / ${scaled(STREAM_RUNS)}`, 'per letter', ms(this.rate.level));
     if (this.state === 0 && now >= this.start0) {
       const k = this.item(now);
       const within = (now - this.start0) % this.rate.level;

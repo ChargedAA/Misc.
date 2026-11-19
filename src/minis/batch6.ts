@@ -30,6 +30,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -238,14 +239,14 @@ class Where implements Mini {
       this.at = now + 700;
     } else if (this.state === 1 && now >= this.at) this.state = 2;
     else if (this.state === 3 && now >= this.at) {
-      if (this.i >= WHERE_TRIALS) return true;
+      if (this.i >= scaled(WHERE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'shapes', String(this.k.level), 'trial', `${Math.min(this.i + 1, WHERE_TRIALS)} / ${WHERE_TRIALS}`);
+    header(v, touch, 'shapes', String(this.k.level), 'trial', `${Math.min(this.i + 1, scaled(WHERE_TRIALS))} / ${scaled(WHERE_TRIALS)}`);
     const s = Math.min(a.bottom - a.top - 50 * a.u, a.right - a.left, 520 * a.u);
     const g = (this.geo = { x0: a.cx - s / 2, y0: a.cy - s / 2 + 20 * a.u, s });
     ctx.strokeStyle = COL_DIM;
@@ -378,7 +379,7 @@ class Flicker implements Mini {
       this.next(now);
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= FLICKER_IMAGES) return true;
+      if (this.i >= scaled(FLICKER_IMAGES)) return true;
       this.arm(now);
     }
     v.clear();
@@ -460,7 +461,7 @@ class Drift implements Mini {
     // Tempo wanders smoothly between about 70 and 150 bpm.
     let t = 0;
     const a = Math.random() * TAU;
-    while (t < DRIFT_MS + 2000) {
+    while (t < scaled(DRIFT_MS) + 2000) {
       this.beats.push(t);
       const bpm = 110 + 32 * Math.sin(t / 5200 + a) + 12 * Math.sin(t / 2100 + a * 2);
       t += 60000 / bpm;
@@ -469,7 +470,7 @@ class Drift implements Mini {
 
   private tap(ts: number): void {
     const t = ts - this.t0;
-    if (t < -300 || t > DRIFT_MS) return;
+    if (t < -300 || t > scaled(DRIFT_MS)) return;
     this.started = true;
     this.taps.push(t);
     this.lastTap = ts;
@@ -499,7 +500,7 @@ class Drift implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > DRIFT_MS + 800) return true;
+    if (t > scaled(DRIFT_MS) + 800) return true;
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
@@ -541,7 +542,7 @@ class Drift implements Mini {
     v.text('early', a.cx - span / 2, y + 22 * a.u, v.fontTiny, 'left');
     v.text('late', a.cx + span / 2, y + 22 * a.u, v.fontTiny, 'right');
     if (!this.started) v.text('tap on each pulse: it speeds up and slows down, silently', a.cx, a.cy - 80 * a.u, v.fontTiny, 'center');
-    progressLine(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / DRIFT_MS, 0, 1));
+    progressLine(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / scaled(DRIFT_MS), 0, 1));
     footer(v, touch, this.held);
     return false;
   }

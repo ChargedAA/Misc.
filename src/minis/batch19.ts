@@ -9,7 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, clamp, footer, handLabel, header, mean, median, message, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, clamp, footer, handLabel, header, mean, median, message, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 
@@ -87,14 +87,14 @@ class Pitch implements Mini {
     }
     if (this.state === 1 && now - this.t0 > 7000) this.answer(-this.up, now);
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= PITCH_TRIALS) return true;
+      if (this.i >= scaled(PITCH_TRIALS)) return true;
       this.arm(now + 300);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     this.cx = a.cx;
-    header(v, touch, 'difference', `${cents} cents`, 'trial', `${Math.min(this.i + 1, PITCH_TRIALS)} / ${PITCH_TRIALS}`);
+    header(v, touch, 'difference', `${cents} cents`, 'trial', `${Math.min(this.i + 1, scaled(PITCH_TRIALS))} / ${scaled(PITCH_TRIALS)}`);
     // Two marks light as the two tones play.
     for (let k = 0; k < 2; k++) {
       const on = this.played > k && now - this.t0 - k * 650 < 320;
@@ -215,9 +215,9 @@ class Compass implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > COMPASS_MS) {
+    if (t > scaled(COMPASS_MS)) {
       this.done = true;
-      if (t > COMPASS_MS + 700) return true;
+      if (t > scaled(COMPASS_MS) + 700) return true;
     }
     v.clear();
     const a = arena(v, touch);
@@ -276,7 +276,7 @@ class Compass implements Mini {
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(a.cx - 120 * a.u, a.top + 4 * a.u, 240 * a.u, dpr);
     ctx.fillStyle = COL_MID;
-    ctx.fillRect(a.cx - 120 * a.u, a.top + 4 * a.u, 240 * a.u * clamp(t / COMPASS_MS, 0, 1), dpr);
+    ctx.fillRect(a.cx - 120 * a.u, a.top + 4 * a.u, 240 * a.u * clamp(t / scaled(COMPASS_MS), 0, 1), dpr);
     footer(v, touch, 0);
     return false;
   }
@@ -372,7 +372,7 @@ class Bank implements Mini {
       this.at = now + 1200;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= BANK_TRIALS) return true;
+      if (this.i >= scaled(BANK_TRIALS)) return true;
       this.make(now + 300);
     }
     v.clear();
@@ -380,7 +380,7 @@ class Bank implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-5);
-    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'shot', `${Math.min(this.i + 1, BANK_TRIALS)} / ${BANK_TRIALS}`);
+    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'shot', `${Math.min(this.i + 1, scaled(BANK_TRIALS))} / ${scaled(BANK_TRIALS)}`);
     const w = Math.min(a.right - a.left - 40 * a.u, 600 * a.u);
     const h = Math.min(a.bottom - a.top - 30 * a.u, w * 0.6);
     const g = (this.geo = { x0: a.cx - w / 2, y0: a.cy - h / 2, w, h });
@@ -486,9 +486,9 @@ class Mirror implements Mini {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
     const t = now - this.t0;
-    if (t > MIRROR_MS) {
+    if (t > scaled(MIRROR_MS)) {
       this.done = true;
-      if (t > MIRROR_MS + 800) return true;
+      if (t > scaled(MIRROR_MS) + 800) return true;
     }
     const half = 0.16;
     if (t >= 0 && !this.done) {
@@ -671,15 +671,15 @@ class Letters implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > LETTERS_MS) {
+    if (t > scaled(LETTERS_MS)) {
       this.done = true;
-      if (t > LETTERS_MS + 800) return true;
+      if (t > scaled(LETTERS_MS) + 800) return true;
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'solved', String(this.solved), 'time left', `${Math.max(0, Math.ceil((LETTERS_MS - t) / 1000))} s`);
+    header(v, touch, 'solved', String(this.solved), 'time left', `${Math.max(0, Math.ceil((scaled(LETTERS_MS) - t) / 1000))} s`);
     if (!this.done) {
       const n = this.shown.length;
       const s = Math.min(54 * a.u, (a.right - a.left) / (n + 2));

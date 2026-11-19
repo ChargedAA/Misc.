@@ -25,6 +25,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -346,7 +347,7 @@ class Exact implements Mini {
 
   private make(_now: number): void {
     // The required rate climbs from about 4.5 to 9 taps a second.
-    this.rate = 4.5 + (this.round / (EXACT_ROUNDS - 1)) * 4.5 + (Math.random() - 0.5);
+    this.rate = 4.5 + (this.round / (scaled(EXACT_ROUNDS) - 1)) * 4.5 + (Math.random() - 0.5);
     this.windowMs = [1500, 2000, 2500, 3000][Math.floor(Math.random() * 4)]!;
     this.target = Math.max(4, Math.round((this.rate * this.windowMs) / 1000));
     this.taps = 0;
@@ -388,13 +389,13 @@ class Exact implements Mini {
       this.at = now + 1500;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= EXACT_ROUNDS) return true;
+      if (this.round >= scaled(EXACT_ROUNDS)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'exact', `${this.exact} / ${this.round}`, 'round', `${Math.min(this.round + 1, EXACT_ROUNDS)} / ${EXACT_ROUNDS}`);
+    header(v, touch, 'exact', `${this.exact} / ${this.round}`, 'round', `${Math.min(this.round + 1, scaled(EXACT_ROUNDS))} / ${scaled(EXACT_ROUNDS)}`);
     ctx.fillStyle = COL_LINE;
     v.text(`${this.target} taps`, a.cx, a.cy - 40 * a.u, v.fontBig, 'center');
     ctx.fillStyle = COL_MID;
@@ -415,7 +416,7 @@ class Exact implements Mini {
     const under = this.errs.filter((e) => e < 0).length;
     return {
       score: this.exact * 100 + abs.filter((e) => e === 1).length * 40,
-      primary: { label: 'exact', value: this.exact, unit: `/ ${EXACT_ROUNDS}` },
+      primary: { label: 'exact', value: this.exact, unit: `/ ${scaled(EXACT_ROUNDS)}` },
       lines: [
         { label: 'exact', value: `${this.exact} of ${this.round}` },
         { label: 'within one', value: pct(abs.filter((e) => e <= 1).length / (abs.length || 1)) },

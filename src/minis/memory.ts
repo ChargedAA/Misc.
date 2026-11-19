@@ -23,6 +23,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const STRIKES = 3;
@@ -555,7 +556,7 @@ class Back implements Mini {
         }
       }
     } else if (this.state === 1 && now >= this.t0) {
-      if (this.block >= BACK_BLOCKS) return true;
+      if (this.block >= scaled(BACK_BLOCKS)) return true;
       this.newBlock(now + 600);
     }
 
@@ -563,7 +564,7 @@ class Back implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'n', `${this.n}-back`, 'block', `${Math.min(this.block + 1, BACK_BLOCKS)} / ${BACK_BLOCKS}`);
+    header(v, touch, 'n', `${this.n}-back`, 'block', `${Math.min(this.block + 1, scaled(BACK_BLOCKS))} / ${scaled(BACK_BLOCKS)}`);
     const size = Math.min(a.bottom - a.top - 70 * a.u, a.right - a.left, 360 * a.u);
     const cell = size / 3;
     const x0 = a.cx - size / 2;

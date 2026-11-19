@@ -23,6 +23,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -111,13 +112,13 @@ class Lights implements Mini {
       this.at = now + 1200;
     }
     if (this.state === 3 && now >= this.at) {
-      if (this.round >= LIGHTS_ROUNDS || this.jumps >= 8) return true;
+      if (this.round >= scaled(LIGHTS_ROUNDS) || this.jumps >= 8) return true;
       this.arm(now + 400);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'best', this.rts.length ? ms(Math.min(...this.rts)) : '–', 'start', `${Math.min(this.round + 1, LIGHTS_ROUNDS)} / ${LIGHTS_ROUNDS}`);
+    header(v, touch, 'best', this.rts.length ? ms(Math.min(...this.rts)) : '–', 'start', `${Math.min(this.round + 1, scaled(LIGHTS_ROUNDS))} / ${scaled(LIGHTS_ROUNDS)}`);
     const gap = Math.min(90 * a.u, (a.right - a.left) / 6);
     const r = gap * 0.3;
     const x0 = a.cx - gap * 2;
@@ -190,11 +191,11 @@ class Clock implements Mini {
     // About nine skips, never in the first ten ticks, never close together.
     const skips = new Set<number>();
     while (skips.size < 9) {
-      const s = rint(10, CLOCK_STEPS - 3);
+      const s = rint(10, scaled(CLOCK_STEPS) - 3);
       if ([...skips].every((x) => Math.abs(x - s) > 6)) skips.add(s);
     }
     let p = 0;
-    for (let i = 0; i < CLOCK_STEPS; i++) {
+    for (let i = 0; i < scaled(CLOCK_STEPS); i++) {
       const sk = skips.has(i);
       p = (p + (sk ? 2 : 1)) % 60;
       this.pos.push(p);
@@ -242,13 +243,13 @@ class Clock implements Mini {
         this.misses++;
       }
       this.k = k;
-      if (k >= CLOCK_STEPS + 1) return true;
+      if (k >= scaled(CLOCK_STEPS) + 1) return true;
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'caught', String(this.hits), 'time left', `${Math.max(0, Math.ceil(((CLOCK_STEPS - Math.max(0, this.k)) * CLOCK_TICK) / 1000))} s`);
+    header(v, touch, 'caught', String(this.hits), 'time left', `${Math.max(0, Math.ceil(((scaled(CLOCK_STEPS) - Math.max(0, this.k)) * CLOCK_TICK) / 1000))} s`);
     const R = Math.min((a.bottom - a.top) * 0.38, 190 * a.u);
     for (let i = 0; i < 60; i++) {
       const ang = (i / 60) * TAU - Math.PI / 2;
@@ -264,7 +265,7 @@ class Clock implements Mini {
         ctx.stroke();
       }
     }
-    if (this.k >= 0 && this.k < CLOCK_STEPS) {
+    if (this.k >= 0 && this.k < scaled(CLOCK_STEPS)) {
       const p = this.pos[this.k]!;
       const ang = (p / 60) * TAU - Math.PI / 2;
       ctx.fillStyle = COL_LINE;
@@ -371,7 +372,7 @@ class First implements Mini {
     if (this.state === 0 && t > this.hideAt) this.state = 1;
     if (this.state === 1 && t > Math.max(...this.arrive) + 3000) this.answer(-this.winner, now);
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= FIRST_TRIALS) return true;
+      if (this.i >= scaled(FIRST_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
@@ -379,7 +380,7 @@ class First implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     this.cx = a.cx;
-    header(v, touch, 'gap', ms(GAPS[this.st.level]!), 'race', `${Math.min(this.i + 1, FIRST_TRIALS)} / ${FIRST_TRIALS}`);
+    header(v, touch, 'gap', ms(GAPS[this.st.level]!), 'race', `${Math.min(this.i + 1, scaled(FIRST_TRIALS))} / ${scaled(FIRST_TRIALS)}`);
     const top = a.top + 20 * a.u;
     const H = a.bottom - top - 40 * a.u;
     const lineY = top;

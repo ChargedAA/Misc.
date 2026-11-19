@@ -9,7 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_SQUARE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, clamp, footer, handLabel, header, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, clamp, footer, handLabel, header, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 const GREY = '#6c6c74';
@@ -590,7 +590,7 @@ class Dock extends Steer {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const dt = this.tick(now);
-    if (this.time * 1000 >= DOCK_MS) {
+    if (this.time * 1000 >= scaled(DOCK_MS)) {
       if (!this.done) {
         this.done = true;
         this.overAt = now + 1200;
@@ -625,7 +625,7 @@ class Dock extends Steer {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'docked', String(this.docks), 'time left', `${Math.max(0, Math.ceil((DOCK_MS - this.time * 1000) / 1000))} s`);
+    header(v, touch, 'docked', String(this.docks), 'time left', `${Math.max(0, Math.ceil((scaled(DOCK_MS) - this.time * 1000) / 1000))} s`);
     const half = Math.min((a.right - a.left) / 2 - 20 * a.u, 320 * a.u);
     const y = a.cy;
     const toX = (x: number) => a.cx + x * half;

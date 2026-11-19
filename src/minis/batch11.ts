@@ -25,6 +25,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -429,7 +430,7 @@ class Ears implements Mini {
       this.at = now + 700;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= EARS_TRIALS || this.early >= 12) return true;
+      if (this.i >= scaled(EARS_TRIALS) || this.early >= 12) return true;
       this.arm(now);
     }
     v.clear();
@@ -459,7 +460,7 @@ class Ears implements Mini {
       v.fontTiny,
       'center',
     );
-    v.text(`${Math.min(this.i + 1, EARS_TRIALS)} / ${EARS_TRIALS}`, a.cx, a.bottom - 20 * a.u, v.fontTiny, 'center');
+    v.text(`${Math.min(this.i + 1, scaled(EARS_TRIALS))} / ${scaled(EARS_TRIALS)}`, a.cx, a.bottom - 20 * a.u, v.fontTiny, 'center');
     footer(v, touch, this.held);
     return false;
   }
@@ -574,7 +575,7 @@ class Guess implements Mini {
       this.at = now + 1500;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= GUESS_ROUNDS) return true;
+      if (this.round >= scaled(GUESS_ROUNDS)) return true;
       this.make(now + 300);
     }
     v.clear();
@@ -582,7 +583,7 @@ class Guess implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.ratios.slice(-4).map((r) => Math.abs(r - 1));
-    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'round', `${Math.min(this.round + 1, GUESS_ROUNDS)} / ${GUESS_ROUNDS}`);
+    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'round', `${Math.min(this.round + 1, scaled(GUESS_ROUNDS))} / ${scaled(GUESS_ROUNDS)}`);
     const wide = a.right - a.left > (a.bottom - a.top) * 1.2;
     const box = Math.min(wide ? (a.right - a.left) * 0.48 : a.right - a.left, (a.bottom - a.top) * (wide ? 0.9 : 0.45), 420 * a.u);
     const bx = wide ? a.left + (a.right - a.left) * 0.27 - box / 2 : a.cx - box / 2;

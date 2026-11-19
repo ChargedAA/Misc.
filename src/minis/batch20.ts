@@ -8,7 +8,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../conf
 import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, gameNow } from './kit.ts';
+import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, gameNow, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 
@@ -135,14 +135,14 @@ class Opposite implements Mini {
       this.trial++;
       if (this.trial >= OPP_PER) {
         this.block++;
-        if (this.block >= OPP_BLOCKS) return true;
+        if (this.block >= scaled(OPP_BLOCKS)) return true;
         this.card(now);
       } else this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'rule', this.anti ? 'opposite' : 'same side', 'block', `${Math.min(this.block + 1, OPP_BLOCKS)} / ${OPP_BLOCKS}`);
+    header(v, touch, 'rule', this.anti ? 'opposite' : 'same side', 'block', `${Math.min(this.block + 1, scaled(OPP_BLOCKS))} / ${scaled(OPP_BLOCKS)}`);
     const off = Math.min(220 * a.u, (a.right - a.left) / 2 - 40 * a.u);
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(a.cx - 6 * a.u, a.cy - v.dpr / 2, 12 * a.u, v.dpr);
@@ -237,7 +237,7 @@ class NumberLine implements Mini {
       this.at = now + 1000;
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= LINE_TRIALS) return true;
+      if (this.i >= scaled(LINE_TRIALS)) return true;
       this.make(now);
     }
     v.clear();
@@ -245,7 +245,7 @@ class NumberLine implements Mini {
     const ctx = v.ctx;
     const dpr = v.dpr;
     const recent = this.errs.slice(-4);
-    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'number', `${Math.min(this.i + 1, LINE_TRIALS)} / ${LINE_TRIALS}`);
+    header(v, touch, 'off by', recent.length ? pct(mean(recent)) : '–', 'number', `${Math.min(this.i + 1, scaled(LINE_TRIALS))} / ${scaled(LINE_TRIALS)}`);
     const w = Math.min(a.right - a.left - 60 * a.u, 680 * a.u);
     const x0 = a.cx - w / 2;
     const y = a.cy + 30 * a.u;
@@ -403,7 +403,7 @@ class Hold implements Mini {
         this.at = now + 900;
       }
     } else if (this.phase === 3 && now >= this.at) {
-      if (this.round >= HOLD_ROUNDS) return true;
+      if (this.round >= scaled(HOLD_ROUNDS)) return true;
       this.make(now + 200);
     }
     v.clear();
@@ -593,13 +593,13 @@ class Chain implements Mini {
       if (this.state === 1) this.type('ok', now);
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.round >= CHAIN_ROUNDS) return true;
+      if (this.round >= scaled(CHAIN_ROUNDS)) return true;
       this.make(now + 300);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'steps', String(this.len.level), 'round', `${Math.min(this.round + 1, CHAIN_ROUNDS)} / ${CHAIN_ROUNDS}`);
+    header(v, touch, 'steps', String(this.len.level), 'round', `${Math.min(this.round + 1, scaled(CHAIN_ROUNDS))} / ${scaled(CHAIN_ROUNDS)}`);
     const ty = a.top + 60 * a.u;
     if (this.state === 0 && now >= this.t0) {
       const inStep = (now - this.t0) % this.step() < this.step() * 0.75;

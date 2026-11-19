@@ -5,7 +5,7 @@
 import { MODES } from './config.ts';
 import { ENTRIES, entry, type Entry } from './minis/index.ts';
 import { SKILLS, keysFor, picksKeys, type MiniResult, type Skill } from './minis/kit.ts';
-import { GUIDES, durationOf } from './minis/groups.ts';
+import { GUIDES, LENGTHS, ROUNDS, durationOf, roundsLabel } from './minis/groups.ts';
 import { trendSvg } from './charts.ts';
 import type { RunRecord, Settings } from './storage.ts';
 import {
@@ -459,6 +459,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const lv = level === undefined ? '' : `:${level}`;
   const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
   const keys = keysFor(id, e.input, c.settings.keys[id]);
+  const lenScale = c.settings.lengths?.[id] ?? 1;
   const min = e.minKeys ?? 1;
   const usesKeys = picksKeys(id, e.input);
   const how = e.def ? e.def.how : controlsHint(id, keys, c.settings.bindings[keys]!);
@@ -471,8 +472,15 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   <dl class="facts">
     <dt>How</dt><dd>${how}</dd>
     <dt>Controls</dt><dd>${controls}</dd>
-    <dt>Length</dt><dd>${durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>
+    <dt>Length</dt><dd>${ROUNDS[id] ? `${roundsLabel(id, lenScale)}${lenScale === 1 ? `${DOT}${durationOf(id)}` : ''}` : durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>
   </dl>
+  ${
+    ROUNDS[id]
+      ? `<div class="counts small lengths" aria-label="Length">${LENGTHS.map(
+          (l) => `<button data-act="length" data-arg="${id}:${l.scale}" aria-pressed="${l.scale === lenScale}">${l.label}<small>${roundsLabel(id, l.scale)}</small></button>`,
+        ).join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length<span class="kbonly">${DOT}press L to change</span></span></div>`
+      : ''
+  }
   ${
     usesKeys
       ? `<div class="counts small" aria-label="How many keys">${MODES.map(

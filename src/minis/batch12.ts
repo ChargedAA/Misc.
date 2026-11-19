@@ -23,6 +23,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -167,14 +168,14 @@ class Shells implements Mini {
     }
     if (this.state === 2 && now - this.t0 > 15000) this.choose((this.pos[0]! + 1) % this.n, now);
     if (this.state === 3 && now >= this.at) {
-      if (this.round >= SHELL_ROUNDS) return true;
+      if (this.round >= scaled(SHELL_ROUNDS)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'swaps', String(this.swaps.length), 'round', `${Math.min(this.round + 1, SHELL_ROUNDS)} / ${SHELL_ROUNDS}`);
+    header(v, touch, 'swaps', String(this.swaps.length), 'round', `${Math.min(this.round + 1, scaled(SHELL_ROUNDS))} / ${scaled(SHELL_ROUNDS)}`);
     const gap = Math.min((a.right - a.left) / (this.n + 0.4), 170 * a.u);
     const r = Math.min(gap * 0.32, 50 * a.u);
     const x0 = a.cx - (gap * (this.n - 1)) / 2;
@@ -215,7 +216,7 @@ class Shells implements Mini {
   result(): MiniResult {
     return {
       score: this.right * 50 + this.bestSwaps * 20 + this.level * 20,
-      primary: { label: 'found', value: this.right, unit: `/ ${SHELL_ROUNDS}` },
+      primary: { label: 'found', value: this.right, unit: `/ ${scaled(SHELL_ROUNDS)}` },
       lines: [
         { label: 'found', value: `${this.right} of ${this.round}` },
         { label: 'most swaps followed', value: String(this.bestSwaps) },
@@ -453,7 +454,7 @@ class Again implements Mini {
     // the order or flip one shade of something already shown.
     const shown = new Set<number>();
     const list: number[] = [];
-    while (list.length < AGAIN_ITEMS) {
+    while (list.length < scaled(AGAIN_ITEMS)) {
       const r = Math.random();
       let c: number;
       if (list.length > 3 && r < 0.4) {
@@ -515,7 +516,7 @@ class Again implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     this.cx = a.cx;
-    header(v, touch, 'right', String(this.hits + this.crs), 'item', `${Math.min(this.i + 1, AGAIN_ITEMS)} / ${AGAIN_ITEMS}`);
+    header(v, touch, 'right', String(this.hits + this.crs), 'item', `${Math.min(this.i + 1, scaled(AGAIN_ITEMS))} / ${scaled(AGAIN_ITEMS)}`);
     if (now >= this.shownAt && this.i < this.items.length) {
       const [s0, g0, s1, g1] = decode(this.items[this.i]!);
       const r = 26 * a.u;
@@ -667,9 +668,9 @@ class Odd implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > ODD_MS) {
+    if (t > scaled(ODD_MS)) {
       this.done = true;
-      if (t > ODD_MS + 700) return true;
+      if (t > scaled(ODD_MS) + 700) return true;
     }
     v.clear();
     const a = arena(v, touch);
@@ -701,7 +702,7 @@ class Odd implements Mini {
       const hint = now - this.flash < 600 && !this.flashOk ? `the odd one was different in ${this.lastRule}` : this.right + this.wrong === 0 ? 'all but one share something. tap the one that does not (or press its number)' : '';
       v.text(hint, a.cx, a.bottom - 14 * a.u, v.fontTiny, 'center');
     } else message(v, a, `${this.right} right`, `${this.wrong} wrong`);
-    const p = clamp(t / ODD_MS, 0, 1);
+    const p = clamp(t / scaled(ODD_MS), 0, 1);
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(a.cx - 120 * a.u, a.top + 4 * a.u, 240 * a.u, dpr);
     ctx.fillStyle = COL_MID;

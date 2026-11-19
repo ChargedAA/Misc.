@@ -181,3 +181,95 @@ export function quick(id: string): boolean {
 export function durationOf(id: string): string {
   return DURATION[id] ?? 'about 1 min';
 }
+
+/** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
+export const ROUNDS: Record<string, [number, string]> = {
+  again: [40, 'items'],
+  aim: [30, 'targets'],
+  alert: [120, 's'],
+  away: [4, 'blocks'],
+  back: [3, 'blocks'],
+  balance: [12, 'puzzles'],
+  bank: [15, 'bounces'],
+  chain: [10, 'chains'],
+  choice: [12, 'trials per block'],
+  clock: [150, 'ticks'],
+  code: [60, 's'],
+  compare: [45, 's'],
+  compass: [75, 's'],
+  count: [24, 'trials'],
+  crack: [5, 'codes'],
+  cross: [20, 'trials'],
+  dock: [60, 's'],
+  drift: [40, 's'],
+  ears: [30, 'trials'],
+  exact: [10, 'rounds'],
+  except: [72, 'digits'],
+  find: [45, 's'],
+  first: [28, 'races'],
+  flank: [40, 'trials'],
+  flicker: [10, 'pictures'],
+  flow: [32, 'trials'],
+  gap: [15, 'gaps'],
+  glance: [24, 'trials'],
+  goalie: [24, 'shots'],
+  guess: [12, 'rounds'],
+  hold: [8, 'rounds'],
+  late: [24, 'runs'],
+  letters: [90, 's'],
+  lights: [10, 'starts'],
+  line: [16, 'numbers'],
+  link: [8, 'rounds'],
+  longer: [30, 'trials'],
+  matrix: [12, 'puzzles'],
+  meet: [16, 'trials'],
+  merge: [12, 'junctions'],
+  middle: [15, 'trials'],
+  mirror: [45, 's'],
+  more: [30, 'trials'],
+  odd: [60, 's'],
+  offbeat: [32, 's'],
+  opposite: [4, 'blocks'],
+  parry: [32, 'attacks'],
+  pitch: [30, 'trials'],
+  plan: [8, 'puzzles'],
+  pour: [10, 'glasses'],
+  probe: [6, 'rules'],
+  pump: [24, 'balloons'],
+  relate: [16, 'puzzles'],
+  remind: [60, 'numbers'],
+  rotate: [30, 'trials'],
+  running: [10, 'rounds'],
+  second: [12, 'trials'],
+  series: [12, 'puzzles'],
+  sets: [4, 'sprints'],
+  shadow: [60, 's'],
+  shape: [40, 'trials'],
+  shells: [12, 'rounds'],
+  side: [40, 'trials'],
+  snap: [15, 'trials'],
+  spot: [36, 'trials'],
+  stop: [40, 'trials'],
+  stream: [20, 'runs'],
+  sum: [60, 's'],
+  swing: [20, 'trials'],
+  switch: [48, 'trials'],
+  sync: [24, 'drops'],
+  tempo: [5, 'rounds'],
+  where: [15, 'trials'],
+};
+
+/** The length choices a game offers: scale and label. */
+export const LENGTHS: readonly { scale: number; label: string }[] = [
+  { scale: 0.5, label: 'Short' },
+  { scale: 1, label: 'Standard' },
+  { scale: 2, label: 'Long' },
+];
+
+/** "15 trials" / "60 s" at a scale. */
+export function roundsLabel(id: string, scale: number): string {
+  const r = ROUNDS[id];
+  if (!r) return '';
+  const n = Math.max(2, Math.round(r[0] * scale));
+  return r[1] === 's' ? `${n} s` : `${n} ${r[1]}`;
+}

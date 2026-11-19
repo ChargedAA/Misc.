@@ -27,6 +27,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 function tapSound(env: MiniEnv, slot: number): void {
@@ -402,7 +403,7 @@ class Tempo implements Mini {
         if (b >= LISTEN + KEEP + 1) this.finishRound(now);
       }
     } else if (this.state === 1 && now >= this.t0) {
-      if (this.round >= TEMPO_ROUNDS) return true;
+      if (this.round >= scaled(TEMPO_ROUNDS)) return true;
       this.newRound(now + 400);
     }
 
@@ -410,9 +411,9 @@ class Tempo implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'round', `${Math.min(this.round + 1, TEMPO_ROUNDS)} / ${TEMPO_ROUNDS}`, 'tempo', `${this.bpm} bpm`);
+    header(v, touch, 'round', `${Math.min(this.round + 1, scaled(TEMPO_ROUNDS))} / ${scaled(TEMPO_ROUNDS)}`, 'tempo', `${this.bpm} bpm`);
     if (this.state === 1) {
-      message(v, a, this.summary, this.round < TEMPO_ROUNDS ? 'next tempo' : '');
+      message(v, a, this.summary, this.round < scaled(TEMPO_ROUNDS) ? 'next tempo' : '');
     } else {
       const b = this.beat;
       const listening = b < LISTEN;
@@ -539,14 +540,14 @@ class Cross implements Mini {
       this.i++;
     }
     if (this.state === 1 && now >= this.t0) {
-      if (this.i >= CROSS_TRIALS) return true;
+      if (this.i >= scaled(CROSS_TRIALS)) return true;
       this.arm(now + 500 + Math.random() * 500);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'trial', `${Math.min(this.i + 1, CROSS_TRIALS)} / ${CROSS_TRIALS}`, 'hidden', pct(this.hide.level / 0.8));
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(CROSS_TRIALS))} / ${scaled(CROSS_TRIALS)}`, 'hidden', pct(this.hide.level / 0.8));
     const half = Math.min((a.right - a.left) / 2 - 20 * dpr, 320 * a.u);
     const y = a.cy;
     // Track from one edge, the line at 80% of the way, a little run-out after.

@@ -29,6 +29,7 @@ import {
   type MiniEnv,
   type MiniResult,
   gameNow,
+  scaled,
 } from './kit.ts';
 
 const GREY = '#6c6c74';
@@ -129,7 +130,7 @@ class Choice implements Mini {
       this.at = now + 600;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.trial >= CHOICE_PER_BLOCK) {
+      if (this.trial >= scaled(CHOICE_PER_BLOCK)) {
         this.block++;
         if (this.block >= this.sizes.length) return true;
         this.newBlock(now);
@@ -286,14 +287,14 @@ class Gap implements Mini {
       this.i++;
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= GAP_TRIALS) return true;
+      if (this.i >= scaled(GAP_TRIALS)) return true;
       this.arm(now + 500, now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'trial', `${Math.min(this.i + 1, GAP_TRIALS)} / ${GAP_TRIALS}`, 'average error', this.errs.length ? pct(mean(this.errs.map(Math.abs))) : '–');
+    header(v, touch, 'trial', `${Math.min(this.i + 1, scaled(GAP_TRIALS))} / ${scaled(GAP_TRIALS)}`, 'average error', this.errs.length ? pct(mean(this.errs.map(Math.abs))) : '–');
     const r = 24 * a.u;
     // Three markers for the gap played twice, a fourth (orange) for the go click.
     const times = [...this.clicks, this.third];
@@ -567,14 +568,14 @@ class Shape implements Mini {
       this.end(now, false, 0, 'too slow');
     }
     if (this.state === 2 && now >= this.at) {
-      if (this.i >= SHAPE_TRIALS) return true;
+      if (this.i >= scaled(SHAPE_TRIALS)) return true;
       this.arm(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, SHAPE_TRIALS)} / ${SHAPE_TRIALS}`);
+    header(v, touch, 'score', String(this.score), 'trial', `${Math.min(this.i + 1, scaled(SHAPE_TRIALS))} / ${scaled(SHAPE_TRIALS)}`);
     const r = 70 * a.u;
     if (this.state === 1) {
       ctx.strokeStyle = COL_LINE;

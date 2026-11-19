@@ -6,7 +6,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } fr
 import { SND_CATCH, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 
@@ -136,13 +136,13 @@ class Parry implements Mini {
         this.finish(true, 'feint: well held', now);
       }
     } else if (this.state === 2 && now >= this.at) {
-      if (this.n >= PARRY_ATTACKS) return true;
+      if (this.n >= scaled(PARRY_ATTACKS)) return true;
       this.guard(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'attack lands in', `${this.travel.level} ms`, 'attack', `${Math.min(this.n + 1, PARRY_ATTACKS)} / ${PARRY_ATTACKS}`);
+    header(v, touch, 'attack lands in', `${this.travel.level} ms`, 'attack', `${Math.min(this.n + 1, scaled(PARRY_ATTACKS))} / ${scaled(PARRY_ATTACKS)}`);
     const dpr = v.dpr;
     const top = a.top + 40 * a.u;
     const bot = a.bottom - 40 * a.u;
@@ -361,7 +361,7 @@ class Goalie implements Mini {
         this.finish(false, early ? 'you went before the kick' : this.dive === 0 ? 'too slow' : 'wrong way', now);
       }
     } else if (this.state === 2 && now >= this.at) {
-      if (this.n >= GOALIE_SHOTS) return true;
+      if (this.n >= scaled(GOALIE_SHOTS)) return true;
       this.runUp(now);
     }
     v.clear();

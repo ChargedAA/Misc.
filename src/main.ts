@@ -53,7 +53,7 @@ import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, quick } from './minis/groups.ts';
-import { clamp, clockShift, keysFor, picksKeys, setClockShift, type Mini, type MiniDef } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, lengthScaleNow, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, endlessMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -526,6 +526,8 @@ function startGame(game: GameId): void {
     miniDef = e.def;
     miniInputs = 0;
     setClockShift(0);
+    // Sets always play the standard length, so a day's set stays comparable with the last.
+    setLengthScale(dailyQueue ? 1 : (settings.lengths?.[game] ?? 1));
     mini = e.def.make();
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan) => sfx.tone(hz, d, pan), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
@@ -741,7 +743,8 @@ function finishMini(): void {
   const keys = pointerOnly ? 0 : activeKeys;
   // Compare the tracked number with the last session and the best one (same key count).
   const lvl = miniDef.levels ? currentLevel : undefined;
-  const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.level === lvl && h.value !== undefined);
+  const lenNow = lengthScaleNow();
+  const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.level === lvl && (h.len ?? 1) === lenNow && h.value !== undefined);
   const vals = earlier.map((h) => h.value!);
   const cmp = {
     last: vals.length ? vals[vals.length - 1]! : null,
@@ -767,6 +770,7 @@ function finishMini(): void {
       decimals: r.primary.decimals,
       lower: r.primary.lower,
       level: lvl,
+      len: lenNow === 1 ? undefined : lenNow,
     });
   }
   const rts = r.rts ?? [];
@@ -1003,6 +1007,18 @@ function onAction(action: string, arg: string): void {
     case 'resume':
       resume();
       break;
+    case 'length': {
+      // Cycle or set the length a game is played at: short, standard, long.
+      const [id, v] = arg.split(':');
+      const order = [1, 2, 0.5];
+      const cur = settings.lengths?.[id!] ?? 1;
+      const next = v ? Number(v) : order[(order.indexOf(cur) + 1) % order.length]!;
+      settings.lengths = { ...(settings.lengths ?? {}), [id!]: next };
+      saveSettings(settings);
+      sfx.play(SND_UI);
+      showMenu();
+      break;
+    }
     case 'miniresume':
       resumeMini();
       break;

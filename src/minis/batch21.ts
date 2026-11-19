@@ -10,7 +10,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } fr
 import { SND_BEAT, SND_CATCH, SND_FALL, SND_FALSE, SND_RING, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, progress, shuffle, sideOf, slotsOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, message, ms, pct, progress, shuffle, sideOf, slotsOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
 
@@ -102,7 +102,7 @@ class Code implements Mini {
 
   press(slot: number, ts: number): void {
     this.held |= 1 << slot;
-    if (ts < this.t0 || ts - this.t0 > CODE_MS) return;
+    if (ts < this.t0 || ts - this.t0 > scaled(CODE_MS)) return;
     const i = this.slots.indexOf(slot);
     if (i < 0) return;
     const ok = this.key[i] === this.cur;
@@ -125,7 +125,7 @@ class Code implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const el = now - this.t0;
-    if (el > CODE_MS) return true;
+    if (el > scaled(CODE_MS)) return true;
     if (el > 0 && now - this.shuffledAt > CODE_RESHUFFLE_MS) {
       this.reshuffle(now);
       this.next(now);
@@ -133,7 +133,7 @@ class Code implements Mini {
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'right', String(this.right), 'time', `${Math.max(0, Math.ceil((CODE_MS - Math.max(0, el)) / 1000))} s`);
+    header(v, touch, 'right', String(this.right), 'time', `${Math.max(0, Math.ceil((scaled(CODE_MS) - Math.max(0, el)) / 1000))} s`);
     // The key: one glyph above each key label.
     const n = this.slots.length;
     const gap = Math.min(96 * a.u, (a.right - a.left) / n);
@@ -157,13 +157,13 @@ class Code implements Mini {
         v.text('new key', a.cx, a.cy + 120 * a.u, v.fontTiny, 'center');
       }
     }
-    progress(v, a.cx, a.bottom - 8 * a.u, 160 * a.u, Math.max(0, el) / CODE_MS);
+    progress(v, a.cx, a.bottom - 8 * a.u, 160 * a.u, Math.max(0, el) / scaled(CODE_MS));
     footer(v, touch, this.held);
     return false;
   }
 
   result(): MiniResult {
-    const perMin = this.right; // the run is exactly a minute
+    const perMin = Math.round(this.right / (scaled(CODE_MS) / 60000));
     const all = this.right + this.wrong;
     return {
       score: Math.max(0, Math.round(this.right * 8 - this.wrong * 12)),
@@ -250,14 +250,14 @@ class Flow implements Mini {
     if (this.state === 0 && now >= this.at) this.show(now);
     else if (this.state === 1 && now - this.shownAt > 2500) this.answer(false, now);
     else if (this.state === 2 && now >= this.at) {
-      if (this.trial >= FLOW_TRIALS) return true;
+      if (this.trial >= scaled(FLOW_TRIALS)) return true;
       this.state = 0;
       this.at = now + 350;
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'moving together', `${this.coh.level}%`, 'trial', `${Math.min(this.trial + 1, FLOW_TRIALS)} / ${FLOW_TRIALS}`);
+    header(v, touch, 'moving together', `${this.coh.level}%`, 'trial', `${Math.min(this.trial + 1, scaled(FLOW_TRIALS))} / ${scaled(FLOW_TRIALS)}`);
     const R = Math.min(150 * a.u, (a.bottom - a.top) / 2 - 30 * a.u);
     ctx.strokeStyle = COL_FAINT;
     ctx.lineWidth = v.dpr;
@@ -410,7 +410,7 @@ class Away implements Mini {
       this.trial++;
       if (this.trial >= AWAY_PER) {
         this.block++;
-        if (this.block >= AWAY_BLOCKS) return true;
+        if (this.block >= scaled(AWAY_BLOCKS)) return true;
         this.card(now);
       } else this.arm(now);
     }
@@ -550,14 +550,14 @@ class Late implements Mini {
     if (this.state === 0 && now >= this.at) this.play(now);
     else if (this.state === 1 && now > this.t0 + this.times[LATE_BEATS - 1]! + 250) this.state = 2;
     else if (this.state === 3 && now >= this.at) {
-      if (this.trial >= LATE_TRIALS) return true;
+      if (this.trial >= scaled(LATE_TRIALS)) return true;
       this.state = 0;
       this.at = now + 500;
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'late by', this.state === 1 ? '…' : `${this.off.level} ms`, 'run', `${Math.min(this.trial + 1, LATE_TRIALS)} / ${LATE_TRIALS}`);
+    header(v, touch, 'late by', this.state === 1 ? '…' : `${this.off.level} ms`, 'run', `${Math.min(this.trial + 1, scaled(LATE_TRIALS))} / ${scaled(LATE_TRIALS)}`);
     // One dot per beat. With sound on they only count off, after the beat, so the eye cannot judge the timing.
     const gap = 40 * a.u;
     const played = this.state >= 1 ? this.times.filter((t) => now >= this.t0 + t).length : 0;
@@ -636,7 +636,7 @@ class Pump implements Mini {
   start(env: MiniEnv, now: number): void {
     this.env = env;
     // Eight of each, shuffled.
-    for (let k = 0; k < PUMP_BALLOONS; k++) this.order.push(k % PUMP_KINDS.length);
+    for (let k = 0; k < scaled(PUMP_BALLOONS); k++) this.order.push(k % PUMP_KINDS.length);
     shuffle(this.order);
     this.make(now);
   }
@@ -676,13 +676,13 @@ class Pump implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state !== 0 && now >= this.at) {
       this.i++;
-      if (this.i >= PUMP_BALLOONS) return true;
+      if (this.i >= scaled(PUMP_BALLOONS)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'banked', String(this.bank), 'balloon', `${Math.min(this.i + 1, PUMP_BALLOONS)} / ${PUMP_BALLOONS}`);
+    header(v, touch, 'banked', String(this.bank), 'balloon', `${Math.min(this.i + 1, scaled(PUMP_BALLOONS))} / ${scaled(PUMP_BALLOONS)}`);
     const K = PUMP_KINDS[this.kind]!;
     const maxR = Math.min(120 * a.u, (a.bottom - a.top) / 2 - 40 * a.u);
     // Size grows with pumps relative to the large balloon's limit; small balloons start smaller.
@@ -780,7 +780,7 @@ class Remind implements Mini {
   start(env: MiniEnv, now: number): void {
     this.env = env;
     // Cues spread through the run, never in the first eight trials.
-    const slots = shuffle([...Array(REMIND_TRIALS - 10).keys()].map((k) => k + 8));
+    const slots = shuffle([...Array(scaled(REMIND_TRIALS) - 10).keys()].map((k) => k + 8));
     for (const s of slots) {
       if (this.cues.size >= REMIND_CUES) break;
       if (![...this.cues].some((c) => Math.abs(c - s) < 4)) this.cues.add(s);
@@ -866,13 +866,13 @@ class Remind implements Mini {
       this.at = now + 350;
     } else if (this.state === 2 && now >= this.at) {
       this.i++;
-      if (this.i >= REMIND_TRIALS) return true;
+      if (this.i >= scaled(REMIND_TRIALS)) return true;
       this.show(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'odd / even right', this.ongoingAll ? pct(this.ongoingRight / this.ongoingAll) : '–', 'number', `${Math.min(this.i + 1, REMIND_TRIALS)} / ${REMIND_TRIALS}`);
+    header(v, touch, 'odd / even right', this.ongoingAll ? pct(this.ongoingRight / this.ongoingAll) : '–', 'number', `${Math.min(this.i + 1, scaled(REMIND_TRIALS))} / ${scaled(REMIND_TRIALS)}`);
     if (this.state === 0) {
       message(v, { ...a, cy: a.cy - 50 * a.u }, 'odd: left  ·  even: right', 'as fast as you can');
       ctx.fillStyle = COL_ACCENT;

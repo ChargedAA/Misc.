@@ -29,6 +29,7 @@ import {
   type MiniDef,
   type MiniEnv,
   type MiniResult,
+  scaled,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -447,9 +448,9 @@ class Sum implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > SUM_MS) {
+    if (t > scaled(SUM_MS)) {
       this.done = true;
-      if (t > SUM_MS + 700) return true;
+      if (t > scaled(SUM_MS) + 700) return true;
     }
     v.clear();
     const a = arena(v, touch);
@@ -466,7 +467,7 @@ class Sum implements Mini {
     const y = a.cy + 80 * a.u;
     v.text(`false  ${handLabel(this.env, -1)}`, a.cx - 90 * a.u, y, v.fontTiny, 'center');
     v.text(`true  ${handLabel(this.env, 1)}`, a.cx + 90 * a.u, y, v.fontTiny, 'center');
-    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / SUM_MS, 0, 1));
+    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / scaled(SUM_MS), 0, 1));
     footer(v, touch, this.held);
     return false;
   }
@@ -588,9 +589,9 @@ class Compare implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const t = now - this.t0;
-    if (t > COMPARE_MS) {
+    if (t > scaled(COMPARE_MS)) {
       this.done = true;
-      if (t > COMPARE_MS + 700) return true;
+      if (t > scaled(COMPARE_MS) + 700) return true;
     }
     v.clear();
     const a = arena(v, touch);
@@ -612,7 +613,7 @@ class Compare implements Mini {
         v.text('which side is bigger? that hand, or tap that side', a.cx, a.cy + 80 * a.u, v.fontTiny, 'center');
       }
     } else message(v, a, `${this.right} right`, `${this.wrong} wrong`);
-    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / COMPARE_MS, 0, 1));
+    progress(v, a.cx, a.bottom - 20 * a.u, 120 * a.u, clamp(t / scaled(COMPARE_MS), 0, 1));
     footer(v, touch, this.held);
     return false;
   }
@@ -761,14 +762,14 @@ class Series implements Mini {
       this.at = now + 1600;
     }
     if (this.state === 1 && now >= this.at) {
-      if (this.i >= SERIES_N) return true;
+      if (this.i >= scaled(SERIES_N)) return true;
       this.make(now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'right', `${this.right} / ${this.i}`, 'question', `${Math.min(this.i + 1, SERIES_N)} / ${SERIES_N}`);
+    header(v, touch, 'right', `${this.right} / ${this.i}`, 'question', `${Math.min(this.i + 1, scaled(SERIES_N))} / ${scaled(SERIES_N)}`);
     ctx.fillStyle = COL_LINE;
     ctx.font = v.fontHud;
     ctx.textAlign = 'center';
@@ -802,7 +803,7 @@ class Series implements Mini {
   result(): MiniResult {
     return {
       score: this.right * 60 + this.level * 20,
-      primary: { label: 'right', value: this.right, unit: `/ ${SERIES_N}` },
+      primary: { label: 'right', value: this.right, unit: `/ ${scaled(SERIES_N)}` },
       lines: [
         { label: 'right', value: `${this.right} of ${this.i}` },
         { label: 'median time when right', value: this.times.length ? `${(median(this.times) / 1000).toFixed(1)} s` : '–' },

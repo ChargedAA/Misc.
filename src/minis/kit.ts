@@ -169,6 +169,21 @@ export function setClockShift(v: number): void {
   shift = v;
 }
 
+// --- Session length ------------------------------------------------------------
+// Each game's round count (or, for timed drills, its duration) passes through scaled(),
+// which applies the length chosen on the drill page: short, standard or long.
+let lengthScale = 1;
+export function setLengthScale(v: number): void {
+  lengthScale = v;
+}
+export function lengthScaleNow(): number {
+  return lengthScale;
+}
+/** A game's standard round count or duration, scaled to the chosen length. */
+export function scaled(base: number): number {
+  return Math.max(2, Math.round(base * lengthScale));
+}
+
 export class Stair {
   level: number;
   readonly step: number;
