@@ -213,6 +213,17 @@ export interface MenuCtx {
   bestFor: (id: string, keys: number) => RunRecord | null;
 }
 
+/** "best 222 ms": a game's best on its headline number, the one results lead with. Score for the built-in games. */
+function bestOf(c: MenuCtx, id: string): string {
+  const recs = c.history.filter((r) => r.kind === 'mini' && r.game === id && typeof r.value === 'number' && Number.isFinite(r.value));
+  if (!recs.length) return c.bests[id] ? `best ${fmtInt(c.bests[id]!)}` : '';
+  const last = recs[recs.length - 1]!;
+  const vals = recs.map((r) => r.value!);
+  const pos = vals.filter((v) => v > 0);
+  const v = last.lower ? (pos.length ? Math.min(...pos) : 0) : Math.max(...vals);
+  return `best <span class="nt">${fmtPrimary(v, { label: '', value: v, unit: last.unit ?? '', decimals: last.decimals })}</span>`;
+}
+
 function gamesOf(skills: readonly string[]): Entry[] {
   return ENTRIES.filter((e) => skills.includes(e.skill));
 }
@@ -291,7 +302,7 @@ export function endlessMenu(c: MenuCtx): Menu {
     items: [
       { label: 'Everything', desc: `Any of the ${MINIS_COUNT()} games, one after another`, act: 'quick', arg: 'endless:all' },
       ...GROUPS.map((g) => ({ label: `${g.name} only`, desc: g.desc, act: 'quick', arg: `endless:${g.id}` })),
-      ...ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : 'difficulty', act: 'go', arg: `game:${e.id}` })),
+      ...ENTRIES.filter((e) => e.def?.levels).map((e) => ({ label: e.name, desc: e.blurb, meta: bestOf(c, e.id) || 'difficulty', act: 'go', arg: `game:${e.id}` })),
     ],
     enter: { label: 'Everything', act: 'quick', arg: 'endless:all' },
   };
@@ -366,7 +377,7 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
     {
       label: `Benchmark: ${name(g.benchmark)}`,
       desc: 'The same drill and setup every time, so your progress shows',
-      meta: c.bests[g.benchmark] ? `best ${fmtInt(c.bests[g.benchmark]!)}` : '',
+      meta: bestOf(c, g.benchmark),
       act: 'go',
       arg: `game:${g.benchmark}`,
       code: 'Enter',
@@ -387,7 +398,7 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
         headingNote: i === 0 ? grp.desc : undefined,
         label: e.name,
         desc: e.blurb,
-        meta: c.bests[e.id] ? `best ${fmtInt(c.bests[e.id]!)}` : inputLabel(e),
+        meta: bestOf(c, e.id) || inputLabel(e),
         act: 'go',
         arg: `game:${e.id}`,
         code: key?.[0] ?? 'Unidentified',
@@ -497,7 +508,7 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
     wide: true,
     page,
     extra: `${overview(c.history)}<h2>Your games <span>most recent first${DOT}pick one for its stats</span></h2>`,
-    items: played.map(([id, s]) => ({ label: entry(id)!.name, desc: `${s.n} session${s.n === 1 ? '' : 's'}${DOT}last ${shortDate(s.at)}`, meta: c.bests[id] ? `best ${fmtInt(c.bests[id]!)}` : '', act: 'go', arg: `gamestats:${id}` })),
+    items: played.map(([id, s]) => ({ label: entry(id)!.name, desc: `${s.n} session${s.n === 1 ? '' : 's'}${DOT}last ${shortDate(s.at)}`, meta: bestOf(c, id), act: 'go', arg: `gamestats:${id}` })),
     after: played.length ? '' : '<p class="muted">Play something and it shows up here.</p>',
   };
 }
@@ -568,13 +579,14 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
         .reverse()
         .map((r) => {
           const v = e.def && r.value !== undefined ? fmtPrimary(r.value, { label: '', value: r.value, unit: r.unit ?? '', decimals: r.decimals }) : fmtInt(r.score ?? 0);
-          return `<tr><td>${shortDate(r.at)}</td>${usesKeys ? `<td>${r.mode || '–'}</td>` : ''}<td>${v}</td><td>${fmtInt(r.kind === 'cps' ? (r.target ?? 0) : (r.score ?? 0))}</td></tr>`;
+          const win = e.def?.levels ? `<td>${r.level ? `${r.level} ${e.def.custom?.unit ?? ''}` : 'progressing'}</td>` : '';
+          return `<tr><td>${shortDate(r.at)}</td>${usesKeys ? `<td>${r.mode || '–'}</td>` : ''}${win}<td>${v}</td><td>${fmtInt(r.kind === 'cps' ? (r.target ?? 0) : (r.score ?? 0))}</td></tr>`;
         })
         .join('')}</table>`
     : '';
   return {
-    title: 'STATS',
-    sub: `${e.name}${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
+    title: e.name.toUpperCase(),
+    sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
     extra: `${seg}${body}${table}`,
     items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}` }],

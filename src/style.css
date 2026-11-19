@@ -1181,3 +1181,9 @@ tr.dim td {
   letter-spacing: 0.06em;
   margin-top: 4px;
 }
+
+/* A value inside an uppercase label keeps its own case: 218 ms, not 218 MS. */
+.nt {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
