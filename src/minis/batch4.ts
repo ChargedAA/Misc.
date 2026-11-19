@@ -6,7 +6,7 @@
 //   Swing  - press as the pendulum passes the bottom. It speeds up, then hides.
 //   Stream - letters fly past; press for the X.
 
-import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
+import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
@@ -42,36 +42,60 @@ const RATIOS: [number, number][] = [
   [3, 2],
   [2, 5],
 ];
-const GUIDE = 2;
+/** Loops with both hands' clicks to join, then loops on your own with only a soft tick at each loop start. */
+const GUIDE = 4;
 const PLAY = 4;
 
 class Poly implements Mini {
   private env!: MiniEnv;
   private round = 0;
   private ratio: [number, number] = [1, 2];
-  private cycle = 1800;
+  private cycle = 2000;
   private t0 = 0;
-  private state = 0; // 0 playing, 1 summary
+  private state = 0; // 0 playing, 1 round summary
+  private at = 0;
+  private exact = false;
   private taps: [number[], number[]] = [[], []];
-  private lastBeat: [number, number] = [-1, -1];
-  private roundErr: [number, number] = [0, 0];
-  private errs: number[] = [];
+  /** Every expected beat of this round: hand, time from t0, and how it went (null until judged). */
+  private beats: { h: number; t: number; hit: boolean | null; off: number }[] = [];
+  private fired = 0;
+  private onTime = 0;
+  private judged = 0;
+  private offs: number[] = [];
+  private roundScores: number[] = [];
   private summary = '';
   private held = 0;
   private flash: [number, number] = [0, 0];
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
-    this.newRound(now + 1000);
+    this.exact = !!env.soundAt && !env.muted;
+    this.newRound(now + 1200, now);
   }
 
-  private newRound(at: number): void {
+  private win(h: number): number {
+    return Math.max(70, (this.cycle / this.ratio[h]!) * 0.22);
+  }
+
+  private newRound(at: number, now: number): void {
     this.ratio = RATIOS[Math.min(this.round, RATIOS.length - 1)]!;
-    this.cycle = 1600 + Math.random() * 600;
+    // A loop long enough that the busier hand has at least ~300 ms between taps.
+    this.cycle = Math.max(1800, Math.max(...this.ratio) * 330);
     this.t0 = at;
     this.state = 0;
     this.taps = [[], []];
-    this.lastBeat = [-1, -1];
+    this.beats = [];
+    this.fired = 0;
+    for (let c = 0; c < GUIDE + PLAY; c++)
+      for (let h = 0; h < 2; h++)
+        for (let k = 0; k < this.ratio[h]!; k++) this.beats.push({ h, t: c * this.cycle + (k * this.cycle) / this.ratio[h]!, hit: null, off: 0 });
+    this.beats.sort((x, y) => x.t - y.t);
+    if (this.exact) {
+      for (let c = 0; c < GUIDE + PLAY; c++) {
+        if (c < GUIDE) for (let h = 0; h < 2; h++) for (let k = 0; k < this.ratio[h]!; k++) this.env.soundAt!(h ? SND_BEAT_UP : SND_BEAT, at - now + c * this.cycle + (k * this.cycle) / this.ratio[h]!);
+        else this.env.soundAt!(SND_UI, at - now + c * this.cycle);
+      }
+    }
   }
 
   press(slot: number, ts: number): void {
@@ -80,56 +104,58 @@ class Poly implements Mini {
     const side = sideOf(slot);
     if (side === 0) return;
     const h = side < 0 ? 0 : 1;
-    this.taps[h].push(ts - this.t0);
+    // Judged against when the click was heard.
+    const t = ts - this.t0 - (this.exact ? (this.env.latency ?? 0) : 0);
+    this.taps[h].push(t);
     this.flash[h] = ts + 90;
     this.env.sound(h ? SND_TAP_R : SND_TAP_L);
+    // The nearest unjudged beat of this hand within the window takes the tap.
+    let best: (typeof this.beats)[number] | null = null;
+    for (const b of this.beats) if (b.h === h && b.hit === null && Math.abs(b.t - t) <= this.win(h) && (!best || Math.abs(b.t - t) < Math.abs(best.t - t))) best = b;
+    if (best) {
+      best.hit = true;
+      best.off = t - best.t;
+    }
   }
 
   release(slot: number): void {
     this.held &= ~(1 << slot);
   }
 
-  private score(now: number): void {
-    const out: [number, number] = [0, 0];
-    for (let h = 0; h < 2; h++) {
-      const n = this.ratio[h]!;
-      const step = this.cycle / n;
-      const errs: number[] = [];
-      for (let c = GUIDE; c < GUIDE + PLAY; c++) {
-        for (let k = 0; k < n; k++) {
-          const want = c * this.cycle + k * step;
-          let best = step / 2;
-          for (const t of this.taps[h]) if (Math.abs(t - want) < best) best = Math.abs(t - want);
-          errs.push(best);
-        }
-      }
-      out[h] = mean(errs);
-      this.errs.push(...errs);
-    }
-    this.roundErr = out;
-    this.summary = `${this.ratio[0]} against ${this.ratio[1]}:  left ${Math.round(out[0])} ms, right ${Math.round(out[1])} ms off`;
+  private finishRound(now: number): void {
+    // Only the loops on your own count.
+    const own = this.beats.filter((b) => b.t >= GUIDE * this.cycle);
+    const hits = own.filter((b) => b.hit);
+    const score = own.length ? hits.length / own.length : 0;
+    this.onTime += hits.length;
+    this.judged += own.length;
+    this.offs.push(...hits.map((b) => b.off));
+    this.roundScores.push(score);
+    const side = (h: number) => {
+      const mine = own.filter((b) => b.h === h);
+      return mine.length ? Math.round((100 * mine.filter((b) => b.hit).length) / mine.length) : 0;
+    };
+    this.summary = `${this.ratio[0]} against ${this.ratio[1]}: ${Math.round(score * 100)}% of beats on time  (left ${side(0)}%, right ${side(1)}%)`;
     this.round++;
     this.state = 1;
-    this.t0 = now + 2600;
-    this.env.sound(mean(out) < 40 ? SND_CATCH : SND_TAP_WEAK);
+    this.at = now + 2600;
+    this.env.sound(score >= 0.7 ? SND_CATCH : SND_TAP_WEAK);
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
-    if (this.state === 0 && now >= this.t0) {
-      const t = now - this.t0;
-      if (t >= (GUIDE + PLAY) * this.cycle + 300) this.score(now);
-      else if (t < GUIDE * this.cycle) {
-        for (let h = 0; h < 2; h++) {
-          const b = Math.floor(t / (this.cycle / this.ratio[h]!));
-          if (b !== this.lastBeat[h]) {
-            this.lastBeat[h] = b;
-            this.env.sound(h ? SND_BEAT_UP : SND_BEAT);
-          }
+    const t = now - this.t0;
+    if (this.state === 0) {
+      // Without scheduled audio, fire the guide clicks from frames.
+      if (!this.exact)
+        while (this.fired < this.beats.length && this.beats[this.fired]!.t <= t) {
+          const b = this.beats[this.fired]!;
+          if (b.t < GUIDE * this.cycle) this.env.sound(b.h ? SND_BEAT_UP : SND_BEAT);
+          this.fired++;
         }
-      }
-    } else if (this.state === 1 && now >= this.t0) {
+      if (t >= (GUIDE + PLAY) * this.cycle + 400) this.finishRound(now);
+    } else if (now >= this.at) {
       if (this.round >= RATIOS.length) return true;
-      this.newRound(now + 600);
+      this.newRound(now + 900, now);
     }
     v.clear();
     const a = arena(v, touch);
@@ -137,56 +163,78 @@ class Poly implements Mini {
     const dpr = v.dpr;
     header(v, touch, 'round', `${Math.min(this.state === 1 ? this.round : this.round + 1, RATIOS.length)} / ${RATIOS.length}`, 'ratio', `${this.ratio[0]} : ${this.ratio[1]}`);
     if (this.state === 1) {
-      message(v, a, this.summary, this.round < RATIOS.length ? 'next ratio' : '');
-    } else {
-      const t = Math.max(0, now - this.t0);
-      const phase = (t % this.cycle) / this.cycle;
-      const cyc = Math.floor(t / this.cycle);
-      const guide = cyc < GUIDE;
-      const span = Math.min(a.right - a.left, 560 * a.u);
-      const x0 = a.cx - span / 2;
-      for (let h = 0; h < 2; h++) {
-        const y = a.cy + (h ? 50 : -50) * a.u;
-        ctx.fillStyle = COL_DIM;
-        ctx.fillRect(x0, y, span, dpr);
-        const n = this.ratio[h]!;
-        for (let k = 0; k < n; k++) {
-          const x = x0 + (k / n) * span;
-          ctx.fillStyle = guide ? COL_LINE : COL_MID;
-          ctx.fillRect(x - dpr, y - 12 * a.u, 2 * dpr, 24 * a.u);
-        }
-        // Taps in this cycle.
-        ctx.fillStyle = COL_ACCENT;
-        for (const tp of this.taps[h]) {
-          if (Math.floor(tp / this.cycle) !== cyc) continue;
-          const x = x0 + ((tp % this.cycle) / this.cycle) * span;
-          ctx.beginPath();
-          ctx.arc(x, y, 5 * a.u, 0, TAU);
-          ctx.fill();
-        }
-        ctx.fillStyle = now < this.flash[h] ? COL_LINE : COL_MID;
-        v.text(`${h ? 'right' : 'left'}  ${handLabel(this.env, h ? 1 : -1)}  ·  ${n} per loop`, x0, y - 22 * a.u, v.fontTiny, 'left');
-      }
-      // Playhead.
-      const px = x0 + phase * span;
-      ctx.fillStyle = COL_LINE;
-      ctx.fillRect(px - dpr / 2, a.cy - 80 * a.u, dpr, 160 * a.u);
-      ctx.fillStyle = COL_MID;
-      v.text(guide ? 'listen and join in: each hand on its own ticks' : `on your own  ${cyc - GUIDE + 1} / ${PLAY}`, a.cx, a.cy + 110 * a.u, v.fontTiny, 'center');
+      message(v, a, this.summary, this.round < RATIOS.length ? `next: ${RATIOS[this.round]![0]} against ${RATIOS[this.round]![1]}` : '');
+      footer(v, touch, this.held);
+      return false;
     }
+    const cyc = Math.floor(Math.max(0, t) / this.cycle);
+    const guide = cyc < GUIDE;
+    // Two lanes; beats slide right to left onto the hit line. Each lane shows one loop ahead.
+    const span = Math.min(a.right - a.left, 620 * a.u);
+    const x0 = a.cx - span / 2;
+    const hitX = x0 + span * 0.12;
+    const pxPerMs = (span * 0.85) / this.cycle;
+    for (let h = 0; h < 2; h++) {
+      const y = a.cy + (h ? 48 : -48) * a.u;
+      ctx.fillStyle = COL_FAINT;
+      ctx.fillRect(x0, y, span, dpr);
+      // Loop starts: thin bars, always shown, so you can keep your place on your own.
+      for (let c = 0; c <= GUIDE + PLAY; c++) {
+        const x = hitX + (c * this.cycle - t) * pxPerMs;
+        if (x < x0 || x > x0 + span) continue;
+        ctx.fillStyle = COL_DIM;
+        ctx.fillRect(x - dpr / 2, y - 20 * a.u, dpr, 40 * a.u);
+      }
+      for (const b of this.beats) {
+        if (b.h !== h) continue;
+        const x = hitX + (b.t - t) * pxPerMs;
+        if (x < x0 - 10 || x > x0 + span) continue;
+        const ownBeat = b.t >= GUIDE * this.cycle;
+        // On your own, beats ahead are hidden; you see only how the ones behind went.
+        if (ownBeat && b.t > t - 50 && b.hit !== true) continue;
+        ctx.beginPath();
+        ctx.arc(x, y, 7 * a.u, 0, TAU);
+        if (b.hit) {
+          ctx.fillStyle = COL_LINE;
+          ctx.fill();
+        } else if (b.t < t - this.win(h)) {
+          ctx.strokeStyle = COL_ACCENT;
+          ctx.lineWidth = 1.5 * dpr;
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = ownBeat ? COL_DIM : COL_MID;
+          ctx.lineWidth = 1.5 * dpr;
+          ctx.stroke();
+        }
+      }
+      // The hit line, lit when that hand taps.
+      ctx.fillStyle = now < this.flash[h] ? COL_ACCENT : COL_LINE;
+      ctx.fillRect(hitX - dpr, y - 16 * a.u, 2 * dpr, 32 * a.u);
+      ctx.fillStyle = COL_MID;
+      v.text(`${h ? 'right' : 'left'} ${handLabel(this.env, h ? 1 : -1)}  ·  ${this.ratio[h]} per loop`, x0, y - 26 * a.u, v.fontTiny, 'left');
+    }
+    ctx.fillStyle = guide ? COL_MID : COL_LINE;
+    v.text(
+      t < 0 ? `${this.ratio[0]} against ${this.ratio[1]}: get ready` : guide ? `join in: tap each hand as its beats reach the line  ·  loop ${cyc + 1} of ${GUIDE}` : `on your own: keep both going  ·  ${cyc - GUIDE + 1} of ${PLAY}`,
+      a.cx,
+      a.cy + 110 * a.u,
+      v.fontTiny,
+      'center',
+    );
     footer(v, touch, this.held);
     return false;
   }
 
   result(): MiniResult {
-    const m = mean(this.errs);
+    const share = this.judged ? this.onTime / this.judged : 0;
     return {
-      score: this.round ? Math.round(Math.max(0, 200 - m) * 5 * this.round) : 0,
-      primary: { label: 'average error', value: m, unit: 'ms', lower: true },
+      score: this.round ? Math.round(share * 600 + this.round * 40) : 0,
+      primary: { label: 'beats on time, on your own', value: Math.round(share * 100), unit: '%' },
+      series: { label: 'on time by ratio', names: RATIOS.slice(0, this.round).map((r) => `${r[0]}:${r[1]}`), values: this.roundScores.map((x) => Math.round(x * 100)), unit: '%' },
       lines: [
-        { label: 'average error', value: ms(m) },
+        { label: 'beats on time', value: `${this.onTime} of ${this.judged}` },
+        { label: 'typical timing of hits', value: this.offs.length ? `${Math.round(Math.abs(mean(this.offs)))} ms ${mean(this.offs) >= 0 ? 'late' : 'early'}` : '–' },
         { label: 'ratios played', value: RATIOS.slice(0, this.round).map((r) => `${r[0]}:${r[1]}`).join('  ') || '–' },
-        { label: 'last round, left / right', value: `${Math.round(this.roundErr[0])} / ${Math.round(this.roundErr[1])} ms` },
       ],
       saved: this.round >= 1,
     };
@@ -896,7 +944,7 @@ export const BATCH4: MiniDef[] = [
     name: 'Poly',
     skill: 'coordination',
     blurb: 'Two hands, two tempos at once. Two against three, and up.',
-    how: 'Each hand gets its own beat inside the same loop: the left taps its ticks, the right taps its own. Two loops with clicks to join in, then four on your own. Ratios get harder each round.',
+    how: 'Each hand has its own beat inside the same loop: the left plays one count (say 2 per loop), the right another (say 3). Beats slide along two lanes onto a line; tap each hand as its beats arrive. For four loops you hear both, each hand with its own click; then four loops on your own, with only a soft tick at the start of each loop. Scored on how many beats you land on time on your own.',
     input: 'keys',
     minKeys: 2,
     make: () => new Poly(),
