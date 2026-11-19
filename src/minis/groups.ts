@@ -25,7 +25,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'aim', 'whack', 'reflex'] },
-      { name: 'Hold back', desc: 'Stop a press you have already started', ids: ['stop', 'dodge'] },
+      { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'opposite', 'dodge'] },
       { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch'] },
       { name: 'Runs', desc: 'Steer a rolling ball; the window to react is the difficulty', ids: ['lanes', 'hurdles', 'rush'] },
     ],
@@ -68,7 +68,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route'] },
       { name: 'Places', desc: 'Where things were', ids: ['grid', 'where', 'pairs'] },
-      { name: 'Updating', desc: 'Keep what you hold current as new items arrive', ids: ['back', 'running'] },
+      { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link'] },
     ],
     routine: ['digits', 'grid', 'running'],
@@ -88,7 +88,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   judgement: {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
-      { name: 'Size and amount', desc: 'Lengths, counts and midpoints', ids: ['longer', 'more', 'guess', 'middle'] },
+      { name: 'Size and amount', desc: 'Lengths, counts, midpoints and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line'] },
       { name: 'Angle, shade, speed', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank'] },
       { name: 'By ear', desc: 'Judge what you hear', ids: ['pitch'] },
@@ -99,7 +99,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check and compare sums against the clock', ids: ['sum', 'compare'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare and carry sums against the clock', ids: ['sum', 'compare', 'chain'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
       { name: 'Test and deduce', desc: 'Gather clues, then reason to the answer. No clock', ids: ['probe', 'crack'] },

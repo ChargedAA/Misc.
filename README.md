@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 110 small games for reaction, speed, timing, memory,
+A minimal training suite: 114 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -64,6 +64,7 @@ not saved; neither are practice runs.
 | Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
 | Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
 | Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
+| Opposite | Press the side away from the dot. Blocks of "same" and "opposite". | keys, 2+ keys |
 
 ### Speed
 
@@ -117,6 +118,7 @@ not saved; neither are practice runs.
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap, 2+ keys |
 | Link | Shapes and numbers, paired. Which number went with this shape? | tap or click |
 | Route | Learn a string of turns, then drive it from memory. | keys, 2+ keys |
+| Hold | Remember positions while checking sums in between. | keys or tap, 2+ keys |
 
 ### Attention
 
@@ -174,6 +176,7 @@ not saved; neither are practice runs.
 | Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
 | Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
 | Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | tap or click |
+| Line | Put a number on a number line. | tap or click |
 
 ### Reasoning
 
@@ -191,6 +194,7 @@ not saved; neither are practice runs.
 | Crack | Find the hidden code from right-place and wrong-place clues. | tap or click |
 | Compass | Follow a string of turns in your head. Which way are you facing? | tap or click |
 | Letters | Unscramble the word. Type it. | keys |
+| Chain | Keep a running total through a string of operations. | tap or click |
 
 ## Why these games
 
@@ -224,6 +228,10 @@ The suite leans on established tasks and on what is known about training:
   item. Matrix is a procedurally generated progressive-matrices puzzle, Relate
   is transitive inference (the premises vanish later, adding a memory load),
   and Balance is algebra in pictures.
+- **More classic tasks.** Opposite is an anti-saccade style task (respond away
+  from the cue, in blocks against same-side responding). Hold is a complex-span
+  task: positions held while verifying sums. Line is number-line estimation.
+  Pitch measures a pitch discrimination threshold in cents.
 - **Sustained attention.** Except is the sustained attention to response task
   (SART): press for every digit but the rare 3, so the habit of pressing is the
   trap. It reports withheld 3s, misses, and how steady your presses are.
