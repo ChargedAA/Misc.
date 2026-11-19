@@ -320,3 +320,6 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
   // Timed: a timed drill just runs for that long; a round game plays rounds until the clock ends it.
   return r[1] === 's' ? { scale: -value / r[0], limitMs: 0 } : { scale: 200, limitMs: -value * 1000 };
 }
+
+/** Games that cannot be played without sound. */
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);

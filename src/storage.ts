@@ -43,6 +43,8 @@ export interface Settings {
   volume?: number;
   /** Two-key games played on another pair of keys: 'shift' or 'arrows'. */
   keysets?: Record<string, string>;
+  /** What Random and Endless draw from: skills left out, and kinds of game to skip. */
+  runFilter?: { skip: string[]; noSound?: boolean; noKeyboard?: boolean; touchOnly?: boolean };
   /** Rounds or length chosen per game, where a game offers the choice. */
   lengths?: Record<string, number>;
 }

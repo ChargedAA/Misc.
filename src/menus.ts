@@ -5,7 +5,7 @@
 import { MODES } from './config.ts';
 import { ENTRIES, entry, type Entry } from './minis/index.ts';
 import { SKILLS, keysFor, picksKeys, type MiniResult, type Skill } from './minis/kit.ts';
-import { GUIDES, ROUNDS, durationOf, lengthsFor, roundsLabel } from './minis/groups.ts';
+import { GUIDES, NEEDS_SOUND, ROUNDS, durationOf, lengthsFor, roundsLabel } from './minis/groups.ts';
 import { trendSvg } from './charts.ts';
 import { KEYSETS, bindingsFor, type RunRecord, type Settings } from './storage.ts';
 import {
@@ -304,19 +304,26 @@ export function dailyMenu(c: MenuCtx): Menu {
   };
 }
 
-/** Mixed sessions: a few random drills, or endless until you stop. */
-export function randomMenu(): Menu {
+/** Mixed sessions: a few random drills, or endless until you stop, from the games you choose. */
+export function randomMenu(c?: MenuCtx): Menu {
+  const f = c?.settings.runFilter ?? { skip: [] };
+  const chip = (act: string, arg: string, on: boolean, label: string) => `<button data-act="${act}" data-arg="${arg}" aria-pressed="${on}">${label}</button>`;
+  const pool = ENTRIES.filter((e) => e.def && !f.skip.includes(e.skill) && !(f.noSound && NEEDS_SOUND.has(e.id)) && !(f.noKeyboard && e.input === 'type') && !(f.touchOnly && (e.input === 'keys' || e.input === 'type'))).length;
+  const extra = `<div class="chips" aria-label="Skills to draw from">${SKILLS.map((k) => chip('rskill', k.id, !f.skip.includes(k.id), k.name)).join('')}</div>
+  <div class="chips" aria-label="Kinds of game">${chip('rflag', 'noSound', !!f.noSound, 'No sound needed')}${chip('rflag', 'noKeyboard', !!f.noKeyboard, 'No full keyboard')}${chip('rflag', 'touchOnly', !!f.touchOnly, 'Touch or mouse only')}</div>
+  <p class="msub">Drawing from ${pool} games. These apply to every random set and endless run.</p>`;
   return {
     title: 'RANDOM',
     sub: 'Random drills back to back, each about a minute. A ready card before each one.',
+    extra,
     items: [
       { label: 'Three drills', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
       { label: 'Five drills', desc: 'About five minutes', act: 'quick', arg: 'all:5' },
       { label: 'Ten drills', desc: 'About ten minutes', act: 'quick', arg: 'all:10' },
-      { label: 'One of each skill', desc: 'Eight drills, a fresh draw each time', act: 'quick', arg: 'each:8' },
+      { label: 'One of each skill', desc: 'One from each skill you have chosen', act: 'quick', arg: 'each:10' },
       { heading: 'Endless', label: 'Everything', desc: 'Random drills until you stop', act: 'quick', arg: 'endless:all' },
-      { label: 'Reflexes only', desc: 'Reaction, speed, timing, coordination', act: 'quick', arg: 'endless:body' },
-      { label: 'Mind only', desc: 'Memory, attention, judgement, reasoning', act: 'quick', arg: 'endless:mind' },
+      { label: 'Reflexes only', desc: 'Reaction, speed, timing, coordination, dexterity', act: 'quick', arg: 'endless:body' },
+      { label: 'Mind only', desc: 'Memory, attention, judgement, reasoning, ear', act: 'quick', arg: 'endless:mind' },
     ],
     enter: { label: 'Three drills', act: 'quick', arg: 'all:3' },
   };

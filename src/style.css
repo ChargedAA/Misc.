@@ -1347,3 +1347,24 @@ button:focus-visible {
 .ctl .act {
   color: var(--line);
 }
+
+/* Toggle chips: which skills and kinds of game Random draws from. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.chips button {
+  padding: 6px 12px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.chips button[aria-pressed='true'] {
+  border-color: var(--mid);
+  color: var(--line);
+}

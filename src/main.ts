@@ -53,7 +53,7 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
+import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
@@ -368,9 +368,9 @@ function buildMenu(n: NavEntry): Menu {
     case 'daily':
       return dailyMenu(c);
     case 'random':
-      return randomMenu();
+      return randomMenu(c);
     case 'endless':
-      return randomMenu();
+      return randomMenu(c);
     case 'gamekeys': {
       const [id, lv] = n.arg.split(':');
       return gameMenu(c, id!, Number(lv) || 0);
@@ -520,6 +520,17 @@ function drawVaried(pool: string[], count: number, before: readonly string[] = [
   return out;
 }
 
+/** Whether a game passes the Random/Endless settings. */
+function allowed(e: MiniDef): boolean {
+  const f = settings.runFilter;
+  if (!f) return true;
+  if (f.skip.includes(e.skill)) return false;
+  if (f.noSound && NEEDS_SOUND.has(e.id)) return false;
+  if (f.noKeyboard && e.input === 'type') return false;
+  if (f.touchOnly && (e.input === 'keys' || e.input === 'type')) return false;
+  return true;
+}
+
 function startQuick(spec: string): void {
   const [scope = 'all', countText = '3'] = spec.split(':');
   const count = Math.max(1, Number(countText) || 3);
@@ -531,10 +542,14 @@ function startQuick(spec: string): void {
   if (scope === 'each') {
     const order = [...SKILLS].sort(() => Math.random() - 0.5);
     queue = [];
-    for (const k of order) queue.push(...drawVaried(MINIS.filter((e) => e.skill === k.id && quick(e.id)).map((e) => e.id), 1, queue));
+    for (const k of order) {
+      const pool = MINIS.filter((e) => e.skill === k.id && quick(e.id) && allowed(e)).map((e) => e.id);
+      if (pool.length) queue.push(...drawVaried(pool, 1, queue));
+    }
   } else if (endlessScope) queue = [pickNext([])];
   else {
-    const pool = MINIS.filter((e) => quick(e.id) && (scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope))).map((e) => e.id);
+    const pool = MINIS.filter((e) => quick(e.id) && allowed(e) && (scope === 'all' || (group ? group.skills.includes(e.skill) : e.skill === scope))).map((e) => e.id);
+    if (!pool.length) return;
     queue = drawVaried(pool, count);
   }
   if (!queue.length) return;
@@ -548,7 +563,8 @@ function startQuick(spec: string): void {
 /** The next game of an endless run: varied, within its scope. */
 function pickNext(recent: readonly string[]): string {
   const group = GROUPS.find((g) => g.id === endlessScope);
-  const pool = MINIS.filter((e) => quick(e.id) && (!group || group.skills.includes(e.skill))).map((e) => e.id);
+  let pool = MINIS.filter((e) => quick(e.id) && allowed(e) && (!group || group.skills.includes(e.skill))).map((e) => e.id);
+  if (!pool.length) pool = MINIS.filter((e) => quick(e.id)).map((e) => e.id);
   return drawVaried(pool, 1, recent)[0]!;
 }
 
@@ -1170,6 +1186,18 @@ function onAction(action: string, arg: string): void {
     case 'resume':
       resume();
       break;
+    case 'rskill':
+    case 'rflag': {
+      // Random / Endless settings: toggle a skill or a kind of game.
+      const f = settings.runFilter ?? { skip: [] };
+      if (action === 'rskill') f.skip = f.skip.includes(arg) ? f.skip.filter((x) => x !== arg) : [...f.skip, arg];
+      else if (arg === 'noSound' || arg === 'noKeyboard' || arg === 'touchOnly') f[arg] = !f[arg];
+      settings.runFilter = f;
+      saveSettings(settings);
+      sfx.play(SND_UI);
+      showMenu();
+      break;
+    }
     case 'keyset': {
       // Play a two-key game on another pair of keys, or back on the usual ones.
       const [id, set] = arg.split(':');
