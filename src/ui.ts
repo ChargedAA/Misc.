@@ -358,7 +358,7 @@ export function miniResultsHtml(
     : AGAIN;
   return `<section class="screen">
   <div class="big">
-    <div class="stat"><div class="v">${r.saved ? fmtPrimary(p.value, p) : '\u2013'}</div><div class="l">${p.label}</div></div>
+    <div class="stat"><div class="v">${r.saved ? fmtPrimary(p.value, p) : '\u2013'}</div><div class="l">${p.label}${DOT}${p.lower ? 'lower is better' : 'higher is better'}</div></div>
     <div class="stat"><div class="v">${r.saved ? fmtInt(r.score) : '\u2013'}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
     <div class="stat"><div class="v">${name}</div><div class="l">game</div></div>
   </div>

@@ -1,3 +1,4 @@
+const DOT_SEP = '  \u00b7  ';
 // More games, one per skill.
 //   Choice - a string lights; press its key. How much slower is choosing between more?
 //   Gap    - two clicks set an interval; reproduce it from a third.
@@ -48,6 +49,8 @@ class Choice implements Mini {
   private lit = 0;
   private drawnAt = 0;
   private rts = new Map<number, number[]>();
+  /** Wrong presses per number of choices, shown beside each median. */
+  private errBy = new Map<number, number>();
   private errors = 0;
   private early = 0;
   private feedback = '';
@@ -102,6 +105,7 @@ class Choice implements Mini {
       this.env.sound(SND_TONE + (lane % 7));
     } else {
       this.errors++;
+      this.errBy.set(this.active.length, (this.errBy.get(this.active.length) ?? 0) + 1);
       this.feedback = 'wrong string';
       this.env.sound(SND_FALSE);
     }
@@ -165,7 +169,10 @@ class Choice implements Mini {
   }
 
   result(): MiniResult {
-    const lines = this.sizes.map((s) => ({ label: `${s} choice${s > 1 ? 's' : ''}`, value: ms(median(this.rts.get(s) ?? [])) }));
+    const lines = this.sizes.map((s) => {
+      const wrong = this.errBy.get(s) ?? 0;
+      return { label: `${s} choice${s > 1 ? 's' : ''}: median, wrong`, value: `${ms(median(this.rts.get(s) ?? []))}${DOT_SEP}${wrong} wrong` };
+    });
     // Hick's law: time grows with log2 of the number of choices.
     const pts = this.sizes.filter((s) => (this.rts.get(s) ?? []).length >= 3).map((s) => [Math.log2(s + 1), median(this.rts.get(s)!)] as const);
     let slope = 0;
