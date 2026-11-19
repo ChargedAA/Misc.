@@ -64,6 +64,8 @@ export interface Mini {
   typeKey?(code: string, ts: number): boolean;
   /** A click or tap at canvas device pixels (pointer games). */
   pointer?(x: number, y: number, ts: number): void;
+  /** The pointer moved (mouse, or a finger dragging), in canvas pixels. */
+  pointerMove?(x: number, y: number, ts: number): void;
   /** Advance and draw. Returns true once the session is over. */
   frame(now: number, v: View, touch: TouchLayout): boolean;
   result(): MiniResult;

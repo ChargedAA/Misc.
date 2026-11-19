@@ -1162,6 +1162,11 @@ function swallow(e: Event): void {
 window.addEventListener('keydown', onKeyDown, { passive: false });
 window.addEventListener('keyup', onKeyUp);
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+canvas.addEventListener('pointermove', (e) => {
+  if (screen !== 'mini' || !mini?.pointerMove) return;
+  const rect = canvas.getBoundingClientRect();
+  mini.pointerMove((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e));
+});
 canvas.addEventListener('pointerup', onPointerUp);
 canvas.addEventListener('pointercancel', onPointerUp);
 // Keep the browser from scrolling, zooming or selecting while fingers are on the board.
