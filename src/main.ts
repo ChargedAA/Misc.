@@ -719,6 +719,7 @@ function finishMini(): void {
   const cmp = {
     last: vals.length ? vals[vals.length - 1]! : null,
     best: vals.length ? (r.primary.lower ? Math.min(...vals.filter((x) => r.primary.zeroOk || x > 0)) : Math.max(...vals)) : null,
+    recent: vals.filter((x) => Number.isFinite(x) && (!r.primary.lower || r.primary.zeroOk || x > 0)).slice(-11),
   };
   if (cmp.best !== null && !Number.isFinite(cmp.best)) cmp.best = null;
   // A personal best is judged on the headline number, the one the results lead with, not

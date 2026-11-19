@@ -2,7 +2,7 @@
 // rebinding. The games themselves are drawn on the canvas; these only appear
 // between runs, so plain HTML strings and one delegated click handler are enough.
 
-import { MODES, getMode } from './config.ts';
+import { COL_DIM, COL_LINE, COL_MID, MODES, getMode } from './config.ts';
 import { histogramSvg, trendSvg } from './charts.ts';
 import type { CpsStats, Histogram, RtStats } from './stats.ts';
 import { ENTRIES, entry } from './minis/index.ts';
@@ -338,12 +338,41 @@ export interface Compare {
   /** The tracked number last time and at its best, if there were earlier sessions. */
   last: number | null;
   best: number | null;
+  /** The tracked number in recent earlier sessions, oldest first. */
+  recent?: number[];
+}
+
+/** This session against the last few: a row of dots on one scale, the newest picked out. */
+function recentSvg(p: MiniResult['primary'], prev: readonly number[]): string {
+  const vals = [...prev, p.value];
+  const W = 320;
+  const H = 54;
+  const pad = 8;
+  let lo = Math.min(...vals);
+  let hi = Math.max(...vals);
+  if (hi - lo < 1e-9) {
+    hi += 1;
+    lo -= 1;
+  }
+  // Better is always up, whichever way the number runs.
+  const y = (v: number) => {
+    const t = (v - lo) / (hi - lo);
+    return pad + (p.lower ? t : 1 - t) * (H - pad * 2);
+  };
+  const x = (i: number) => pad + (i / Math.max(1, vals.length - 1)) * (W - pad * 2);
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join('');
+  const last = vals.length - 1;
+  const dots = vals
+    .map((v, i) => (i === last ? '' : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2" fill="${COL_MID}"/>`))
+    .join('');
+  return `<figure class="recent"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="this session against the last ${prev.length}"><path d="${line}" fill="none" stroke="${COL_DIM}" stroke-width="1"/>${dots}<circle cx="${x(last).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="4" fill="${COL_LINE}"/></svg><figcaption>this session against the last ${prev.length}${DOT}better is up</figcaption></figure>`;
 }
 
 /** "12 ms better than last time" style comparison for the tracked number. */
 function compareLine(p: MiniResult['primary'], c: Compare | null): string {
   if (!c || (c.last === null && c.best === null)) return '<p class="cmp">First time: this result is your baseline.</p>';
-  const fmt = (v: number) => fmtPrimary(Math.abs(v), { ...p, value: Math.abs(v) });
+  // A change in a percentage is in points: 16% to 10% is 6 points, not 6%.
+  const fmt = (v: number) => (p.unit === '%' ? `${Math.abs(v).toFixed(p.decimals ?? 0)} points` : fmtPrimary(Math.abs(v), { ...p, value: Math.abs(v) }));
   const parts: string[] = [];
   let tone = '';
   if (c.last !== null) {
@@ -407,6 +436,7 @@ export function miniResultsHtml(
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
   ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
   <table>${r.saved ? `<tr><td>score</td><td>${fmtInt(r.score)}${best ? `${DOT}personal best` : ''}</td></tr>` : ''}${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}

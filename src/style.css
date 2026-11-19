@@ -1162,3 +1162,22 @@ tr.dim td {
     padding: 7px 14px;
   }
 }
+
+/* This session against the last few, under the comparison. */
+.recent {
+  margin: 4px 0 18px;
+  max-width: 320px;
+}
+
+.recent svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.recent figcaption {
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
