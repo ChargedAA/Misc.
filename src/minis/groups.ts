@@ -25,7 +25,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'aim', 'whack', 'reflex'] },
-      { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'opposite', 'dodge'] },
+      { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'opposite', 'dodge', 'parry', 'goalie'] },
       { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch'] },
       { name: 'Runs', desc: 'Steer a rolling ball; the window to react is the difficulty', ids: ['lanes', 'hurdles', 'rush'] },
     ],

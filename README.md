@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 120 small games for reaction, speed, timing, memory,
+A minimal training suite: 122 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -65,6 +65,8 @@ not saved; neither are practice runs.
 | Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
 | Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
 | Opposite | Press the side away from the dot. Blocks of "same" and "opposite". | keys, 2+ keys |
+| Parry | A fencer attacks left or right. Parry the real ones; hold on the feints. | keys, 2+ keys |
+| Goalie | Penalties. Dive the way the ball goes, or stay put when it comes down the middle. | keys, 2+ keys |
 
 ### Speed
 
