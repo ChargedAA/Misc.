@@ -1324,3 +1324,26 @@ button:focus-visible {
   outline: 1px solid var(--line);
   outline-offset: 3px;
 }
+
+/* Controls: each key with what it does. */
+.ctls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+}
+
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ctl kbd,
+.ctl .kb {
+  color: var(--line);
+  border-color: var(--mid);
+}
+
+.ctl .act {
+  color: var(--line);
+}

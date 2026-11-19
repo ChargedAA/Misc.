@@ -56,7 +56,7 @@ import { SKILLS } from './minis/kit.ts';
 import { GUIDES, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
-import { Ui, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
@@ -561,7 +561,7 @@ function showReady(): void {
   stopLoop();
   screen = 'ready';
   inputLockUntil = performance.now() + 250;
-  const keys = keysFor(id, e.input, settings.keys[id]);
+  const keys = keysFor(id, e.input, settings.keys[id], e.minKeys);
   ui.show(
     readyHtml({
       label: queueLabel,
@@ -571,7 +571,7 @@ function showReady(): void {
       skill: SKILLS.find((k) => k.id === e.skill)?.name ?? '',
       blurb: e.blurb,
       how: e.def ? e.def.how : '',
-      controls: e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, bindingsFor(settings, id, keys))}${e.input === 'both' ? ' &nbsp; or tap' : ''}`,
+      controls: e.def ? controlsHtml(id, e.input, keys, bindingsFor(settings, id, keys)) : keysLine(keys, bindingsFor(settings, id, keys)),
       length: durationOf(id),
       hands: e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, bindingsFor(settings, id, keys)),
     }),
@@ -609,7 +609,7 @@ function startGame(game: GameId): void {
   // Sets (daily, random) play games with levels at their progressing difficulty.
   if (dailyQueue) currentLevel = 0;
   const e = entry(game);
-  applyKeys(e ? keysFor(game, e.input, settings.keys[game]) : (settings.keys[game] ?? 2), game);
+  applyKeys(e ? keysFor(game, e.input, settings.keys[game], e.minKeys) : (settings.keys[game] ?? 2), game);
   pointerSlot.fill(0);
   ui.hide();
   if (e?.def) {

@@ -20,6 +20,7 @@ import {
   fmtPrimary,
   keysLine,
   overview,
+  controlsHtml,
   shortDate,
   handKeys,
   stepsHtml,
@@ -410,13 +411,13 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   if (e.def?.levels && level === undefined) return levelMenu(c, e);
   const lv = level === undefined ? '' : `:${level}`;
   const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
-  const keys = keysFor(id, e.input, c.settings.keys[id]);
+  const keys = keysFor(id, e.input, c.settings.keys[id], e.minKeys);
   const lenScale = c.settings.lengths?.[id] ?? 1;
   const min = e.minKeys ?? 1;
   const usesKeys = picksKeys(id, e.input);
   const binds = bindingsFor(c.settings, id, keys);
   const how = e.def ? e.def.how : controlsHint(id, keys, binds);
-  const controls = e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, binds)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`;
+  const controls = e.def ? controlsHtml(id, e.input, keys, binds) : keysLine(keys, binds);
   // Two-key games can also be played on the Shift keys or the arrows.
   const set = c.settings.keysets?.[id] ?? '';
   const sets = (e.input === 'keys' || e.input === 'both') && keys === 2
@@ -453,7 +454,16 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
     sub: group ? group.name : skill.name,
     extra,
     items: [
-      { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'Space', keyName: 'SPACE', hero: true },
+      {
+        label: 'Start',
+        // The whole setup in one line, right above the decision: difficulty, length, keys.
+        desc: [lvName, ROUNDS[id] ? `${lengthsFor(id).find((l) => l.value === lenScale)?.label ?? 'Standard'}: ${roundsLabel(id, lenScale)}` : durationOf(id), usesKeys ? `${keys} keys` : '', set ? KEYSETS[set]!.label : ''].filter(Boolean).join(DOT),
+        act: 'play',
+        arg: `${id}:${keys}${lv}`,
+        code: 'Space',
+        keyName: 'SPACE',
+        hero: true,
+      },
       { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyP', keyName: 'P' },
       { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
     ],

@@ -46,12 +46,12 @@ function cv(a: readonly number[]): number {
 // --- Endless ----------------------------------------------------------------------
 
 export const ENDLESS_LEVELS = [
-  { label: 'Progressing', desc: 'Starts at 800 ms and tightens with every clear', value: 0 },
-  { label: 'Beginner', desc: '700 ms to react', value: 700 },
-  { label: 'Amateur', desc: '600 ms to react', value: 600 },
-  { label: 'Intermediate', desc: '500 ms to react', value: 500 },
-  { label: 'Advanced', desc: '400 ms to react', value: 400 },
-  { label: 'Expert', desc: '300 ms to react', value: 300 },
+  { label: 'Progressive', desc: 'Starts at 800 ms to react and tightens with every clear', value: 0 },
+  { label: 'Fixed 700 ms', desc: 'Always 700 ms from pop-up to reaching you', value: 700 },
+  { label: 'Fixed 600 ms', desc: 'Always 600 ms', value: 600 },
+  { label: 'Fixed 500 ms', desc: 'Always 500 ms', value: 500 },
+  { label: 'Fixed 400 ms', desc: 'Always 400 ms', value: 400 },
+  { label: 'Fixed 300 ms', desc: 'Always 300 ms', value: 300 },
 ];
 const ENDLESS_CUSTOM = { unit: 'ms', min: 150, max: 1200, def: 450 };
 
@@ -633,7 +633,7 @@ class Trill implements Mini {
   }
 }
 
-const ENDLESS_HOW = 'Pick a difficulty: the window is how long you get from the moment something pops up to the moment it reaches you. Progressing starts slow and tightens with every clear. Three hits end it.';
+const ENDLESS_HOW = 'Pick a difficulty: the window is how long you get from the moment something pops up to the moment it reaches you. Progressive starts slow and tightens with every clear. Three hits end it.';
 
 export const BATCH14: MiniDef[] = [
   {

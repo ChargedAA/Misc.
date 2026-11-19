@@ -7,6 +7,7 @@ import { histogramSvg, trendSvg } from './charts.ts';
 import type { CpsStats, Histogram, RtStats } from './stats.ts';
 import { ENTRIES, entry } from './minis/index.ts';
 import { SKILLS, type MiniResult } from './minis/kit.ts';
+import { CONTROLS } from './minis/controls.ts';
 import { keyLabel, type Bindings, type GameId, type RunRecord, type Settings } from './storage.ts';
 
 export class Ui {
@@ -163,6 +164,35 @@ export function keysLine(keys: number, b: Bindings): string {
   let h = `${b.left.map(kbd).join('')}${m.right ? ' &nbsp; ' + b.right.map(kbd).join('') : ''}`;
   if (m.reflex && b.reflex) h += ` &nbsp; ${kbd(b.reflex)}`;
   return h;
+}
+
+/**
+ * What each control does, with the real keys: "Z move left · M move right · SPACE jump".
+ * Falls back to plain hands for games without their own map.
+ */
+export function controlsHtml(id: string, input: string, keys: number, b: Bindings): string {
+  const m = getMode(keys);
+  const left = b.left.slice(0, m.left);
+  const right = b.right.slice(0, m.right);
+  const reflex = m.reflex && b.reflex ? [b.reflex] : [];
+  const map: [string, string][] =
+    CONTROLS[id] ??
+    (input === 'pointer' ? [['TAP', 'click or tap']] : input === 'type' ? [['keyboard', 'type']] : [['L', 'left'], ['R', 'right'], ...(input === 'both' ? ([['TAP', 'or tap the side']] as [string, string][]) : [])]);
+  const keysOf = (tok: string): string => {
+    const all = [...left, ...reflex, ...right];
+    const list =
+      tok === 'L' ? left : tok === 'R' ? (right.length ? right : left) : tok === 'ANY' ? all : tok === 'OUTER_L' ? left.slice(0, 1) : tok === 'OUTER_R' ? right.slice(-1) : tok === 'MID' ? all.filter((k) => k !== left[0] && k !== right[right.length - 1]) : null;
+    if (list) return list.map(kbd).join('');
+    if (tok === 'BOTH') return `${kbd(left[0] ?? '')}+${kbd((right[0] ?? left[0]) ?? '')}`;
+    if (tok === 'TAP') return '';
+    if (tok === '') return '';
+    return `<span class="kb wide">${tok}</span>`;
+  };
+  // Tap entries only for games that take taps.
+  const rows = map.filter(([k]) => k !== 'TAP' || input !== 'keys');
+  return `<span class="ctls">${rows
+    .map(([k, act]) => `<span class="ctl">${keysOf(k)}<span class="act">${act}</span></span>`)
+    .join('')}</span>`;
 }
 
 export function pauseHtml(muted: boolean): string {

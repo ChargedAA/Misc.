@@ -46,8 +46,9 @@ export function picksKeys(id: string, input: InputKind): boolean {
 }
 
 /** The key count a game is played with: the saved choice where there is one, else one key per hand. */
-export function keysFor(id: string, input: InputKind, saved: number | undefined): number {
-  return picksKeys(id, input) ? (saved ?? 2) : 2;
+export function keysFor(id: string, input: InputKind, saved: number | undefined, minKeys = 1): number {
+  // Never a count the game cannot be played with (Rush needs three).
+  return picksKeys(id, input) ? Math.max(saved ?? 2, minKeys) : 2;
 }
 
 export interface MiniLine {
