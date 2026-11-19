@@ -1275,3 +1275,46 @@ tr.dim td {
   line-height: 18px;
   text-align: center;
 }
+
+/* Descriptions pop up on hover or keyboard focus instead of filling every row. Touch screens,
+   which cannot hover, keep them inline; the big main buttons always show theirs. */
+@media (hover: hover) {
+  .item {
+    position: relative;
+  }
+
+  .item:not(.hero) .d {
+    position: absolute;
+    left: 62px;
+    top: calc(100% - 4px);
+    z-index: 20;
+    max-width: min(440px, calc(100% - 62px));
+    padding: 8px 12px;
+    border: 1px solid var(--dim);
+    border-radius: 4px;
+    background: #141417;
+    color: var(--line);
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.1s ease 0s, visibility 0s linear 0.1s;
+  }
+
+  .item:not(.hero):hover .d,
+  .item:not(.hero):focus-visible .d {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.12s ease 0.35s, visibility 0s linear 0.35s;
+  }
+
+  .ihead span {
+    opacity: 0;
+    transition: opacity 0.12s;
+  }
+
+  .ihead:hover span {
+    opacity: 1;
+  }
+}
