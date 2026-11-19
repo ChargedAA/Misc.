@@ -43,6 +43,10 @@ export interface Settings {
   volume?: number;
   /** Two-key games played on another pair of keys: 'shift' or 'arrows'. */
   keysets?: Record<string, string>;
+  /** Name shown on leaderboards; empty means nothing is ever sent. */
+  lbName?: string;
+  /** A random id for this device, so a player's entries stay one entry. */
+  device?: string;
   /** What Random and Endless draw from: skills left out, and kinds of game to skip. */
   runFilter?: { skip: string[]; noSound?: boolean; noKeyboard?: boolean; touchOnly?: boolean };
   /** Rounds or length chosen per game, where a game offers the choice. */
@@ -129,7 +133,7 @@ function validBindings(b: unknown, mode: ModeDef): b is Bindings {
   return mode.reflex ? typeof x.reflex === 'string' && x.reflex.length > 0 : true;
 }
 
-interface SavedSettings {
+interface SavedSettings extends Partial<Omit<Settings, 'keys' | 'muted' | 'bindings'>> {
   keys?: Record<string, number>;
   /** Before the title screen there was one key count for everything. */
   mode?: number;
@@ -151,10 +155,27 @@ export function loadSettings(): Settings {
   const old = count(saved?.mode, 2);
   const keys: Record<string, number> = { climb: old, reflex: old, burst: old === 1 ? 2 : old };
   for (const [id, n] of Object.entries(saved?.keys ?? {})) keys[id] = count(n, keys[id] ?? 2);
+  const num = (v: unknown, lo: number, hi: number): number | undefined => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : undefined);
+  const record = <T,>(v: unknown, ok: (x: unknown) => x is T): Record<string, T> | undefined => {
+    if (!v || typeof v !== 'object') return undefined;
+    const out: Record<string, T> = {};
+    for (const [k, x] of Object.entries(v)) if (ok(x)) out[k] = x;
+    return out;
+  };
+  const isNum = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+  const isStr = (x: unknown): x is string => typeof x === 'string';
+  const rf = saved?.runFilter;
   return {
     keys,
     muted: saved?.muted === true,
     bindings,
+    audioOffset: num(saved?.audioOffset, -60, 300),
+    volume: num(saved?.volume, 0, 1),
+    keysets: record(saved?.keysets, isStr),
+    lengths: record(saved?.lengths, isNum),
+    lbName: typeof saved?.lbName === 'string' ? saved.lbName.slice(0, 16) : undefined,
+    device: typeof saved?.device === 'string' && /^[a-z0-9]{12,40}$/.test(saved.device) ? saved.device : undefined,
+    runFilter: rf && typeof rf === 'object' ? { skip: Array.isArray(rf.skip) ? rf.skip.filter(isStr) : [], noSound: rf.noSound === true, noKeyboard: rf.noKeyboard === true, touchOnly: rf.touchOnly === true } : undefined,
   };
 }
 

@@ -16,6 +16,7 @@ import {
   bestLine,
   card,
   controlsHint,
+  esc,
   fmtInt,
   fmtPrimary,
   keysLine,
@@ -510,7 +511,7 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
 export function settingsMenu(c: MenuCtx, note = ''): Menu {
   return {
     title: 'SETTINGS',
-    extra: note ? `<p class="cmp">${note}</p>` : '',
+    extra: `${note ? `<p class="cmp">${note}</p>` : ''}<div class="lbform"><label for="lbname">Leaderboard name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" placeholder="leave empty to stay off the boards" value="${(c.settings.lbName ?? '').replace(/"/g, '')}"><button data-act="lbname">Save</button></div><p class="muted">With a name set, verified runs (no scripts, no impossible timing) go to the shared leaderboards on the live site. Only the name, the game and the result are shown.</p>`,
     items: [
       { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
       { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
@@ -581,11 +582,12 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
         })
         .join('')}</table>`
     : '';
+  const lbKeys = usesKeys ? (filter || c.settings.keys[id] || 2) : 0;
   return {
     title: e.name.toUpperCase(),
     sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
-    extra: `${seg}${body}${table}`,
+    extra: `${seg}${body}<h2>Leaderboard <span>standard length${lbKeys ? `${DOT}${lbKeys} keys` : ''}${c.settings.lbName ? `${DOT}you are ${esc(c.settings.lbName)}` : `${DOT}set a name in Settings to join`}</span></h2><div id="lb" data-game="${id}" data-len="1" data-keys="${lbKeys}" data-label="${esc(all[all.length - 1]?.vlabel ?? '')}"><p class="muted">Loading…</p></div>${table}`,
     items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}`, code: 'Space', keyName: 'SPACE' }],
   };
 }

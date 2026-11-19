@@ -1368,3 +1368,46 @@ button:focus-visible {
   border-color: var(--mid);
   color: var(--line);
 }
+
+/* Leaderboard name and boards. */
+.lbform {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 6px;
+}
+
+.lbform label {
+  color: var(--mid);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lbform input {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--dim);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--line);
+  font: inherit;
+}
+
+.lbform input:focus {
+  outline: none;
+  border-color: var(--line);
+}
+
+.lbform button {
+  padding: 8px 14px;
+  border: 1px solid var(--mid);
+  border-radius: 3px;
+  color: var(--line);
+}
+
+table.board tr.me td {
+  color: var(--line);
+  font-weight: 500;
+}

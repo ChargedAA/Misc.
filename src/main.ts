@@ -55,9 +55,9 @@ import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
-import { Integrity } from './integrity.ts';
-import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef } from './minis/kit.ts';
-import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { Integrity, browserEnv } from './integrity.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
+import { Ui, controlsHtml, handKeys, leaderboardHtml, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
@@ -84,7 +84,7 @@ const reflex = new ReflexSession();
 const cpsTrainer = new CpsTrainer();
 const touch = new TouchLayout();
 const uiRoot = document.getElementById('ui')!;
-const integrity = new Integrity();
+const integrity = new Integrity(() => browserEnv(import.meta.env.DEV));
 /** Why the last run was not trusted, if it was not. */
 let integrityFlags: string[] = [];
 const ui = new Ui(uiRoot, onAction);
@@ -392,6 +392,41 @@ function showMenu(dir = 0): void {
   screen = 'menu';
   listening = '';
   ui.show(columnsHtml(nav.map((n) => ({ menu: buildMenu(n), sel: n.sel })), dir));
+  const lb = uiRoot.querySelector<HTMLElement>('#lb');
+  if (lb) void fillBoard(lb);
+}
+
+/** Load a game's leaderboard into its stats page. */
+async function fillBoard(el: HTMLElement): Promise<void> {
+  try {
+    const res = await fetch(`/api/scores?game=${encodeURIComponent(el.dataset.game ?? '')}&len=${el.dataset.len ?? '1'}&keys=${el.dataset.keys ?? '0'}`);
+    if (!res.ok) throw new Error(String(res.status));
+    const data = (await res.json()) as { entries: { name: string; value: number; unit: string; lower: boolean; at: number }[] };
+    el.innerHTML = leaderboardHtml(data.entries, settings.lbName ?? '', el.dataset.label ?? '');
+  } catch {
+    el.innerHTML = '<p class="muted">The leaderboard shows on the live site.</p>';
+  }
+}
+
+/** Send a verified run to the leaderboard, if the player has chosen a name. */
+async function submitScore(r: MiniResult, game: string, keys: number, durationMs: number): Promise<void> {
+  if (!settings.lbName || !settings.device) return;
+  const note = (t: string) => {
+    const el = uiRoot.querySelector('#lbnote');
+    if (el) el.textContent = t;
+  };
+  note('Sending to the leaderboard…');
+  try {
+    const res = await fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ device: settings.device, name: settings.lbName, game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags }),
+    });
+    const out = (await res.json()) as { ok: boolean; rank?: number; reason?: string };
+    note(out.ok ? (out.rank && out.rank <= 100 ? `Leaderboard: #${out.rank}` : 'Leaderboard: not in the top 100 yet') : `Leaderboard: not accepted (${out.reason})`);
+  } catch {
+    note('');
+  }
 }
 
 function go(target: string): void {
@@ -923,6 +958,7 @@ function finishMini(): void {
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp, integrityFlags));
+  if (r.saved && !integrityFlags.length && Number.isFinite(r.primary.value)) void submitScore(r, miniDef.id, keys, performance.now() - clockShift() - miniStartAt);
 }
 
 function showKeys(): void {
@@ -1207,6 +1243,16 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'lbname': {
+      const input = uiRoot.querySelector<HTMLInputElement>('#lbname');
+      const name = (input?.value ?? '').replace(/[^A-Za-z0-9 _-]/g, '').trim().slice(0, 16);
+      settings.lbName = name.length >= 2 ? name : '';
+      if (!settings.device) settings.device = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
+      saveSettings(settings);
+      sfx.play(SND_UI);
+      showMenu();
+      break;
+    }
     case 'keyset': {
       // Play a two-key game on another pair of keys, or back on the usual ones.
       const [id, set] = arg.split(':');
@@ -1324,6 +1370,14 @@ function release(slot: number, ts: number): void {
 
 function onKeyDown(e: KeyboardEvent): void {
   const code = e.code;
+  // Typing in a text field (the leaderboard name) is typing, not shortcuts.
+  if (e.target instanceof HTMLInputElement) {
+    if (code === 'Enter') {
+      e.preventDefault();
+      onAction('lbname', '');
+    } else if (code === 'Escape') e.target.blur();
+    return;
+  }
 
   if (screen === 'keys' && listening) {
     e.preventDefault();
@@ -1350,7 +1404,7 @@ function onKeyDown(e: KeyboardEvent): void {
     e.preventDefault();
     return;
   }
-  if (screen === 'mini' && !e.repeat) integrity.note(e, stamp(e));
+  if (screen === 'mini' && !e.repeat) integrity.note(e, stamp(e), code);
   if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift())) {
     miniInputs++;
     e.preventDefault();
@@ -1434,6 +1488,7 @@ function onKeyUp(e: KeyboardEvent): void {
     swallowCode = '';
     return;
   }
+  if (screen === 'mini') integrity.noteUp(e.code, stamp(e));
   if (screen === 'mini' && mini?.typeKeyUp) mini.typeKeyUp(e.code, stamp(e) - clockShift());
   const slot = keymap.get(e.code);
   if (slot !== undefined) release(slot, stamp(e));

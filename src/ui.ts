@@ -61,7 +61,7 @@ function pct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
 
-function esc(s: string): string {
+export function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 }
 
@@ -193,6 +193,15 @@ export function controlsHtml(id: string, input: string, keys: number, b: Binding
   return `<span class="ctls">${rows
     .map(([k, act]) => `<span class="ctl">${keysOf(k)}<span class="act">${act}</span></span>`)
     .join('')}</span>`;
+}
+
+/** A game's top scores; your own name picked out. */
+export function leaderboardHtml(entries: { name: string; value: number; unit: string; lower: boolean; at: number }[], me: string, label = ''): string {
+  if (!entries.length) return '<p class="muted">No scores yet. Set a name in Settings and play it to be first.</p>';
+  const fmt = (e: (typeof entries)[number]) => fmtPrimary(e.value, { label: '', value: e.value, unit: e.unit, decimals: e.unit === 's' || e.unit === '/s' ? 1 : 0 });
+  return `<table class="board"><tr><th>#</th><th>name</th><th>${esc(label || 'result')} · ${entries[0]!.lower ? 'lower is better' : 'higher is better'}</th><th>when</th></tr>${entries
+    .map((e, i) => `<tr${e.name === me ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(e.name)}</td><td>${fmt(e)}</td><td>${shortDate(e.at)}</td></tr>`)
+    .join('')}</table>`;
 }
 
 export function pauseHtml(muted: boolean): string {
@@ -507,6 +516,7 @@ export function miniResultsHtml(
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
   ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : flags.length ? `<p class="warn">Not saved: this run did not look like a person playing. ${flags.join('; ')}.</p>` : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${r.saved && !practice ? '<p class="muted" id="lbnote"></p>' : ''}
   ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
   <table>${r.lines
