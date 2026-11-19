@@ -69,7 +69,8 @@ export class Sfx {
     if (this.master && this.ctx) this.master.gain.setValueAtTime(m ? 0 : 1, this.ctx.currentTime);
   }
 
-  play(id: number): void {
+  /** Play a sound now, or `delayMs` from now on the audio clock (sample-accurate, unlike a frame). */
+  play(id: number, delayMs = 0): void {
     const ctx = this.ctx;
     if (!ctx || this.muted) return;
     const buf = this.buffers[id];
@@ -77,7 +78,7 @@ export class Sfx {
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.connect(this.pans[this.panOf[id]! + 1]!);
-    src.start();
+    src.start(delayMs > 0 ? ctx.currentTime + delayMs / 1000 : 0);
   }
 
   /** A pure tone at any pitch, with a soft attack and release: for listening drills. */

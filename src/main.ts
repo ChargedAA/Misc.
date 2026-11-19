@@ -525,7 +525,7 @@ function startGame(game: GameId): void {
     miniDef = e.def;
     miniInputs = 0;
     mini = e.def.make();
-    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), tone: (hz, d, pan) => sfx.tone(hz, d, pan), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
+    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), tone: (hz, d, pan) => sfx.tone(hz, d, pan), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);

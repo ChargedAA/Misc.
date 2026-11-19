@@ -38,6 +38,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
       { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain'] },
+      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code'] },
     ],
     routine: ['sprint', 'steady', 'trill'],
     benchmark: 'sprint',
@@ -48,6 +49,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even'] },
       { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop', 'tower', 'keep'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo'] },
+      { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
     ],
     routine: ['tempo', 'cross', 'gap'],
     benchmark: 'tempo',
@@ -70,6 +72,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Places', desc: 'Where things were', ids: ['grid', 'where', 'pairs'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link'] },
+      { name: 'Remember to act', desc: 'Keep an intention in mind while busy with something else', ids: ['remind'] },
     ],
     routine: ['digits', 'grid', 'running'],
     benchmark: 'digits',
@@ -77,7 +80,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   attention: {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
-      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort'] },
+      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
@@ -89,9 +92,10 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
       { name: 'Size and amount', desc: 'Lengths, counts, midpoints and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line'] },
-      { name: 'Angle, shade, speed', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first'] },
+      { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank'] },
       { name: 'By ear', desc: 'Judge what you hear', ids: ['pitch'] },
+      { name: 'Risk', desc: 'Weigh a bigger reward against the chance of losing it', ids: ['pump'] },
     ],
     routine: ['longer', 'tilt', 'more'],
     benchmark: 'longer',
@@ -113,6 +117,10 @@ export const GUIDES: Record<Skill, SkillGuide> = {
 
 /** Drills that are not about a minute long. */
 export const DURATION: Record<string, string> = {
+  away: '1.5 min',
+  late: '2 min',
+  remind: '1.5 min',
+  pump: '1.5 min',
   alert: '2 min',
   clock: '2 min',
   except: '1.5 min',

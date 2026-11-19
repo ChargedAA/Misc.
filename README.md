@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 114 small games for reaction, speed, timing, memory,
+A minimal training suite: 120 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -81,6 +81,7 @@ not saved; neither are practice runs.
 | Exact | Tap exactly N times inside the window. Fast enough, and stop on time. | keys or tap |
 | Rain | Letters fall. Type them before they land. | keys |
 | Trill | Alternate in order, flat out, for ten seconds. Fast and even both count. | keys, 2+ keys |
+| Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
 
 ### Timing
 
@@ -99,6 +100,7 @@ not saved; neither are practice runs.
 | Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
 | Tower | A block slides over the stack. Drop it squarely; overhang is cut off. | keys or tap |
 | Keep | Steer a paddle to keep the balls in play. A second one joins later. | keys, 2+ keys |
+| Late | Six beats by ear. Were they even, or did one land late? | keys, 2+ keys |
 
 ### Memory
 
@@ -119,6 +121,7 @@ not saved; neither are practice runs.
 | Link | Shapes and numbers, paired. Which number went with this shape? | tap or click |
 | Route | Learn a string of turns, then drive it from memory. | keys, 2+ keys |
 | Hold | Remember positions while checking sums in between. | keys or tap, 2+ keys |
+| Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
 
 ### Attention
 
@@ -140,6 +143,7 @@ not saved; neither are practice runs.
 | Tangle | Follow one line through a tangle to its end. | tap or click |
 | Sort | Flip the switch to send each item down the right chute. The rule changes. | keys, 2+ keys |
 | Shadow | Keep your pointer on a wandering target. Catch flashes at the edges. | tap or click |
+| Away | A flash grabs your eyes. The arrow you must read is on the other side. | keys, 2+ keys |
 
 ### Coordination
 
@@ -177,6 +181,8 @@ not saved; neither are practice runs.
 | Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
 | Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | tap or click |
 | Line | Put a number on a number line. | tap or click |
+| Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
+| Pump | Pump a balloon for points; bank before it pops. Each size has its own risk. | keys, 2+ keys |
 
 ### Reasoning
 
