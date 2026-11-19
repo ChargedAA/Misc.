@@ -23,10 +23,10 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reaction: {
     about: 'Respond to a signal fast, pick the right response, and hold back the wrong one.',
     groups: [
-      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert'] },
+      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert', 'ruler'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'aim', 'whack', 'reflex'] },
       { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'opposite', 'dodge', 'parry', 'goalie', 'volley'] },
-      { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch'] },
+      { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch', 'flipper'] },
       { name: 'Runs', desc: 'Steer a rolling ball; the window to react is the difficulty', ids: ['lanes', 'hurdles', 'rush'] },
     ],
     routine: ['snap', 'choice', 'stop'],
@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop', 'tower', 'keep'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
     ],
@@ -83,9 +83,9 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
       { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps'] },
-      { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow'] },
+      { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte'] },
-      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail'] },
+      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
     ],
     routine: ['track', 'find', 'except'],
