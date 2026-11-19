@@ -7,7 +7,7 @@ import { ENTRIES, entry, type Entry } from './minis/index.ts';
 import { SKILLS, keysFor, picksKeys, type MiniResult, type Skill } from './minis/kit.ts';
 import { GUIDES, ROUNDS, durationOf, lengthsFor, roundsLabel } from './minis/groups.ts';
 import { trendSvg } from './charts.ts';
-import type { RunRecord, Settings } from './storage.ts';
+import { KEYSETS, bindingsFor, type RunRecord, type Settings } from './storage.ts';
 import {
   CPS_METRICS,
   DOT,
@@ -413,13 +413,21 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const lenScale = c.settings.lengths?.[id] ?? 1;
   const min = e.minKeys ?? 1;
   const usesKeys = picksKeys(id, e.input);
-  const how = e.def ? e.def.how : controlsHint(id, keys, c.settings.bindings[keys]!);
-  const controls = e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, c.settings.bindings[keys]!)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`;
+  const binds = bindingsFor(c.settings, id, keys);
+  const how = e.def ? e.def.how : controlsHint(id, keys, binds);
+  const controls = e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, binds)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`;
+  // Two-key games can also be played on the Shift keys or the arrows.
+  const set = c.settings.keysets?.[id] ?? '';
+  const sets = (e.input === 'keys' || e.input === 'both') && keys === 2
+    ? `<div class="counts small lengths" aria-label="Which keys">${[['', 'Usual keys'], ...Object.entries(KEYSETS).map(([k, v]) => [k, v.label])]
+        .map(([k, label]) => `<button data-act="keyset" data-arg="${id}:${k}" aria-pressed="${k === set}">${label}<small>${k ? `${KEYSETS[k]!.left.replace('Left', ' left')} · ${KEYSETS[k]!.right.replace('Right', ' right')}` : keysLine(2, c.settings.bindings[2]!).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}</small></button>`)
+        .join('')}<span class="lbl">keys to play with</span></div>`
+    : '';
   const best = c.bestFor(id, keys);
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
   const skill = SKILLS.find((k) => k.id === e.skill)!;
   const group = GUIDES[e.skill].groups.find((g) => g.ids.includes(id));
-  const extra = `${stepsHtml(how, e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, c.settings.bindings[keys]!))}
+  const extra = `${stepsHtml(how, e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, binds))}
   <dl class="facts">
     <dt>Controls</dt><dd>${controls}</dd>
     ${ROUNDS[id] ? (lvName ? `<dt>Difficulty</dt><dd>${lvName}</dd>` : '') : `<dt>Length</dt><dd>${durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>`}
@@ -437,7 +445,8 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
           (m) => `<button data-act="keycount" data-arg="${id}:${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
         ).join('')}<span class="lbl">keys<span class="kbonly">${DOT}press 1 to 6</span></span></div>`
       : ''
-  }`;
+  }
+  ${sets}`;
   return {
     title: e.name.toUpperCase(),
     sub: group ? group.name : skill.name,

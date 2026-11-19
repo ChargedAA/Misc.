@@ -39,6 +39,7 @@ import { cpsStats, histogram, rtStats } from './stats.ts';
 import {
   RESERVED,
   addRecord,
+  bindingsFor,
   clearHistory,
   defaultBindings,
   keyLabel,
@@ -150,10 +151,10 @@ const SAMPLED_AT = 4;
 
 // --- Keys -------------------------------------------------------------------------
 
-function applyKeys(count: number): void {
+function applyKeys(count: number, game = ''): void {
   activeKeys = count;
   const mode = getMode(count);
-  const b = settings.bindings[count]!;
+  const b = game ? bindingsFor(settings, game, count) : settings.bindings[count]!;
   keymap.clear();
   slotLabels.fill('');
   liftLabels = [];
@@ -486,7 +487,7 @@ function showReady(): void {
   stopLoop();
   screen = 'ready';
   inputLockUntil = performance.now() + 250;
-  const keys = settings.keys[id] ?? 2;
+  const keys = keysFor(id, e.input, settings.keys[id]);
   ui.show(
     readyHtml({
       label: queueLabel,
@@ -496,9 +497,9 @@ function showReady(): void {
       skill: SKILLS.find((k) => k.id === e.skill)?.name ?? '',
       blurb: e.blurb,
       how: e.def ? e.def.how : '',
-      controls: e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, settings.bindings[keys]!)}${e.input === 'both' ? ' &nbsp; or tap' : ''}`,
+      controls: e.input === 'pointer' ? 'Click or tap' : e.input === 'type' ? 'A full keyboard' : `${keysLine(keys, bindingsFor(settings, id, keys))}${e.input === 'both' ? ' &nbsp; or tap' : ''}`,
       length: durationOf(id),
-      hands: e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, settings.bindings[keys]!),
+      hands: e.input === 'pointer' || e.input === 'type' ? undefined : handKeys(keys, bindingsFor(settings, id, keys)),
     }),
   );
 }
@@ -530,7 +531,7 @@ function startGame(game: GameId): void {
   // Sets (daily, random) play games with levels at their progressing difficulty.
   if (dailyQueue) currentLevel = 0;
   const e = entry(game);
-  applyKeys(e ? keysFor(game, e.input, settings.keys[game]) : (settings.keys[game] ?? 2));
+  applyKeys(e ? keysFor(game, e.input, settings.keys[game]) : (settings.keys[game] ?? 2), game);
   pointerSlot.fill(0);
   ui.hide();
   if (e?.def) {
@@ -1086,6 +1087,16 @@ function onAction(action: string, arg: string): void {
     case 'resume':
       resume();
       break;
+    case 'keyset': {
+      // Play a two-key game on another pair of keys, or back on the usual ones.
+      const [id, set] = arg.split(':');
+      settings.keysets = { ...(settings.keysets ?? {}), [id!]: set ?? '' };
+      if (set) settings.keys[id!] = 2;
+      saveSettings(settings);
+      sfx.play(SND_UI);
+      showMenu();
+      break;
+    }
     case 'length': {
       // Cycle or set the length a game is played at: short, standard, long.
       const [id, v] = arg.split(':');

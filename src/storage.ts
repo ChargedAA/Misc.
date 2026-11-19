@@ -41,6 +41,8 @@ export interface Settings {
   audioOffset?: number;
   /** Master volume, 0 to 1. */
   volume?: number;
+  /** Two-key games played on another pair of keys: 'shift' or 'arrows'. */
+  keysets?: Record<string, string>;
   /** Rounds or length chosen per game, where a game offers the choice. */
   lengths?: Record<string, number>;
 }
@@ -180,7 +182,22 @@ export function clearHistory(): void {
 }
 
 /** Short label for a KeyboardEvent.code. */
+/** Other pairs of keys a two-key game can be played on, one key per hand. */
+export const KEYSETS: Record<string, { label: string; left: string; right: string }> = {
+  shift: { label: 'Shift keys', left: 'ShiftLeft', right: 'ShiftRight' },
+  arrows: { label: 'Arrows', left: 'ArrowLeft', right: 'ArrowRight' },
+};
+
+/** The bindings a game is played with: the saved ones, or a two-key set chosen for that game. */
+export function bindingsFor(settings: Settings, id: string, keys: number): Bindings {
+  const set = KEYSETS[settings.keysets?.[id] ?? ''];
+  if (set && keys === 2) return { left: [set.left], right: [set.right], reflex: null };
+  return settings.bindings[keys]!;
+}
+
 export function keyLabel(code: string): string {
+  if (code === 'ShiftLeft') return 'L\u21e7';
+  if (code === 'ShiftRight') return 'R\u21e7';
   if (code.startsWith('Key')) return code.slice(3);
   if (code.startsWith('Digit')) return code.slice(5);
   if (code.startsWith('Numpad')) return 'NUM ' + code.slice(6).toUpperCase();
@@ -197,8 +214,8 @@ export function keyLabel(code: string): string {
     Backslash: '\\',
     Minus: '-',
     Equal: '=',
-    ShiftLeft: 'L SHIFT',
-    ShiftRight: 'R SHIFT',
+    ShiftLeft: 'L\u21e7',
+    ShiftRight: 'R\u21e7',
     ControlLeft: 'L CTRL',
     ControlRight: 'R CTRL',
     AltLeft: 'L ALT',
