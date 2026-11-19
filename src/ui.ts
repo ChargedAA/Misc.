@@ -264,9 +264,9 @@ function cpsBlock(c: CpsStats, labels: string[], showJitter: boolean): string {
 }
 
 const AGAIN: [string, string, string, string][] = [
-  ['Again', 'again', 'z', 'KeyZ Enter'],
-  ['Game stats', 'gamestats', 'x', 'KeyX'],
-  ['Back', 'menu', 'c', 'KeyC Escape Backspace'],
+  ['Again', 'again', 'space', 'Space Enter'],
+  ['Stats', 'gamestats', 's', 'KeyS'],
+  ['Back', 'menu', 'esc', 'Escape Backspace'],
 ];
 
 export interface RunSummary {
@@ -446,20 +446,20 @@ export function miniResultsHtml(
   const skill = SKILLS.find((k) => k.id === e?.skill)?.name ?? '';
   const actions: [string, string, string, string][] = daily?.practice
     ? [
-        ['Practise again', 'practiceagain', 'z', 'KeyZ Enter'],
-        ['Play it for real', 'forreal', 'x', 'KeyX'],
-        ['Back', 'menu', 'c', 'KeyC Escape Backspace'],
+        ['Practise again', 'practiceagain', 'space', 'Space'],
+        ['Play it for real', 'forreal', 'enter', 'Enter'],
+        ['Back', 'menu', 'esc', 'Escape Backspace'],
       ]
     : daily
     ? daily.nextName
       ? [
-          [`Next: ${daily.nextName}`, 'dailynext', 'z', 'KeyZ Enter'],
-          ['Game stats', 'gamestats', 'x', 'KeyX'],
-          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'c', 'KeyC Escape Backspace'],
+          [`Next: ${daily.nextName}`, 'dailynext', 'space', 'Space Enter'],
+          ['Stats', 'gamestats', 's', 'KeyS'],
+          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape Backspace'],
         ]
       : [
-          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'z', 'KeyZ Enter'],
-          ['Game stats', 'gamestats', 'x', 'KeyX'],
+          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'space', 'Space Enter'],
+          ['Stats', 'gamestats', 's', 'KeyS'],
         ]
     : AGAIN;
   // Lower-is-better numbers are never really zero: zero means it was not measured.
@@ -515,10 +515,10 @@ export function dailySummaryHtml(rows: DailyRow[], total: number, bestTotal: num
   const retry = worst && worst.vsUsual! <= -0.05 ? worst : null;
   const actions: [string, string, string, string][] = retry
     ? [
-        [`Retry ${retry.name}`, 'play', 'z', 'KeyZ Enter', ],
-        ['Back', 'menu', 'x', 'KeyX Escape Backspace'],
+        [`Retry ${retry.name}`, 'play', 'space', 'Space Enter'],
+        ['Back', 'menu', 'esc', 'Escape Backspace'],
       ]
-    : [['Back', 'menu', 'z', 'KeyZ Enter Escape Backspace']];
+    : [['Back', 'menu', 'esc', 'Space Enter Escape Backspace']];
   const foots = foot(actions).replace('data-act="play"', `data-act="play" data-arg="${retry ? `${retry.id}:${retry.keys ?? 2}` : ''}"`);
   return `<section class="screen">
   <p class="rpos">${label}${DOT}done</p>
@@ -578,8 +578,8 @@ export function readyHtml(r: ReadyInfo): string {
     <dt>Length</dt><dd>${r.length}</dd>
   </dl>
   ${foot([
-    ['Start', 'readygo', 'space', 'Space Enter KeyZ'],
-    ['Skip this one', 'skip', 'x', 'KeyX'],
+    ['Start', 'readygo', 'space', 'Space Enter'],
+    ['Skip to the next', 'skip', 'n', 'KeyN'],
     [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape Backspace'],
   ])}
 </section>`;

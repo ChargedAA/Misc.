@@ -236,7 +236,7 @@ export function startMenu(c: MenuCtx): Menu {
     title: 'TENSION',
     sub: `Train eight skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
-      { label: 'Mix', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
+      { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
       { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
     ],
@@ -304,7 +304,7 @@ export function dailyMenu(c: MenuCtx): Menu {
 /** Mixed sessions: a few random drills, or endless until you stop. */
 export function randomMenu(): Menu {
   return {
-    title: 'MIX',
+    title: 'RANDOM',
     sub: 'Random drills back to back, each about a minute. A ready card before each one.',
     items: [
       { label: 'Three drills', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
@@ -443,9 +443,9 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
     sub: group ? group.name : skill.name,
     extra,
     items: [
-      { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'KeyZ Space', keyName: 'Z', hero: true },
-      { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyX', keyName: 'X' },
-      { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyC', keyName: 'C' },
+      { label: 'Start', desc: usesKeys ? `With ${keys} key${keys === 1 ? '' : 's'}` : '', act: 'play', arg: `${id}:${keys}${lv}`, code: 'Space', keyName: 'SPACE', hero: true },
+      { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyP', keyName: 'P' },
+      { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
     ],
     enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
     after: best ? `<p class="best">${bestLine(id, best)}</p>` : '',
@@ -558,7 +558,7 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
     sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
     extra: `${seg}${body}${table}`,
-    items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}` }],
+    items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}`, code: 'Space', keyName: 'SPACE' }],
   };
 }
 
