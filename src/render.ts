@@ -272,15 +272,15 @@ export class View {
   }
 
   /** Touch pads and the corner button. Drawn only once a touch has been seen. */
-  drawTouch(touch: TouchLayout, icon: number, held: number): void {
-    if (!touch.active) return;
+  drawTouch(touch: TouchLayout, icon: number, held: number, always = false): void {
+    if (!touch.active && !always) return;
     const ctx = this.ctx;
     const dpr = this.dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.setLineDash(NO_DASH);
     ctx.lineWidth = dpr;
-    const pads = touch.pads;
+    const pads = touch.active ? touch.pads : [];
     for (let i = 0; i < pads.length; i++) {
       const p = pads[i]!;
       const on = (held & (1 << p.slot)) !== 0;

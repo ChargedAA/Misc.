@@ -82,7 +82,8 @@ const runner = new Runner(sim);
 const reflex = new ReflexSession();
 const cpsTrainer = new CpsTrainer();
 const touch = new TouchLayout();
-const ui = new Ui(document.getElementById('ui')!, onAction);
+const uiRoot = document.getElementById('ui')!;
+const ui = new Ui(uiRoot, onAction);
 
 const settings = loadSettings();
 sfx.muted = settings.muted;
@@ -98,6 +99,10 @@ interface NavEntry {
   page: number;
   /** The item chosen in this column when a deeper one is open. */
   sel?: string;
+  /** Scroll position to return to. */
+  scroll?: number;
+  /** A screen this one was opened over (a result or a recap), restored by Back instead of the menu path. */
+  over?: { html: string; screen: Screen };
 }
 let nav: NavEntry[] = [{ kind: 'start', arg: '', page: 0 }];
 let lastGame: GameId = 'climb';
@@ -391,14 +396,29 @@ function go(target: string): void {
   const arg = i < 0 ? '' : target.slice(i + 1);
   if (kind === 'gamestats') gsFilter = 0;
   nav[nav.length - 1]!.sel = target;
+  nav[nav.length - 1]!.scroll = uiRoot.scrollTop;
   nav.push({ kind, arg, page: 0 });
   showMenu(1);
 }
 
+/** Back one screen, to where you were: same scroll position, the item you opened in focus. */
 function back(): void {
+  const top = nav[nav.length - 1]!;
+  if (top.over && nav.length > 1) {
+    // Opened over a result or recap: close it and return there, run and all.
+    nav.pop();
+    screen = top.over.screen;
+    ui.show(top.over.html);
+    inputLockUntil = performance.now() + 150;
+    return;
+  }
   if (nav.length > 1) nav.pop();
-  nav[nav.length - 1]!.sel = undefined;
+  const now = nav[nav.length - 1]!;
+  const sel = now.sel;
+  now.sel = undefined;
   showMenu(-1);
+  if (now.scroll !== undefined) uiRoot.scrollTop = now.scroll;
+  if (sel) uiRoot.querySelector<HTMLButtonElement>(`.col.active [data-arg="${CSS.escape(sel)}"]`)?.focus({ preventScroll: true });
 }
 
 /** Close the columns deeper than `level`. */
@@ -582,6 +602,10 @@ function endRun(): void {
 
 function startGame(game: GameId): void {
   lastGame = game;
+  // A stats page opened over an old result has nothing to return to once a new game starts.
+  nav = nav.filter((n) => !n.over);
+  // The key that started this (Space, Enter, R...) is still down: it is not gameplay until released.
+  swallowCode = actionCode;
   // Sets (daily, random) play games with levels at their progressing difficulty.
   if (dailyQueue) currentLevel = 0;
   const e = entry(game);
@@ -648,6 +672,9 @@ function leave(): void {
 }
 
 let pausedAt = 0;
+/** The key that triggered the current menu action, and the one to ignore in play until it comes up. */
+let actionCode = '';
+let swallowCode = '';
 /** The length value this drill is played at (see lengthsFor), its time limit (ms, 0 for none) and its start on the game clock. */
 let lengthValue = 1;
 let miniLimit = 0;
@@ -669,6 +696,7 @@ function pauseMini(): void {
 
 function resumeMini(): void {
   if (screen !== 'miniPause' || !mini) return;
+  swallowCode = actionCode;
   setClockShift(clockShift() + (performance.now() - pausedAt));
   sfx.unlock();
   screen = 'mini';
@@ -1089,13 +1117,14 @@ function onAction(action: string, arg: string): void {
     case 'restart':
       startGame('climb');
       break;
-    case 'gamestats':
-      // From a results screen: the game's stats, over its page.
+    case 'gamestats': {
+      // From a result or a recap: the game's stats over it; Back returns to it with the run intact.
       gsFilter = 0;
-      nav[nav.length - 1]!.sel = `gamestats:${arg || lastGame}`;
-      nav.push({ kind: 'gamestats', arg: arg || lastGame, page: 0 });
+      const over = screen === 'miniResults' || screen === 'results' || screen === 'reflexResults' || screen === 'burstResults' ? { html: uiRoot.innerHTML, screen } : undefined;
+      nav.push({ kind: 'gamestats', arg: arg || lastGame, page: 0, over });
       showMenu(1);
       break;
+    }
     case 'gsfilter':
       gsFilter = Number(arg) | 0;
       showMenu();
@@ -1280,6 +1309,10 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
 
+  if (swallowCode && code === swallowCode && (screen === 'mini' || screen === 'play' || screen === 'reflex' || screen === 'burst')) {
+    e.preventDefault();
+    return;
+  }
   if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift())) {
     miniInputs++;
     e.preventDefault();
@@ -1339,7 +1372,9 @@ function onKeyDown(e: KeyboardEvent): void {
   const target = [...document.querySelectorAll<HTMLButtonElement>('#ui [data-key]')].find((el) => el.dataset.key!.split(' ').includes(code));
   if (target) {
     e.preventDefault();
+    actionCode = code;
     if (!target.disabled) target.click();
+    actionCode = '';
     return;
   }
   if (code === 'Escape' || code === 'Backspace') {
@@ -1357,6 +1392,10 @@ function onKeyDown(e: KeyboardEvent): void {
 }
 
 function onKeyUp(e: KeyboardEvent): void {
+  if (e.code === swallowCode) {
+    swallowCode = '';
+    return;
+  }
   if (screen === 'mini' && mini?.typeKeyUp) mini.typeKeyUp(e.code, stamp(e) - clockShift());
   const slot = keymap.get(e.code);
   if (slot !== undefined) release(slot, stamp(e));
@@ -1374,7 +1413,8 @@ function onPointerDown(e: PointerEvent): void {
   const rect = canvas.getBoundingClientRect();
   const hit = touch.hit((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr);
   if (hit === HIT_CORNER) {
-    if (touch.active) leave();
+    // The corner button pauses a drill for mouse and touch alike.
+    if (touch.active || screen === 'mini') leave();
     return;
   }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {

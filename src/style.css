@@ -1318,3 +1318,9 @@ tr.dim td {
     opacity: 1;
   }
 }
+
+/* Keyboard focus is always visible. */
+button:focus-visible {
+  outline: 1px solid var(--line);
+  outline-offset: 3px;
+}

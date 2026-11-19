@@ -2,7 +2,7 @@
 // arena layout, and a few drawing helpers that keep every game looking alike.
 
 import { COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX, type ModeDef } from '../config.ts';
-import { ICON_CLOSE, type View } from '../render.ts';
+import { ICON_PAUSE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 
 export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity';
@@ -287,7 +287,7 @@ export function arena(v: View, touch: TouchLayout): Arena {
  */
 export function header(
   v: View,
-  touch: TouchLayout,
+  _touch: TouchLayout,
   leftLabel: string,
   leftValue: string,
   rightLabel: string,
@@ -299,7 +299,7 @@ export function header(
   const dpr = v.dpr;
   const ty = 40 * dpr;
   const lx = Math.max(24 * dpr, v.ox - 330 * dpr);
-  const rx = Math.min(v.w - (touch.active ? 84 : 24) * dpr, v.ox + 330 * dpr);
+  const rx = Math.min(v.w - 84 * dpr, v.ox + 330 * dpr);
   ctx.fillStyle = COL_MID;
   v.text(leftLabel, lx, ty, v.fontTiny, 'left');
   v.text(rightLabel, rx, ty, v.fontTiny, 'right');
@@ -338,7 +338,8 @@ export function footer(v: View, touch: TouchLayout, held: number, hint = 'esc to
     v.ctx.fillStyle = COL_DIM;
     v.text(hint, v.ox, v.h - 22 * v.dpr, v.fontTiny, 'center');
   }
-  v.drawTouch(touch, ICON_CLOSE, held);
+  // The pause button sits in the top corner for mouse and touch alike.
+  v.drawTouch(touch, ICON_PAUSE, held, true);
 }
 
 /** A centred message in the arena, with an optional smaller line under it. */
