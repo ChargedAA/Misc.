@@ -1,6 +1,6 @@
 # TENSION
 
-A minimal training suite: 122 small games for reaction, speed, timing, memory,
+A minimal training suite: 125 small games for reaction, speed, timing, memory,
 attention, coordination, judgement and reasoning. Near-black, thin lines, one accent colour. Every
 game is short, adapts to you, and keeps your history so you can see trends.
 
@@ -20,18 +20,22 @@ the left hand's keys and the Mind skills on the right hand's:
 | `C` | Timing | `M` | Judgement |
 | `V` | Coordination | `,` | Reasoning |
 
-`R` Mix, `S` Stats and `O` Settings sit in the header.
+`R` Random, `S` Stats and `O` Settings sit in the header. Everywhere, `Space`
+is the main action, `Esc` goes back, letters pick list items, and named actions
+use their initial (`S` stats, `P` practice, `L` length, `R` restart, `F` finish,
+`Q` quit, `N` skip). Descriptions appear when you hover over an item.
 
 One page at a time, with the path back above it; `Esc` goes back.
 
 A skill's page starts with a three-drill **routine** (`Space`), then lists every
 drill grouped by what it trains, each on its own key. A drill's page gives
 numbered steps naming your actual keys, the controls, a **length** choice
-(short, standard or long, showing the real round count; `L` cycles it), a key
-count only for the games where it matters, then **Start** (`Z`), **Stats**
-(`X`) and **Practice** (`C`, plays it through but saves nothing).
+(short, standard, long, 1 min, 3 min or endless; `L` cycles it), a key count
+only for the games where it matters, a choice of keys for two-key games (usual,
+Shift keys or arrows), then **Start** (`Space`), **Practice** (`P`, plays it
+through but saves nothing) and **Stats** (`S`).
 
-**Mix** plays three, five or ten random drills, one of each skill, or random
+**Random** plays three, five or ten random drills, one of each skill, or random
 drills endlessly. In sets, each drill opens with a ready card (the same steps
 and controls) so the clock never runs while you read; `Space` starts it and `X`
 skips it. Sets always play the standard length.
@@ -71,6 +75,7 @@ not saved; neither are practice runs.
 | Opposite | Press the side away from the dot. Blocks of "same" and "opposite". | keys, 2+ keys |
 | Parry | A fencer attacks left or right. Parry the real ones; hold on the feints. | keys, 2+ keys |
 | Goalie | Penalties. Dive the way the ball goes, or stay put when it comes down the middle. | keys, 2+ keys |
+| Volley | Return the ball with the hand on its side as it reaches your line. It comes back faster. | keys, 2+ keys |
 
 ### Speed
 
@@ -165,10 +170,12 @@ not saved; neither are practice runs.
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 | Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
-| Sync | Both hands at exactly the same moment. Then with a set gap. | keys, 2+ keys |
+| Sync | Two balls drop, one per hand. Press as each hits the line, together or one after the other. | keys, 2+ keys |
 | Dock | Thrust a drifting ship into the dock and stop dead inside it. | keys, 2+ keys |
 | Lander | Feather the thrust and touch down softly on the pad. | keys |
 | Mirror | Steer along a track. Every so often the controls swap sides. | keys, 2+ keys |
+| Comet | Always moving forward: hold to turn. Collect the dots, miss the mines. | keys, 2+ keys |
+| Slalom | Ski down with momentum and pass every flag on the side its pennant points to. | keys, 2+ keys |
 
 ### Judgement
 
