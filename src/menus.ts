@@ -202,6 +202,8 @@ export interface MenuCtx {
   bests: Record<string, number>;
   daily: string[];
   dailyDone: number | null;
+  /** The latest session today, per game. */
+  today: Record<string, RunRecord>;
   streak: number;
   perf: boolean;
   /** Last difficulty played and custom difficulty, per game. */
@@ -296,12 +298,29 @@ export function endlessMenu(c: MenuCtx): Menu {
 }
 
 export function dailyMenu(c: MenuCtx): Menu {
+  const done = c.daily.filter((id) => c.today[id]).length;
+  const row = (id: string, i: number) => {
+    const e = entry(id);
+    const r = c.today[id];
+    const val = r ? (r.value !== undefined && r.unit !== undefined ? fmtPrimary(r.value, { label: r.vlabel ?? '', value: r.value, unit: r.unit, decimals: r.decimals }) : fmtInt(r.score ?? 0)) : '';
+    return `<li class="${r ? 'on' : ''}"><i>${i + 1}</i><b>${e?.name ?? id}</b><span>${SKILLS.find((k) => k.id === e?.skill)?.name ?? ''}</span><em>${r ? val : '\u2013'}</em></li>`;
+  };
   return {
     title: 'DAILY',
-    sub: 'The same set for everyone today',
-    items: [{ label: c.dailyDone !== null ? 'Play it again' : 'Play the set', desc: `${c.daily.length} games back to back`, meta: c.dailyDone !== null ? `today ${fmtInt(c.dailyDone)}` : '', act: 'daily' }],
+    sub: `The same set for everyone today${DOT}${done ? `${done} of ${c.daily.length} played today` : `about ${c.daily.length} minutes`}`,
+    items: [
+      {
+        label: c.dailyDone !== null ? 'Play it again' : 'Play the set',
+        desc: `${c.daily.length} drills back to back, a ready card before each`,
+        meta: c.dailyDone !== null ? `today ${fmtInt(c.dailyDone)}` : '',
+        act: 'daily',
+        code: 'Space',
+        keyName: 'SPACE',
+        hero: true,
+      },
+    ],
     enter: { label: 'Play', act: 'daily' },
-    after: `<ol class="dlist">${c.daily.map((id) => `<li>${entry(id)?.name ?? id}<span>${SKILLS.find((k) => k.id === entry(id)?.skill)?.name ?? ''}</span></li>`).join('')}</ol>`,
+    after: `<ol class="dlist">${c.daily.map(row).join('')}</ol>`,
   };
 }
 
@@ -439,7 +458,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
     usesKeys
       ? `<div class="counts small" aria-label="How many keys">${MODES.map(
           (m) => `<button data-act="keycount" data-arg="${id}:${m.id}" aria-pressed="${m.id === keys}"${m.id < min ? ' disabled' : ''}>${m.id}</button>`,
-        ).join('')}<span class="lbl">keys${DOT}press 1 to 6</span></div>`
+        ).join('')}<span class="lbl">keys<span class="kbonly">${DOT}press 1 to 6</span></span></div>`
       : ''
   }`;
   return {

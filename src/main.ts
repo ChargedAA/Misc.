@@ -322,8 +322,13 @@ function menuCtx(): MenuCtx {
   }
   const now = Date.now();
   let dailyDone: number | null = null;
-  for (const r of history) if (r.kind === 'mini' && r.game === 'daily' && sameDay(r.at, now)) dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
-  return { settings, history, bests, daily: dailySet(), dailyDone, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k) };
+  const today: Record<string, RunRecord> = {};
+  for (const r of history) {
+    if (r.kind !== 'mini' || !sameDay(r.at, now)) continue;
+    if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
+    else if (r.game) today[r.game] = r;
+  }
+  return { settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k) };
 }
 
 function buildMenu(n: NavEntry): Menu {
