@@ -289,13 +289,30 @@ td:first-child {
 .foot {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 28px;
+  gap: 10px 12px;
   margin-top: 34px;
   font-size: 13px;
 }
 
 .foot button {
-  padding: 10px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px 9px 10px;
+  border: 1px solid var(--dim);
+  border-radius: 4px;
+}
+
+.foot button:hover {
+  border-color: var(--mid);
+}
+
+.foot button.main {
+  border-color: var(--line);
+}
+
+.foot button .kb {
+  min-width: 22px;
 }
 
 .foot .k {
@@ -964,4 +981,97 @@ tr.dim td {
 
 .ready .mblurb {
   margin-top: 20px;
+}
+
+/* Results: the drill, one big number, how it compares, then the detail. */
+.result {
+  max-width: 600px;
+}
+
+.result h1 {
+  margin: 0 0 22px;
+}
+
+.hero-num {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-num .n {
+  font-size: 72px;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.hero-num .u {
+  font-size: 20px;
+  color: var(--mid);
+}
+
+.hero-label {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--line);
+}
+
+.hero-label span {
+  margin-left: 12px;
+  color: var(--mid);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.result .cmp {
+  display: inline-block;
+  margin: 18px 0 20px;
+  padding: 7px 12px;
+  border: 1px solid var(--dim);
+  border-radius: 4px;
+  color: var(--line);
+  font-size: 13px;
+}
+
+.result .cmp.up {
+  border-color: var(--mid);
+}
+
+.result .cmp.best {
+  border-color: var(--line);
+}
+
+.series {
+  margin: 4px 0 18px;
+}
+
+.series figcaption {
+  display: flex;
+  justify-content: space-between;
+  color: var(--line);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.series figcaption span {
+  color: var(--mid);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.series svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  font-family: inherit;
+}
+
+@media (max-width: 760px) {
+  .hero-num .n {
+    font-size: 56px;
+  }
 }

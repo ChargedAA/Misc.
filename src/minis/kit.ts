@@ -35,12 +35,14 @@ export interface MiniResult {
   /** Higher is better; used for "best". */
   score: number;
   /** The one number tracked across sessions. */
-  primary: { label: string; value: number; unit: string; lower?: boolean; decimals?: number };
+  primary: { label: string; value: number; unit: string; lower?: boolean; decimals?: number; zeroOk?: boolean };
   lines: MiniLine[];
   /** Reaction times (ms) for a histogram, when the game measures them. */
   rts?: number[];
   /** Short sessions are not saved. */
   saved: boolean;
+  /** A few numbers worth seeing side by side (each sprint, each choice count), drawn as bars. */
+  series?: { label: string; names: string[]; values: number[]; unit: string; lower?: boolean; decimals?: number };
 }
 
 export interface MiniEnv {

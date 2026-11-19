@@ -695,17 +695,18 @@ function finishMini(): void {
   r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
   const pointerOnly = !usesKeyCount(miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
-  const prev = bestFor(miniDef.id, activeKeys);
-  const isBest = r.saved && r.score > 0 && (prev === null || r.score > (prev.score ?? 0));
   // Compare the tracked number with the last session and the best one (same key count).
   const lvl = miniDef.levels ? currentLevel : undefined;
   const earlier = history.filter((h) => h.kind === 'mini' && h.game === miniDef!.id && (pointerOnly || h.mode === activeKeys) && h.level === lvl && h.value !== undefined);
   const vals = earlier.map((h) => h.value!);
   const cmp = {
     last: vals.length ? vals[vals.length - 1]! : null,
-    best: vals.length ? (r.primary.lower ? Math.min(...vals.filter((x) => x > 0)) : Math.max(...vals)) : null,
+    best: vals.length ? (r.primary.lower ? Math.min(...vals.filter((x) => r.primary.zeroOk || x > 0)) : Math.max(...vals)) : null,
   };
   if (cmp.best !== null && !Number.isFinite(cmp.best)) cmp.best = null;
+  // A personal best is judged on the headline number, the one the results lead with, not
+  // on the score, so the two can never disagree. The first session is a baseline, not a best.
+  const isBest = r.saved && cmp.best !== null && Number.isFinite(r.primary.value) && (r.primary.lower ? (r.primary.zeroOk || r.primary.value > 0) && r.primary.value < cmp.best : r.primary.value > cmp.best);
   if (isBest) sfx.play(SND_BURST_OK);
   if (r.saved) {
     history = addRecord({
@@ -735,7 +736,7 @@ function finishMini(): void {
     const next = dailyQueue[dailyIdx + 1];
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
-  ui.show(miniResultsHtml(miniDef.name, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
+  ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp));
 }
 
 function showKeys(): void {

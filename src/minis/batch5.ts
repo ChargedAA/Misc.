@@ -139,7 +139,7 @@ class Side implements Mini {
     const done = this.i || 1;
     return {
       score: this.score,
-      primary: { label: 'side pull', value: cost, unit: 'ms', lower: true },
+      primary: { label: 'side pull', value: cost, unit: 'ms', lower: true, zeroOk: true },
       lines: [
         { label: 'appears on the answer side', value: ms(median(this.same)) },
         { label: 'appears on the other side', value: ms(median(this.cross)) },

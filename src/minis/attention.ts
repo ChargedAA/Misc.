@@ -490,7 +490,7 @@ class Switch implements Mini {
     const done = this.i || 1;
     return {
       score: this.score,
-      primary: { label: 'switch cost', value: cost, unit: 'ms', lower: true },
+      primary: { label: 'switch cost', value: cost, unit: 'ms', lower: true, zeroOk: true },
       lines: [
         { label: 'same rule as before', value: ms(median(this.rep)) },
         { label: 'rule switched', value: ms(median(this.sw)) },

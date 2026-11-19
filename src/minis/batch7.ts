@@ -141,10 +141,10 @@ class Sets implements Mini {
       score: peak > 0 ? Math.round(mean(this.rates) * 40 + (1 - drop) * 100) : 0,
       primary: { label: 'average over the sets', value: mean(this.rates), unit: '/s', decimals: 1 },
       lines: [
-        { label: 'sets', value: this.rates.map((r) => r.toFixed(1)).join('  ') || '–' },
         { label: 'best set', value: `${peak.toFixed(1)} taps/s` },
         { label: 'drop from best to last', value: pct(Math.max(0, drop)) },
       ],
+      series: { label: 'each sprint', names: this.rates.map((_, i) => `set ${i + 1}`), values: this.rates, unit: 'taps a second', decimals: 1 },
       saved: this.rates.length >= 2 && peak > 0,
     };
   }

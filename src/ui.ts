@@ -68,15 +68,38 @@ export function kbd(code: string): string {
   return `<kbd>${esc(keyLabel(code))}</kbd>`;
 }
 
-/** A row of buttons: label, action, key shown, and the key codes that press it. */
+/** A row of buttons: label, action, key shown, and the key codes that press it. The first is the main one. */
 function foot(items: [label: string, act: string, key: string, codes?: string][]): string {
   return (
     '<div class="foot">' +
     items
-      .map(([label, act, key, codes]) => `<button data-act="${act}"${codes ? ` data-key="${codes}"` : ''}>${label}${key ? `<span class="k">${key}</span>` : ''}</button>`)
+      .map(
+        ([label, act, key, codes], i) =>
+          `<button class="${i === 0 ? 'main' : ''}" data-act="${act}"${codes ? ` data-key="${codes}"` : ''}>${key ? `<span class="kb${key.length > 2 ? ' wide' : ''}">${key.toUpperCase()}</span>` : ''}${label}</button>`,
+      )
       .join('') +
     '</div>'
   );
+}
+
+/** Bars for a handful of values, labelled underneath, with each value on top. */
+function seriesSvg(s: NonNullable<MiniResult['series']>): string {
+  const n = s.values.length;
+  if (!n) return '';
+  const W = 520;
+  const H = 96;
+  const max = Math.max(...s.values.filter((v) => Number.isFinite(v)), 1e-9);
+  const bw = Math.min(26, (W / n) * 0.3);
+  const step = W / n;
+  const fmt = (v: number) => (Number.isFinite(v) && v > 0 ? (s.decimals ? v.toFixed(s.decimals) : String(Math.round(v))) : '\u2013');
+  const bars = s.values
+    .map((v, i) => {
+      const h = Number.isFinite(v) ? Math.max(1, (v / max) * (H - 30)) : 0;
+      const x = i * step + (step - bw) / 2;
+      return `<rect x="${x.toFixed(1)}" y="${(H - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="var(--line)" opacity="0.9"/><text x="${(x + bw / 2).toFixed(1)}" y="${(H - h - 6).toFixed(1)}" text-anchor="middle" fill="var(--line)" font-size="12">${fmt(v)}</text><text x="${(x + bw / 2).toFixed(1)}" y="${H + 16}" text-anchor="middle" fill="var(--mid)" font-size="11">${s.names[i] ?? ''}</text>`;
+    })
+    .join('');
+  return `<figure class="series"><figcaption>${s.label}<span>${s.unit}${s.lower ? `${DOT}lower is better` : ''}</span></figcaption><svg viewBox="0 -4 ${W} ${H + 24}" role="img" aria-label="${s.label}">${bars}</svg></figure>`;
 }
 
 function keySeg(current: number, act: string, withAll = false): string {
@@ -317,25 +340,29 @@ export interface Compare {
 
 /** "12 ms better than last time" style comparison for the tracked number. */
 function compareLine(p: MiniResult['primary'], c: Compare | null): string {
-  if (!c || (c.last === null && c.best === null)) return '<p class="cmp">first session: this sets your baseline</p>';
+  if (!c || (c.last === null && c.best === null)) return '<p class="cmp">First time: this result is your baseline.</p>';
   const fmt = (v: number) => fmtPrimary(Math.abs(v), { ...p, value: Math.abs(v) });
-  const vs = (other: number, label: string) => {
-    const d = p.value - other;
-    if (Math.abs(d) < 1e-9) return `same as ${label}`;
-    const better = p.lower ? d < 0 : d > 0;
-    return `${fmt(d)} ${better ? 'better' : 'worse'} than ${label}`;
-  };
   const parts: string[] = [];
-  if (c.last !== null) parts.push(vs(c.last, 'last time'));
+  let tone = '';
+  if (c.last !== null) {
+    const d = p.value - c.last;
+    if (Math.abs(d) < 1e-9) parts.push('same as last time');
+    else {
+      const better = p.lower ? d < 0 : d > 0;
+      tone = better ? 'up' : 'down';
+      parts.push(`${better ? '\u25b2' : '\u25bc'} ${fmt(d)} ${better ? 'better' : 'worse'} than last time`);
+    }
+  }
   if (c.best !== null) {
     const beat = p.lower ? p.value < c.best : p.value > c.best;
-    parts.push(beat ? `new best (was ${fmtPrimary(c.best, { ...p, value: c.best })})` : `best ${fmtPrimary(c.best, { ...p, value: c.best })}`);
+    if (beat) tone = 'best';
+    parts.push(beat ? `new best, was ${fmtPrimary(c.best, { ...p, value: c.best })}` : `best ${fmtPrimary(c.best, { ...p, value: c.best })}`);
   }
-  return `<p class="cmp">${parts.join(DOT)}</p>`;
+  return `<p class="cmp ${tone}">${parts.join(DOT)}</p>`;
 }
 
 export function miniResultsHtml(
-  name: string,
+  id: string,
   r: MiniResult,
   hist: Histogram | null,
   rtMedian: number,
@@ -344,6 +371,8 @@ export function miniResultsHtml(
   cmp: Compare | null = null,
 ): string {
   const p = r.primary;
+  const e = entry(id);
+  const skill = SKILLS.find((k) => k.id === e?.skill)?.name ?? '';
   const actions: [string, string, string, string][] = daily
     ? daily.nextName
       ? [
@@ -356,17 +385,22 @@ export function miniResultsHtml(
           ['Game stats', 'gamestats', 'x', 'KeyX'],
         ]
     : AGAIN;
-  return `<section class="screen">
-  <div class="big">
-    <div class="stat"><div class="v">${r.saved ? fmtPrimary(p.value, p) : '\u2013'}</div><div class="l">${p.label}${DOT}${p.lower ? 'lower is better' : 'higher is better'}</div></div>
-    <div class="stat"><div class="v">${r.saved ? fmtInt(r.score) : '\u2013'}</div><div class="l">score${best ? `${DOT}best` : ''}</div></div>
-    <div class="stat"><div class="v">${name}</div><div class="l">game</div></div>
-  </div>
-  ${r.saved ? compareLine(p, cmp) : ''}
-  <table>${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
+  // Lower-is-better numbers are never really zero: zero means it was not measured.
+  const measured = Number.isFinite(p.value) && (p.zeroOk || !(p.lower && p.value <= 0));
+  const value = r.saved && measured ? fmtPrimary(p.value, p) : '\u2013';
+  // Split the unit off so the number can be large and the unit small.
+  const m = /^(.*?)(\s?[^\d\s\u2013.,-][^\d]*)?$/.exec(value);
+  const num = m?.[1] && m[2] ? m[1] : value;
+  const unit = m?.[1] && m[2] ? m[2].trim() : '';
+  return `<section class="screen result">
+  <p class="rpos">${skill}${daily ? `${DOT}${daily.label} ${daily.index}${daily.total ? ` of ${daily.total}` : ''}` : ''}</p>
+  <h1>${(e?.name ?? id).toUpperCase()}</h1>
+  <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
+  <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
+  ${r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${r.saved && r.series ? seriesSvg(r.series) : ''}
+  <table>${r.saved ? `<tr><td>score</td><td>${fmtInt(r.score)}${best ? `${DOT}personal best` : ''}</td></tr>` : ''}${r.lines.map((l) => `<tr><td>${l.label}</td><td>${l.value}</td></tr>`).join('')}</table>
   ${hist && hist.counts.length ? `<h2>Reaction times <span>median ${Math.round(rtMedian)} ms</span></h2>${histogramSvg(hist, rtMedian)}` : ''}
-  ${r.saved ? '' : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
-  ${daily ? `<p class="muted">${daily.label}: game ${daily.index}${daily.total ? ` of ${daily.total}` : ''}</p>` : ''}
   ${foot(actions)}
 </section>`;
 }

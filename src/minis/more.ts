@@ -186,11 +186,14 @@ class Choice implements Mini {
     lines.push({ label: 'extra per doubling of choices', value: pts.length >= 2 ? ms(slope) : '–' });
     lines.push({ label: 'wrong / too early', value: `${this.errors} / ${this.early}` });
     const all = [...this.rts.values()].flat();
-    const top = median(this.rts.get(this.sizes[this.sizes.length - 1]!) ?? []);
+    // The headline: the most choices with enough presses to give a real median.
+    const topSize = [...this.sizes].reverse().find((n) => (this.rts.get(n) ?? []).length >= 3) ?? this.sizes[0]!;
+    const top = median(this.rts.get(topSize) ?? []);
     return {
       score: top ? Math.round(100000 / top) : 0,
-      primary: { label: `${this.sizes[this.sizes.length - 1]}-choice median`, value: top, unit: 'ms', lower: true },
+      primary: { label: `${topSize}-choice median`, value: top, unit: 'ms', lower: true },
       lines,
+      series: { label: 'median by number of choices', names: this.sizes.map((n) => `${n} choice${n > 1 ? 's' : ''}`), values: this.sizes.map((n) => median(this.rts.get(n) ?? [])), unit: 'ms', lower: true },
       rts: all,
       saved: all.length >= 8,
     };
@@ -590,7 +593,7 @@ class Shape implements Mini {
     const done = this.i || 1;
     return {
       score: this.score,
-      primary: { label: 'interference', value: cost, unit: 'ms', lower: true },
+      primary: { label: 'interference', value: cost, unit: 'ms', lower: true, zeroOk: true },
       lines: [
         { label: 'word agrees', value: ms(median(this.same)) },
         { label: 'word disagrees', value: ms(median(this.clash)) },
