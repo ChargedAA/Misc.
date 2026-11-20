@@ -6,7 +6,7 @@
 //     The tempo climbs while you stay even.
 //   Trill (speed)  - alternate in order, flat out, for ten seconds. Fast and even both count.
 
-import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX } from '../config.ts';
+import { COL_BG, ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX } from '../config.ts';
 import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
@@ -323,7 +323,10 @@ class Endless implements Mini {
           ? `blocks pop up ahead: sidestep with ${handLabel(this.env, -1)} / ${handLabel(this.env, 1)}`
           : this.kind === 'jump'
             ? 'bars pop up across the track: press to jump'
-            : 'blocks: sidestep with your outer keys. bars: jump with any other key';
+            : 'blocks: sidestep with your outer keys. bars: jump (other key, or both outer keys)';
+      // A backing band so the lane lines don't run through the words.
+      ctx.fillStyle = COL_BG;
+      ctx.fillRect(a.left, a.top + 8 * a.u, a.right - a.left, 34 * a.u);
       message(v, { ...a, cy: a.top + 30 * a.u }, how, '', COL_MID);
     }
     if (this.over) message(v, { ...a, cy: a.cy - 40 * a.u }, `${this.cleared} cleared`, this.rts.length ? `median ${Math.round(med)} ms` : '');
