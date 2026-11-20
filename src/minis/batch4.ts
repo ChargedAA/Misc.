@@ -641,7 +641,8 @@ class Ladder implements Mini {
     v.text(`${rate} /s`, a.cx + w / 2 + 12 * dpr, yOf(Math.min(rate, maxR)) + 4 * dpr, v.fontTiny, 'left');
     if (this.below > 0 && !this.over) progress(v, a.cx, ty - 16 * dpr, w / 2, 1 - this.below / 900, COL_ACCENT);
     if (!this.t0) message(v, { ...a, cy: ty - 40 * a.u }, 'tap to start: stay at or above the white line', 'it steps up every second', COL_MID);
-    if (this.over) message(v, a, `${this.best.toFixed(2)} per second`, 'highest rung held');
+    // Above the ladder, not across its rungs.
+    if (this.over) message(v, { ...a, cy: a.top + 50 * a.u }, `${this.best.toFixed(2)} per second`, 'highest rung held');
     footer(v, touch, this.held);
     return false;
   }

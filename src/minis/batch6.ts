@@ -260,8 +260,11 @@ class Where implements Mini {
     if (this.state >= 2) {
       const it = this.items[this.probe]!;
       ctx.fillStyle = COL_MID;
-      v.text('where was', a.cx - 16 * dpr, g.y0 - 14 * dpr, v.fontTiny, 'right');
-      draw(it, a.cx + 4 * dpr, g.y0 - 18 * dpr);
+      v.text('where was', a.cx - 6 * dpr, g.y0 - 14 * dpr, v.fontTiny, 'right');
+      // A small copy of the shape after the words, clear of them.
+      const r = Math.min(s * 0.03, 9 * dpr);
+      ctx.fillStyle = it.grey ? GREY : COL_LINE;
+      v.shape(it.shape, a.cx + 4 * dpr + r, g.y0 - 19 * dpr, r, true);
       if (this.state === 3) {
         draw(it, g.x0 + it.x * s, g.y0 + it.y * s);
         ctx.strokeStyle = COL_ACCENT;
