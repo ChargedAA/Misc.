@@ -1,9 +1,10 @@
 // The online half of the game: accounts (Sign in with Google), posting scores, and the
 // leaderboards. Menus render empty containers; `fill` loads each one from the API.
 
+import { handle, type Store } from './api-core.ts';
 import { GOOGLE_CLIENT_ID } from './google.ts';
 import { entry } from './minis/index.ts';
-import { SKILLS } from './minis/kit.ts';
+import { SKILLS, picksKeys } from './minis/kit.ts';
 import { esc, fmtPrimary, shortDate } from './ui.ts';
 
 export const PAGE = 50;
@@ -43,7 +44,85 @@ interface Best {
 }
 
 /** Call the API. Throws only when there is no server at all (a local file, offline). */
+/**
+ * The offline test build (built with VITE_LOCAL_API=1) runs the API inside the page, kept in this
+ * browser's storage, with sample players, so leaderboards and accounts can be tried from a file.
+ * The real site never includes it: the flag is unset there and this code is dropped.
+ */
+export const LOCAL = import.meta.env.VITE_LOCAL_API === '1';
+
+const LOCAL_PREFIX = 'tension.testapi.';
+const localStore: Store = {
+  get: async (k) => {
+    try {
+      const v = localStorage.getItem(LOCAL_PREFIX + k);
+      return v === null ? null : JSON.parse(v);
+    } catch {
+      return null;
+    }
+  },
+  setJSON: async (k, v) => {
+    try {
+      localStorage.setItem(LOCAL_PREFIX + k, JSON.stringify(v));
+    } catch {
+      // storage full or blocked: the test leaderboard just won't keep it
+    }
+  },
+  delete: async (k) => {
+    try {
+      localStorage.removeItem(LOCAL_PREFIX + k);
+    } catch {
+      // ignore
+    }
+  },
+};
+const localVerify = async (c: string) => (c.startsWith('test:') && c.length > 5 ? { sub: c.slice(5), given: c.slice(5) } : null);
+
+async function localCall(path: string, method: string, body: unknown, token?: string): Promise<Response> {
+  return handle(new Request(`https://test.local${path}`, { method, body: body === undefined ? undefined : JSON.stringify(body), headers: token ? { authorization: `Bearer ${token}` } : {} }), { store: localStore, verify: localVerify });
+}
+
+let seeding: Promise<void> | null = null;
+
+/** Fill the test leaderboard with sample players, once per browser. */
+function seedLocal(): Promise<void> {
+  seeding ??= (async () => {
+    if (await localStore.get('meta/seeded', { type: 'json' })) return;
+    const names = ['Kestrel', 'Juno', 'Moss', 'Pike', 'Wren', 'Orla', 'Basil', 'Indigo', 'Tamsin', 'Rook', 'Sable', 'Fennel', 'Quill', 'Hazel', 'Otto', 'Lark', 'Ember', 'Cass', 'Nell', 'Ash', 'Vesper', 'Dov', 'Marlo', 'Iris', 'Bram'];
+    // A few games across skills, with headlines in each game's own units.
+    const games: { id: string; unit: string; lower: boolean; base: number; step: number; rt?: boolean }[] = [
+      { id: 'snap', unit: 'ms', lower: true, base: 228, step: 4.2, rt: true },
+      { id: 'sprint', unit: '', lower: false, base: 118, step: -1.9 },
+      { id: 'stream', unit: 'ms', lower: true, base: 96, step: 5.5 },
+      { id: 'octave', unit: '%', lower: false, base: 100, step: -2.2 },
+      { id: 'intune', unit: 'cents', lower: true, base: 6, step: 1.4 },
+      { id: 'chord', unit: '%', lower: false, base: 96, step: -2.6 },
+      { id: 'sum', unit: '', lower: false, base: 34, step: -0.9 },
+    ];
+    for (let i = 0; i < names.length; i++) {
+      const a = (await (await localCall('/api/auth', 'POST', { credential: `test:sample${i}` })).json()) as { token: string };
+      await localCall('/api/name', 'POST', { name: names[i] }, a.token);
+      for (const g of games) {
+        if ((i * 7 + g.id.length) % 5 === 0) continue; // not everyone has played everything
+        const e = entry(g.id);
+        if (!e) continue;
+        const v = Math.max(0, Math.round((g.base + g.step * i + ((i * 37) % 11) - 5) * 10) / 10);
+        const value = g.unit === '%' ? Math.min(100, Math.round(v)) : v;
+        const rts = g.rt ? Array.from({ length: 12 }, (_, k) => Math.round(value + ((k * 53) % 70) - 20)) : [];
+        await localCall('/api/scores', 'POST', { game: g.id, value, unit: g.unit, lower: g.lower, len: 1, keys: picksKeys(g.id, e.input) ? 2 : 0, inputs: 40, durationMs: 40000, rtHeadline: !!g.rt, rts, flags: [] }, a.token);
+      }
+    }
+    await localStore.setJSON('meta/seeded', true);
+  })();
+  return seeding;
+}
+
 export async function api<T = Record<string, unknown>>(path: string, opts: { body?: unknown; token?: string } = {}): Promise<{ status: number; data: T }> {
+  if (LOCAL) {
+    await seedLocal();
+    const res = await localCall(path, opts.body === undefined ? 'GET' : 'POST', opts.body, opts.token);
+    return { status: res.status, data: (await res.json()) as T };
+  }
   const res = await fetch(path, {
     method: opts.body === undefined ? 'GET' : 'POST',
     headers: { ...(opts.body === undefined ? {} : { 'content-type': 'application/json' }), ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}) },
@@ -55,7 +134,8 @@ export async function api<T = Record<string, unknown>>(path: string, opts: { bod
 }
 
 /** Whether Google sign-in can be offered here; the dev server offers a stand-in instead. */
-export function signInMode(dev: boolean): 'google' | 'dev' | 'none' {
+export function signInMode(dev: boolean): 'google' | 'dev' | 'local' | 'none' {
+  if (LOCAL) return 'local';
   if (dev) return 'dev';
   if (location.protocol === 'file:') return 'none';
   return GOOGLE_CLIENT_ID ? 'google' : 'none';
@@ -162,7 +242,7 @@ async function fillOne(el: HTMLElement, me: string): Promise<void> {
       // Grouped by skill, one row per game (its most-played board), the others a click away.
       const byGame = new Map<string, BoardSummary[]>();
       for (const b of data.boards) byGame.set(b.game, [...(byGame.get(b.game) ?? []), b]);
-      let html = `<p class="muted">${byGame.size} game${byGame.size === 1 ? '' : 's'} with scores${DOT}${data.boards.reduce((a, b) => a + b.count, 0)} entries in all</p>`;
+      let html = `${LOCAL ? '<p class="cmp">Test copy: these are sample players, kept only in this browser. Nothing is sent anywhere.</p>' : ''}<p class="muted">${byGame.size} game${byGame.size === 1 ? '' : 's'} with scores${DOT}${data.boards.reduce((a, b) => a + b.count, 0)} entries in all</p>`;
       for (const sk of SKILLS) {
         const games = [...byGame.entries()].filter(([g]) => entry(g)?.skill === sk.id).sort((a, b) => gameName(a[0]).localeCompare(gameName(b[0])));
         if (!games.length) continue;

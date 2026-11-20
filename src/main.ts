@@ -56,7 +56,7 @@ import { SKILLS } from './minis/kit.ts';
 import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
-import { api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
+import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, boardsMenu, boardMenu, playerMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
@@ -1309,7 +1309,7 @@ function onAction(action: string, arg: string): void {
     }
     case 'devsignin': {
       const id = (uiRoot.querySelector<HTMLInputElement>('#devname')?.value ?? '').trim() || 'tester';
-      void onCredential(`dev:${id}`);
+      void onCredential(`${LOCAL ? 'test' : 'dev'}:${id}`);
       break;
     }
     case 'signout':

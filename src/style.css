@@ -1511,3 +1511,21 @@ table.boards th:nth-child(3),
 table.boards td:nth-child(3) {
   text-align: left;
 }
+
+/* The boards list: one table per skill, columns lined up across them. */
+table.boards {
+  table-layout: fixed;
+  width: 100%;
+}
+
+table.boards th:nth-child(1) {
+  width: 32%;
+}
+
+table.boards th:nth-child(2) {
+  width: 22%;
+}
+
+table.boards th:nth-child(3) {
+  width: 28%;
+}

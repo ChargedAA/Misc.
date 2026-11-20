@@ -205,7 +205,7 @@ export interface MenuCtx {
   /** Best record for a game at a key count. */
   bestFor: (id: string, keys: number) => RunRecord | null;
   /** Leaderboard account: how sign-in works here, and who is signed in. */
-  online: { mode: 'google' | 'dev' | 'none'; session?: string; name: string | null; suggested?: string; note?: string };
+  online: { mode: 'google' | 'dev' | 'local' | 'none'; session?: string; name: string | null; suggested?: string; note?: string };
 }
 
 /** "best 222 ms": a game's best on its headline number, the one results lead with. Score for the built-in games. */
@@ -609,8 +609,8 @@ function accountHtml(c: MenuCtx): string {
     body =
       o.mode === 'google'
         ? '<div id="gsi" class="gsi"></div>'
-        : o.mode === 'dev'
-          ? '<div class="lbform"><input id="devname" maxlength="16" autocomplete="off" placeholder="any test account id"><button data-act="devsignin">Sign in (dev server)</button></div>'
+        : o.mode === 'dev' || o.mode === 'local'
+          ? `<div class="lbform"><input id="devname" maxlength="16" autocomplete="off" placeholder="any test account id"><button data-act="devsignin">Sign in (${o.mode === 'local' ? 'test copy' : 'dev server'})</button></div>${o.mode === 'local' ? '<p class="cmp">Test copy: this stands in for Google sign-in, and the leaderboards are pretend ones kept only in this browser, with sample players. On the live site this is a Sign in with Google button.</p>' : ''}`
           : `<p class="muted">${location.protocol === 'file:' ? 'Signing in needs the live site; this is a local copy.' : 'Sign-in is not set up on this site yet.'}</p>`;
     body += '<p class="muted">Sign in with Google to post to the leaderboards. Your Google name and email are never shown: you pick a display name. Playing never needs an account.</p>';
   } else if (!o.name) {
