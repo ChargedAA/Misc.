@@ -194,6 +194,12 @@ export function scaled(base: number): number {
   return Math.max(2, Math.round(base * lengthScale));
 }
 
+/**
+ * An adaptive staircase. After `down` right answers in a row it steps harder, after a mistake it
+ * steps easier, so it settles where the player is right about 71% of the time (2 down, 1 up).
+ * Until the first mistake every right answer steps harder at once (the usual fast start), so a
+ * strong player reaches their level quickly instead of spending the session walking down.
+ */
 export class Stair {
   level: number;
   readonly step: number;
@@ -201,6 +207,7 @@ export class Stair {
   readonly max: number;
   readonly down: number;
   private run = 0;
+  private fast = true;
   constructor(start: number, step: number, min: number, max: number, down = 2) {
     this.level = start;
     this.step = step;
@@ -211,11 +218,12 @@ export class Stair {
   /** `harder` is the direction that makes the task harder (+1 or -1). */
   update(correct: boolean, harder = 1): void {
     if (correct) {
-      if (++this.run >= this.down) {
+      if (this.fast || ++this.run >= this.down) {
         this.run = 0;
         this.level = clamp(this.level + this.step * harder, this.min, this.max);
       }
     } else {
+      this.fast = false;
       this.run = 0;
       this.level = clamp(this.level - this.step * harder, this.min, this.max);
     }

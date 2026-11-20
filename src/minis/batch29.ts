@@ -218,10 +218,15 @@ const REF_LEVELS = [
 
 // --- In tune ------------------------------------------------------------------------
 
+/** Mistunings, in cents, each about 20% smaller than the last: from half a semitone to 2 cents. */
+const MISTUNE = [50, 40, 32, 25, 20, 16, 13, 10, 8, 6, 5, 4, 3, 2];
+
 class InTune extends EarQuiz {
   protected readonly total = scaled(24);
-  // Starts a third of a semitone off; two right in a row brings it 3 cents closer.
-  private readonly cents = new Stair(33, 3, 3, 50, 2);
+  private readonly st = new Stair(1, 1, 0, MISTUNE.length - 1);
+  private get cents(): number {
+    return MISTUNE[this.st.level]!;
+  }
   private levels: number[] = [];
   private n = 60;
   private off = 0;
@@ -229,7 +234,7 @@ class InTune extends EarQuiz {
   protected ask(): number {
     this.n = rint(52, 76);
     // Half the notes are exactly in tune (A4 = 440 Hz, equal temperament).
-    this.off = Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1) * this.cents.level;
+    this.off = Math.random() < 0.5 ? 0 : (Math.random() < 0.5 ? -1 : 1) * this.cents;
     this.options = ['in tune', 'out of tune'];
     this.answer = this.off === 0 ? 0 : 1;
     return this.replay();
@@ -253,8 +258,8 @@ class InTune extends EarQuiz {
   }
 
   protected override onAnswer(ok: boolean): void {
-    if (this.off !== 0) this.levels.push(this.cents.level);
-    this.cents.update(ok, -1);
+    if (this.off !== 0) this.levels.push(this.cents);
+    this.st.update(ok);
   }
 
   override result(): MiniResult {

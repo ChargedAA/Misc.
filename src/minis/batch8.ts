@@ -61,7 +61,8 @@ abstract class Threshold implements Mini {
 
   constructor(table: readonly number[], trials: number, showMs: number) {
     this.table = table;
-    this.trials = trials;
+    // Trials follow the length setting (short, standard, long), like every other game.
+    this.trials = scaled(trials);
     this.showMs = showMs;
     this.st = new Stair(0, 1, 0, table.length - 1);
   }
