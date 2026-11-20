@@ -1,0 +1,396 @@
+// Shared pieces for the mini-games: the game interface, an adaptive staircase,
+// arena layout, and a few drawing helpers that keep every game looking alike.
+
+import { COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX, type ModeDef } from '../config.ts';
+import { ICON_PAUSE, type View } from '../render.ts';
+import type { TouchLayout } from '../touch.ts';
+
+export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity' | 'ear';
+
+export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
+  { id: 'reaction', name: 'Reaction', blurb: 'See it, press it.' },
+  { id: 'speed', name: 'Speed', blurb: 'Tap rate you can hold and control.' },
+  { id: 'timing', name: 'Timing', blurb: 'Press at exactly the right moment.' },
+  { id: 'memory', name: 'Memory', blurb: 'Hold more in your head.' },
+  { id: 'attention', name: 'Attention', blurb: 'Pick the signal out of the noise.' },
+  { id: 'coordination', name: 'Coordination', blurb: 'Several things at once.' },
+  { id: 'judgement', name: 'Judgement', blurb: 'Size things up at a glance.' },
+  { id: 'reasoning', name: 'Reasoning', blurb: 'Think fast and stay right.' },
+  { id: 'dexterity', name: 'Dexterity', blurb: 'Fingers that find and press any key.' },
+  { id: 'ear', name: 'Ear', blurb: 'Hear pitch: higher, in tune, which note, which chord.' },
+];
+
+/** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either; 'type' needs a full keyboard. */
+export type InputKind = 'keys' | 'pointer' | 'both' | 'type';
+
+/** Whether a game is played on the lift keys, so its key count matters. */
+export function usesKeyCount(input: InputKind): boolean {
+  return input === 'keys' || input === 'both';
+}
+
+/**
+ * Games where the number of keys changes the game: more strings to choose from, more
+ * keys to roll through or tap with, further dashes. Every other key game only asks
+ * which hand, so it is played with one key per hand and offers no choice.
+ */
+export const MULTI_KEY: ReadonlySet<string> = new Set([
+  'climb', 'reflex', 'burst',
+  'choice', 'sequence', 'code', 'juggle', 'split', 'strings',
+  'sprint', 'sets', 'tug', 'ladder', 'pulse', 'steady', 'exact',
+  'roll', 'trill', 'even',
+  'lanes', 'hurdles', 'rush',
+]);
+
+/** True when a game offers a choice of how many keys. */
+export function picksKeys(id: string, input: InputKind): boolean {
+  return usesKeyCount(input) && MULTI_KEY.has(id);
+}
+
+/** The key count a game is played with: the saved choice where there is one, else one key per hand. */
+export function keysFor(id: string, input: InputKind, saved: number | undefined, minKeys = 1): number {
+  // Never a count the game cannot be played with (Rush needs three).
+  return picksKeys(id, input) ? Math.max(saved ?? 2, minKeys) : 2;
+}
+
+export interface MiniLine {
+  label: string;
+  value: string;
+}
+
+export interface MiniResult {
+  /** Higher is better; used for "best". */
+  score: number;
+  /** The one number tracked across sessions. */
+  primary: { label: string; value: number; unit: string; lower?: boolean; decimals?: number; zeroOk?: boolean };
+  lines: MiniLine[];
+  /** Reaction times (ms) for a histogram, when the game measures them. */
+  rts?: number[];
+  /** Short sessions are not saved. */
+  saved: boolean;
+  /** A few numbers worth seeing side by side (each sprint, each choice count), drawn as bars. */
+  series?: { label: string; names: string[]; values: number[]; unit: string; lower?: boolean; decimals?: number };
+}
+
+export interface MiniEnv {
+  mode: ModeDef;
+  /** Label of each slot (0..5 lift keys, 6 reflex). */
+  labels: readonly string[];
+  sound(id: number): void;
+  /** True when sound is off (games that need audio fall back). */
+  muted: boolean;
+  /** For games with difficulty levels: the chosen one (0 = progressing). */
+  level?: number;
+  /**
+   * Audio output delay (ms): a sound started now is heard this much later. Rhythm games
+   * judge a press against when the click was heard, not when it was started.
+   */
+  latency?: number;
+  /** Play a sound `delayMs` from now on the audio clock, for rhythms that must be exact. */
+  soundAt?(id: number, delayMs: number): void;
+  /** A plucked note at any pitch, optionally scheduled ahead on the audio clock (ear training). */
+  note?(hz: number, ms: number, delayMs?: number): void;
+  /** Play a pure tone (listening drills). */
+  tone?(hz: number, ms: number, pan?: number): void;
+}
+
+export interface Mini {
+  start(env: MiniEnv, now: number): void;
+  /** A key or pad went down. `ts` is the event's timeStamp. */
+  press(slot: number, ts: number): void;
+  /** A key or pad came up. `ts` is the event's timeStamp. */
+  release?(slot: number, ts: number): void;
+  /** Any other key (games that type, like Digits). Return true if it was used. */
+  typeKey?(code: string, ts: number): boolean;
+  /** A key let go, for typing games that need held keys. */
+  typeKeyUp?(code: string, ts: number): void;
+  /** A click or tap at canvas device pixels (pointer games). */
+  pointer?(x: number, y: number, ts: number): void;
+  /** The pointer moved (mouse, or a finger dragging), in canvas pixels. */
+  pointerMove?(x: number, y: number, ts: number): void;
+  /** Advance and draw. Returns true once the session is over. */
+  frame(now: number, v: View, touch: TouchLayout): boolean;
+  result(): MiniResult;
+}
+
+export interface MiniDef {
+  id: string;
+  name: string;
+  skill: Skill;
+  /** One line for the title screen. */
+  blurb: string;
+  /** How to play, a sentence or two for the pop-out. */
+  how: string;
+  input: InputKind;
+  /** Fewest keys the game makes sense with. */
+  minKeys?: number;
+  /** Fixed difficulty levels offered before the key count; value 0 means progressing. Space then offers a custom one. */
+  levels?: { label: string; desc: string; value: number }[];
+  /** Unit and range of a custom level. */
+  custom?: { unit: string; min: number; max: number; def: number };
+  make(): Mini;
+}
+
+// --- Keys ---------------------------------------------------------------------
+
+/** -1 for a left-hand key, +1 for right, 0 for the reflex key. */
+export function sideOf(slot: number): number {
+  return slot === SLOT_REFLEX ? 0 : slot >= 3 ? 1 : -1;
+}
+
+/** Slots in play for a mode, left to right on the keyboard (reflex in the middle). */
+export function slotsOf(m: ModeDef): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < m.left; i++) out.push(i);
+  if (m.reflex) out.push(SLOT_REFLEX);
+  for (let i = 0; i < m.right; i++) out.push(3 + i);
+  return out;
+}
+
+/** "Z / X" for the left hand, "N / M" for the right. */
+export function handLabel(env: MiniEnv, side: number): string {
+  const out: string[] = [];
+  const n = side < 0 ? env.mode.left : env.mode.right;
+  for (let i = 0; i < n; i++) out.push(env.labels[(side < 0 ? 0 : 3) + i] ?? '');
+  return out.join(' / ');
+}
+
+// --- Adaptive difficulty -----------------------------------------------------
+
+/**
+ * Transformed up-down staircase: `down` correct answers in a row make it
+ * harder, one miss makes it easier. 2-down 1-up settles near 71% correct,
+ * the usual target for staying challenged without giving up.
+ */
+// --- Game clock ----------------------------------------------------------------
+// Games see time with paused stretches taken out, so a pause never shows up in a
+// reaction time or makes a timer jump.
+let shift = 0;
+/** Now on the game clock. Use this instead of performance.now() inside a game. */
+export function gameNow(): number {
+  return performance.now() - shift;
+}
+export function clockShift(): number {
+  return shift;
+}
+export function setClockShift(v: number): void {
+  shift = v;
+}
+
+// --- Session length ------------------------------------------------------------
+// Each game's round count (or, for timed drills, its duration) passes through scaled(),
+// which applies the length chosen on the drill page: short, standard or long.
+let lengthScale = 1;
+export function setLengthScale(v: number): void {
+  lengthScale = v;
+}
+export function lengthScaleNow(): number {
+  return lengthScale;
+}
+/** Scale used for endless play, and for timed play of round-based games (the clock ends it). */
+export const OPEN_SCALE = 200;
+
+/** A game's standard round count or duration, scaled to the chosen length. */
+export function scaled(base: number): number {
+  return Math.max(2, Math.round(base * lengthScale));
+}
+
+/**
+ * An adaptive staircase. After `down` right answers in a row it steps harder, after a mistake it
+ * steps easier, so it settles where the player is right about 71% of the time (2 down, 1 up).
+ * Until the first mistake every right answer steps harder at once (the usual fast start), so a
+ * strong player reaches their level quickly instead of spending the session walking down.
+ */
+export class Stair {
+  level: number;
+  readonly step: number;
+  readonly min: number;
+  readonly max: number;
+  readonly down: number;
+  private run = 0;
+  private fast = true;
+  constructor(start: number, step: number, min: number, max: number, down = 2) {
+    this.level = start;
+    this.step = step;
+    this.min = min;
+    this.max = max;
+    this.down = down;
+  }
+  /** `harder` is the direction that makes the task harder (+1 or -1). */
+  update(correct: boolean, harder = 1): void {
+    if (correct) {
+      if (this.fast || ++this.run >= this.down) {
+        this.run = 0;
+        this.level = clamp(this.level + this.step * harder, this.min, this.max);
+      }
+    } else {
+      this.fast = false;
+      this.run = 0;
+      this.level = clamp(this.level - this.step * harder, this.min, this.max);
+    }
+  }
+}
+
+export function clamp(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
+export function median(a: readonly number[]): number {
+  if (a.length === 0) return 0;
+  const s = [...a].sort((x, y) => x - y);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
+}
+
+export function mean(a: readonly number[]): number {
+  return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+}
+
+export function shuffle<T>(a: T[]): T[] {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i]!;
+    a[i] = a[j]!;
+    a[j] = t;
+  }
+  return a;
+}
+
+/** Exponential foreperiod: the wait is never more "due" than it was a moment ago. */
+export function foreperiod(min: number, mean: number, max: number): number {
+  return min + Math.min(max - min, -Math.log(1 - Math.random()) * mean);
+}
+
+/** Milliseconds, or a dash when nothing was measured (a real 0 ms never happens). */
+export const ms = (v: number): string => (Number.isFinite(v) && v > 0 ? `${Math.round(v)} ms` : '\u2013');
+export const pct = (v: number): string => `${Math.round(v * 100)}%`;
+
+// --- Layout and drawing ------------------------------------------------------
+
+export interface Arena {
+  cx: number;
+  cy: number;
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  /** Device pixels per layout unit: about 1 CSS pixel, shrinking on small screens. */
+  u: number;
+}
+
+/** The free area below the header and above any touch pads. */
+export function arena(v: View, touch: TouchLayout): Arena {
+  const dpr = v.dpr;
+  const top = 104 * dpr;
+  let bottom = v.h - 40 * dpr;
+  if (touch.active && touch.pads.length > 0) {
+    let padTop = v.h;
+    for (const p of touch.pads) if (p.y < padTop) padTop = p.y;
+    bottom = Math.min(bottom, padTop - 16 * dpr);
+  }
+  const w = Math.min(v.w - 32 * dpr, 760 * dpr);
+  const left = v.ox - w / 2;
+  const u = Math.max(0.6 * dpr, Math.min(dpr * 1.2, (bottom - top) / 420, w / 560));
+  return { cx: v.ox, cy: (top + bottom) / 2, top, bottom, left, right: left + w, u };
+}
+
+/**
+ * The header every game shares: a label and number on the left, another on
+ * the right, optional strikes (filled = left) in the middle.
+ */
+export function header(
+  v: View,
+  _touch: TouchLayout,
+  leftLabel: string,
+  leftValue: string,
+  rightLabel: string,
+  rightValue: string,
+  strikesLeft = -1,
+  strikesMax = 3,
+): void {
+  const ctx = v.ctx;
+  const dpr = v.dpr;
+  const ty = 40 * dpr;
+  const lx = Math.max(24 * dpr, v.ox - 330 * dpr);
+  const rx = Math.min(v.w - 84 * dpr, v.ox + 330 * dpr);
+  ctx.fillStyle = COL_MID;
+  v.text(leftLabel, lx, ty, v.fontTiny, 'left');
+  v.text(rightLabel, rx, ty, v.fontTiny, 'right');
+  ctx.fillStyle = COL_LINE;
+  v.text(openValue(leftValue), lx, ty + 28 * dpr, v.fontHud, 'left');
+  v.text(openValue(rightValue), rx, ty + 28 * dpr, v.fontHud, 'right');
+  if (strikesLeft >= 0) {
+    const q = 4 * dpr;
+    ctx.lineWidth = dpr;
+    for (let i = 0; i < strikesMax; i++) {
+      const sx = v.ox + (i - (strikesMax - 1) / 2) * 16 * dpr;
+      if (i < strikesLeft) {
+        ctx.fillStyle = COL_LINE;
+        ctx.fillRect(sx - q, ty + 14 * dpr, q * 2, q * 2);
+      } else {
+        ctx.strokeStyle = COL_DIM;
+        ctx.strokeRect(sx - q + 0.5, ty + 14 * dpr + 0.5, q * 2 - 1, q * 2 - 1);
+      }
+    }
+  }
+}
+
+/** In endless or timed play a round count has no end: "12 / 3000" shows as "12", and a huge countdown is left out. */
+function openValue(v: string): string {
+  if (lengthScale < OPEN_SCALE) return v;
+  const m = /^(\d+) \/ (\d+)$/.exec(v);
+  if (m && Number(m[2]) >= 400) return m[1]!;
+  const t = /^(\d+) s$/.exec(v);
+  if (t && Number(t[1]) >= 3600) return '\u2013';
+  return v;
+}
+
+/** The footer hint and touch controls. Call last. */
+export function footer(v: View, touch: TouchLayout, held: number, hint = 'esc to pause'): void {
+  if (!touch.active) {
+    v.ctx.fillStyle = COL_DIM;
+    v.text(hint, v.ox, v.h - 22 * v.dpr, v.fontTiny, 'center');
+  }
+  // The pause button sits in the top corner for mouse and touch alike.
+  v.drawTouch(touch, ICON_PAUSE, held, true);
+}
+
+/** A centred message in the arena, with an optional smaller line under it. */
+export function message(v: View, a: Arena, text: string, sub = '', color = COL_LINE): void {
+  v.ctx.fillStyle = color;
+  v.text(text, a.cx, a.cy, v.fontHud, 'center');
+  if (sub) {
+    v.ctx.fillStyle = COL_MID;
+    v.text(sub, a.cx, a.cy + 28 * v.dpr, v.fontTiny, 'center');
+  }
+}
+
+/** A thin progress line, `p` in 0..1, centred at (cx, y). */
+export function progress(v: View, cx: number, y: number, half: number, p: number, color = COL_LINE): void {
+  const ctx = v.ctx;
+  ctx.lineWidth = 2 * v.dpr;
+  ctx.strokeStyle = COL_DIM;
+  ctx.beginPath();
+  ctx.moveTo(cx - half, y);
+  ctx.lineTo(cx + half, y);
+  ctx.stroke();
+  if (p > 0) {
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx - half, y);
+    ctx.lineTo(cx - half + half * 2 * clamp(p, 0, 1), y);
+    ctx.stroke();
+  }
+}
+
+/** Big centred number with a small unit beside it. */
+export function bigNumber(v: View, x: number, y: number, value: string, unit = '', color = COL_LINE): void {
+  const ctx = v.ctx;
+  ctx.font = v.fontBig;
+  const w = ctx.measureText(value).width;
+  ctx.fillStyle = color;
+  v.text(value, x, y, v.fontBig, 'center');
+  if (unit) {
+    ctx.fillStyle = COL_MID;
+    v.text(unit, x + w / 2 + 8 * v.dpr, y, v.fontTiny, 'left');
+  }
+}
