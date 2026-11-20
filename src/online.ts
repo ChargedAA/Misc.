@@ -29,6 +29,7 @@ interface BoardSummary {
   game: string;
   len: number;
   keys: number;
+  level?: number;
   count: number;
   top: { name: string; value: number; unit: string; lower: boolean };
 }
@@ -37,6 +38,7 @@ interface Best {
   game: string;
   len: number;
   keys: number;
+  level?: number;
   value: number;
   unit: string;
   lower: boolean;
@@ -182,8 +184,15 @@ function playerLink(name: string, me: string): string {
   return `<button class="link${name === me ? ' me' : ''}" data-act="go" data-arg="player:${esc(name)}">${esc(name)}</button>`;
 }
 
-function boardArg(game: string, len: number, keys: number, page = 0): string {
-  return `board:${game}:${len}:${keys}:${page}`;
+function boardArg(game: string, len: number, keys: number, level = 0, page = 0): string {
+  return `board:${game}:${len}:${keys}:${level}:${page}`;
+}
+
+/** A board's setup in words: length, key count, level. */
+function boardName(game: string, len: number, keys: number, level = 0): string {
+  const def = entry(game)?.def;
+  const lv = def?.levels ? (def.levels.find((l) => l.value === level)?.label ?? `${level}${def.custom ? ` ${def.custom.unit}` : ''}`) : '';
+  return [lengthName(len), keys ? `${keys} keys` : '', lv].filter(Boolean).join(' · ');
 }
 
 /** The ranked rows of a board. */
@@ -209,34 +218,36 @@ async function fillOne(el: HTMLElement, me: string): Promise<void> {
       // A game's stats page: the first rows, and the way to the whole board.
       const len = Number(d.len ?? 1);
       const keys = Number(d.keys ?? 0);
-      const { data } = await api<{ entries: BoardRow[]; total: number }>(`/api/scores?game=${d.game}&len=${len}&keys=${keys}&limit=10`);
+      const level = Number(d.level ?? 0);
+      const { data } = await api<{ entries: BoardRow[]; total: number }>(`/api/scores?game=${d.game}&len=${len}&keys=${keys}&level=${level}&limit=10`);
       el.innerHTML = data.total
-        ? `${rowsHtml(data.entries, me, d.label || 'result')}<p><button class="pill" data-act="go" data-arg="${boardArg(d.game!, len, keys)}">All ${data.total} player${data.total === 1 ? '' : 's'} →</button></p>`
-        : '<p class="muted">No scores yet. Sign in (Settings) and play it at the standard length to be first.</p>';
+        ? `${rowsHtml(data.entries, me, d.label || 'result')}<p><button class="pill" data-act="go" data-arg="${boardArg(d.game!, len, keys, level)}">All ${data.total} player${data.total === 1 ? '' : 's'} →</button></p>`
+        : '<p class="muted">No scores yet. Sign in (Account tab) and play it at the standard length to be first.</p>';
     } else if (d.online === 'board') {
       const len = Number(d.len ?? 1);
       const keys = Number(d.keys ?? 0);
+      const level = Number(d.level ?? 0);
       const page = Number(d.page ?? 0);
       const [{ data }, { data: all }] = await Promise.all([
-        api<{ entries: BoardRow[]; total: number }>(`/api/scores?game=${d.game}&len=${len}&keys=${keys}&offset=${page * PAGE}&limit=${PAGE}`),
+        api<{ entries: BoardRow[]; total: number }>(`/api/scores?game=${d.game}&len=${len}&keys=${keys}&level=${level}&offset=${page * PAGE}&limit=${PAGE}`),
         api<{ boards: BoardSummary[] }>('/api/boards'),
       ]);
       // Other boards of the same game: other lengths and key counts.
-      const siblings = all.boards.filter((b) => b.game === d.game).sort((a, b) => a.len - b.len || a.keys - b.keys);
+      const siblings = all.boards.filter((b) => b.game === d.game).sort((a, b) => a.len - b.len || a.keys - b.keys || (a.level ?? 0) - (b.level ?? 0));
       const chips = siblings.length > 1
         ? `<div class="chips">${siblings
-            .map((b) => `<button class="chip" data-act="board" data-arg="${boardArg(b.game, b.len, b.keys)}" aria-pressed="${b.len === len && b.keys === keys}">${lengthName(b.len)}${b.keys ? ` · ${b.keys} keys` : ''} <small>${b.count}</small></button>`)
+            .map((b) => `<button class="chip" data-act="board" data-arg="${boardArg(b.game, b.len, b.keys, b.level ?? 0)}" aria-pressed="${b.len === len && b.keys === keys && (b.level ?? 0) === level}">${boardName(b.game, b.len, b.keys, b.level ?? 0)} <small>${b.count}</small></button>`)
             .join('')}</div>`
         : '';
       const pages = Math.max(1, Math.ceil(data.total / PAGE));
       const nav = pages > 1
-        ? `<div class="pager"><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, page - 1)}"${page <= 0 ? ' disabled' : ''}>← Better</button><span>page ${page + 1} of ${pages}</span><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, page + 1)}"${page >= pages - 1 ? ' disabled' : ''}>Next →</button></div>`
+        ? `<div class="pager"><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, level, page - 1)}"${page <= 0 ? ' disabled' : ''}>← Better</button><span>page ${page + 1} of ${pages}</span><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, level, page + 1)}"${page >= pages - 1 ? ' disabled' : ''}>Next →</button></div>`
         : '';
-      el.innerHTML = `${chips}<p class="muted">${data.total} player${data.total === 1 ? '' : 's'}${DOT}${lengthName(len)}${keys ? `${DOT}${keys} keys` : ''}</p>${data.total ? rowsHtml(data.entries, me, d.label || 'result') : '<p class="muted">Nobody on this board yet.</p>'}${nav}`;
+      el.innerHTML = `${chips}<p class="muted">${data.total} player${data.total === 1 ? '' : 's'}${DOT}${boardName(d.game!, len, keys, level)}</p>${data.total ? rowsHtml(data.entries, me, d.label || 'result') : '<p class="muted">Nobody on this board yet.</p>'}${nav}`;
     } else if (d.online === 'boards') {
       const { data } = await api<{ boards: BoardSummary[] }>('/api/boards');
       if (!data.boards.length) {
-        el.innerHTML = '<p class="muted">No scores anywhere yet. Sign in from Settings, play any drill at the standard length, and you are first.</p>';
+        el.innerHTML = '<p class="muted">No scores anywhere yet. Sign in from the Account tab, play any drill at the standard length, and you are first.</p>';
         return;
       }
       // Grouped by skill, one row per game (its most-played board), the others a click away.
@@ -249,7 +260,7 @@ async function fillOne(el: HTMLElement, me: string): Promise<void> {
         html += `<h2>${esc(sk.name)}</h2><table class="board boards"><tr><th>game</th><th>players</th><th>leader</th><th>best</th></tr>${games
           .map(([g, bs]) => {
             const main = [...bs].sort((a, b) => b.count - a.count)[0]!;
-            return `<tr><td><button class="link" data-act="go" data-arg="${boardArg(g, main.len, main.keys)}">${esc(gameName(g))}</button></td><td>${main.count} player${main.count === 1 ? '' : 's'}${bs.length > 1 ? ` <small>+${bs.length - 1} more board${bs.length > 2 ? 's' : ''}</small>` : ''}</td><td>${playerLink(main.top.name, me)}</td><td>${fmt(main.top)}</td></tr>`;
+            return `<tr><td><button class="link" data-act="go" data-arg="${boardArg(g, main.len, main.keys, main.level ?? 0)}">${esc(gameName(g))}</button></td><td>${main.count} player${main.count === 1 ? '' : 's'}${bs.length > 1 ? ` <small>+${bs.length - 1} more board${bs.length > 2 ? 's' : ''}</small>` : ''}</td><td>${playerLink(main.top.name, me)}</td><td>${fmt(main.top)}</td></tr>`;
           })
           .join('')}</table>`;
       }
@@ -262,10 +273,10 @@ async function fillOne(el: HTMLElement, me: string): Promise<void> {
       }
       const rows = [...data.bests].sort((a, b) => gameName(a.game).localeCompare(gameName(b.game)) || a.len - b.len);
       el.innerHTML = rows.length
-        ? `<p class="muted">${rows.length} best${rows.length === 1 ? '' : 's'} on the boards</p><table class="board"><tr><th>game</th><th>board</th><th>best</th><th>set</th></tr>${rows
-            .map((b) => `<tr><td><button class="link" data-act="go" data-arg="${boardArg(b.game, b.len, b.keys)}">${esc(gameName(b.game))}</button></td><td>${lengthName(b.len)}${b.keys ? ` · ${b.keys} keys` : ''}</td><td>${fmt(b)}</td><td>${shortDate(b.at)}</td></tr>`)
+        ? `${d.self ? '' : `<p class="muted">${rows.length} best${rows.length === 1 ? '' : 's'} on the boards</p>`}<table class="board"><tr><th>game</th><th>board</th><th>best</th><th>set</th></tr>${rows
+            .map((b) => `<tr><td><button class="link" data-act="go" data-arg="${boardArg(b.game, b.len, b.keys, b.level ?? 0)}">${esc(gameName(b.game))}</button></td><td>${boardName(b.game, b.len, b.keys, b.level ?? 0)}</td><td>${fmt(b)}</td><td>${shortDate(b.at)}</td></tr>`)
             .join('')}</table>`
-        : '<p class="muted">No scores yet.</p>';
+        : `<p class="muted">${d.self ? 'Nothing on the boards yet. Play any drill at the standard length; runs that pass the fair-play checks are posted automatically.' : 'No scores yet.'}</p>`;
     }
   } catch {
     el.innerHTML = OFFLINE;

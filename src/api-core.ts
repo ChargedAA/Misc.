@@ -5,7 +5,7 @@
 //   GET  /api/me                        the signed-in account's name
 //   POST /api/name      { name }        choose or change the public display name (unique)
 //   POST /api/scores    Submission      a verified run, from a signed-in account with a name
-//   GET  /api/scores?game=&len=&keys=&offset=&limit=   every player on one board, best first
+//   GET  /api/scores?game=&len=&keys=&level=&offset=&limit=   every player on one board, best first
 //   GET  /api/boards                    every board that has scores: player count and the leader
 //   GET  /api/player?name=              one player's best on every board
 //
@@ -36,10 +36,10 @@ interface Account {
 }
 
 /** A player's bests, one per board, so a profile is one read. */
-type Bests = Record<string, { game: string; len: number; keys: number; value: number; unit: string; lower: boolean; at: number }>;
+type Bests = Record<string, { game: string; len: number; keys: number; level: number; value: number; unit: string; lower: boolean; at: number }>;
 
 /** What the boards page lists, kept up to date on every submission. */
-type Index = Record<string, { game: string; len: number; keys: number; count: number; top: { name: string; value: number; unit: string; lower: boolean } }>;
+type Index = Record<string, { game: string; len: number; keys: number; level: number; count: number; top: { name: string; value: number; unit: string; lower: boolean } }>;
 
 const SESSION_DAYS = 60;
 
@@ -182,17 +182,18 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     const rl = allow((await read<number[]>(store, `rl/${uid}`)) ?? [], now);
     await store.setJSON(`rl/${uid}`, rl.times);
     if (!rl.ok) return json({ ok: false, reason: 'too many submissions; try again later' }, 429);
-    const key = boardKey(s.game, s.len, s.keys);
+    const level = s.level ?? 0;
+    const key = boardKey(s.game, s.len, s.keys, level);
     const board = (await read<Entry[]>(store, key)) ?? [];
     const out = insert(board, { uid, name: acct.name, value: s.value, unit: s.unit, lower: s.lower, keys: s.keys, at: now });
     if (out.improved) {
       await store.setJSON(key, out.board);
       const bests = (await read<Bests>(store, `p/${uid}`)) ?? {};
-      bests[key] = { game: s.game, len: s.len, keys: s.keys, value: s.value, unit: s.unit, lower: s.lower, at: now };
+      bests[key] = { game: s.game, len: s.len, keys: s.keys, level, value: s.value, unit: s.unit, lower: s.lower, at: now };
       await store.setJSON(`p/${uid}`, bests);
       const index = (await read<Index>(store, 'index')) ?? {};
       const top = out.board[0]!;
-      index[key] = { game: s.game, len: s.len, keys: s.keys, count: out.board.length, top: { name: top.name, value: top.value, unit: top.unit, lower: top.lower } };
+      index[key] = { game: s.game, len: s.len, keys: s.keys, level, count: out.board.length, top: { name: top.name, value: top.value, unit: top.unit, lower: top.lower } };
       await store.setJSON('index', index);
     }
     return json({ ok: true, rank: out.rank, total: out.board.length, improved: out.improved });
@@ -203,9 +204,10 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     if (!/^[a-z]{2,12}$/.test(game)) return json({ entries: [], total: 0 });
     const len = Number(url.searchParams.get('len') ?? '1');
     const keys = Number(url.searchParams.get('keys') ?? '0') | 0;
+    const level = Number(url.searchParams.get('level') ?? '0') | 0;
     const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') | 0);
     const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '50') | 0));
-    const board = (await read<Entry[]>(store, boardKey(game, len, keys))) ?? [];
+    const board = (await read<Entry[]>(store, boardKey(game, len, keys, level))) ?? [];
     return json({
       total: board.length,
       entries: board.slice(offset, offset + limit).map((e, i) => ({ rank: offset + i + 1, name: e.name, value: e.value, unit: e.unit, lower: e.lower, keys: e.keys, at: e.at })),

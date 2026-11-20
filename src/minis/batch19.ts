@@ -9,6 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { ENGLISH_5K } from './words.ts';
 import { Stair, arena, clamp, footer, handLabel, header, mean, median, message, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -41,7 +42,10 @@ class Pitch implements Mini {
   }
 
   private arm(now: number): void {
-    this.base = 280 * Math.pow(2, Math.random() * 1.2);
+    // The first tone is always a real note (A4 = 440 Hz, equal temperament), from about C#4 to
+    // A5; only the second is moved, by the step being tested.
+    const midi = 61 + Math.floor(Math.random() * 21);
+    this.base = 440 * Math.pow(2, (midi - 69) / 12);
     this.up = Math.random() < 0.5 ? -1 : 1;
     this.t0 = now;
     this.played = 0;
@@ -574,13 +578,10 @@ class Mirror implements Mini {
 
 // --- Letters ----------------------------------------------------------------------
 
-const WORDS = (
-  'calm rain fish gold lamp ship wind tree bird song star moon snow fire home road rock hand time city ' +
-  'plant table chair bread light water stone green river music ocean night clock heart sound earth paper ' +
-  'smile train dream sugar happy house money peace quiet magic world storm grass beach shell field honey ' +
-  'garden silver planet window bottle forest winter summer travel family friend number circle simple ' +
-  'orange yellow island candle little market flower spring golden mirror basket silent rocket'
-).split(' ');
+/** Words to unscramble: the more common half of the 5,000 most common English words, 4 to 7 letters. */
+const WORDS = ENGLISH_5K.slice(0, 2500).filter((w) => w.length >= 4 && w.length <= 7);
+/** Any of the 5,000 counts as an answer if it uses the same letters. */
+const VALID = new Set(ENGLISH_5K);
 const LETTERS_MS = 90000;
 
 class Letters implements Mini {
@@ -637,7 +638,7 @@ class Letters implements Mini {
       this.env.sound(SND_TAP_WEAK);
       if (this.typed.length === this.word.length) {
         // Any listed word with the same letters counts.
-        const ok = this.typed === this.word || (WORDS.includes(this.typed) && this.sorted(this.typed) === this.sorted(this.word));
+        const ok = this.typed === this.word || (VALID.has(this.typed) && this.sorted(this.typed) === this.sorted(this.word));
         this.flash = ts;
         this.flashOk = ok;
         this.lastWord = this.word;

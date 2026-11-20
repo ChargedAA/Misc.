@@ -135,9 +135,14 @@ test('scores: every player on a board, pages, boards list, player pages, renames
   assert.equal((await call('/api/scores?game=snap&len=1&keys=4')).data.total, 0);
   const boards = (await call('/api/boards')).data.boards as { game: string; count: number; top: { name: string } }[];
   assert.deepEqual(boards.map((b) => [b.game, b.count, b.top.name]).sort(), [['snap', 60, 'P59'], ['sprint', 1, 'P3']]);
+  // Levels (Rush's window, Ear's reference or perfect pitch) are separate boards too.
+  await call('/api/scores', { body: good({ level: 1 }), token: players[5] });
+  assert.equal((await call('/api/scores?game=snap&len=1&keys=2&level=1')).data.total, 1);
+  assert.equal((await call('/api/scores?game=snap&len=1&keys=2')).data.total, 60);
   // A player's page: their best everywhere.
   const p3 = await call('/api/player?name=p3');
   assert.deepEqual(p3.data.bests.map((b: { game: string }) => b.game).sort(), ['snap', 'sprint']);
+  assert.equal((await call('/api/player?name=P5')).data.bests.length, 2, 'one best per board, levels included');
   // Renaming shows everywhere.
   assert.equal((await call('/api/name', { body: { name: 'Leader' }, token: players[59] })).status, 200);
   assert.equal((await call('/api/scores?game=snap&len=1&keys=2&limit=1')).data.entries[0].name, 'Leader');

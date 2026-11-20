@@ -17,6 +17,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { ENGLISH_5K } from './words.ts';
 import { Stair, arena, footer, header, mean, median, ms, pct, progress, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
 
 function rint(lo: number, hi: number): number {
@@ -81,10 +82,8 @@ function keyboard(v: View, cx: number, top: number, u: number, lit: Record<strin
   });
 }
 
-export const WORDS = (
-  'time year people way day man thing woman life child world school state family student group country problem hand part place case week company system program question work government number night point home water room mother area money story fact month lot right study book eye job word business issue side kind head house service friend father power hour game line end member law car city community name president team minute idea kid body information back parent face others level office door health person art war history party result change morning reason research girl guy moment air teacher force education ' +
-  'foot boy age policy music market sense nation plan college interest experience effect class control care field development role effort rate heart show leader light voice wife police mind price report decision son view relationship town road arm difference value building action model season society tax director position player record paper space ground form event official matter center couple site project activity star table need court oil situation cost industry figure street image phone data picture practice piece land product doctor wall patient worker news test movie north love support technology step baby computer type attention film tree source organization hair window evidence population truth brain'
-).split(' ');
+/** Words for the typing drills: the 5,000 most common English words (two letters or more). */
+export const WORDS: readonly string[] = ENGLISH_5K.filter((w) => w.length >= 2 && w.length <= 12);
 
 // --- A typed sequence, the shared engine -------------------------------------------
 

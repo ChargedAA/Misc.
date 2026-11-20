@@ -144,12 +144,18 @@ export const LEFT_MASK = 0b000111;
 export const RIGHT_MASK = 0b111000;
 
 // --- Palette (one accent, used only for the ball and the active cue) -------
-export const COL_BG = '#0a0a0b';
+export let COL_BG = '#0a0a0b';
 export const COL_HOLE = '#000000';
 export const COL_FAINT = '#1b1b1e';
 export const COL_TICK = '#2b2b30';
 export const COL_DIM = '#4a4a52';
 export const COL_MID = '#8b8b92';
 export const COL_LINE = '#ececee';
-export const COL_ACCENT = '#ff5a36';
+export let COL_ACCENT = '#ff5a36';
+
+/** Customize: the accent colour and the background, read live by everything that draws. */
+export function setColours(accent: string, bg: string): void {
+  COL_ACCENT = accent;
+  COL_BG = bg;
+}
 export const FONT = 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';

@@ -32,6 +32,23 @@ export const RESERVED = new Set(['Escape', 'Enter', 'Backquote', 'Tab']);
 /** 'climb', 'reflex', 'burst', or a mini-game id. */
 export type GameId = string;
 
+export interface Look {
+  /** Accent colour and background, as CSS colours. */
+  accent?: string;
+  bg?: string;
+  /** In-game text size and menu size, 1 = standard. */
+  text?: number;
+  menu?: number;
+  /** Clicks when moving through menus (game sounds are separate). */
+  uiSound?: boolean;
+  /** Menu slide animations. */
+  motion?: boolean;
+  /** Pause a drill when you switch tabs or apps. */
+  autoPause?: boolean;
+  /** Length for drills you have not set one for. */
+  defLen?: number;
+}
+
 export interface Settings {
   /** Number of keys last chosen for each game. */
   keys: Record<string, number>;
@@ -48,6 +65,8 @@ export interface Settings {
   account?: string;
   /** What Random and Endless draw from: skills left out, and kinds of game to skip. */
   runFilter?: { skip: string[]; noSound?: boolean; noKeyboard?: boolean; touchOnly?: boolean };
+  /** Customize: how the game looks and behaves. */
+  look?: Look;
   /** Rounds or length chosen per game, where a game offers the choice. */
   lengths?: Record<string, number>;
 }
@@ -144,6 +163,25 @@ interface SavedSettings extends Partial<Omit<Settings, 'keys' | 'muted' | 'bindi
   bindings?: Record<number, Bindings>;
 }
 
+const HEX = /^#[0-9a-f]{6}$/i;
+
+function lookOf(v: unknown): Look | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const o = v as Record<string, unknown>;
+  const num = (x: unknown, lo: number, hi: number) => (typeof x === 'number' && x >= lo && x <= hi ? x : undefined);
+  const bool = (x: unknown) => (typeof x === 'boolean' ? x : undefined);
+  return {
+    accent: typeof o.accent === 'string' && HEX.test(o.accent) ? o.accent : undefined,
+    bg: typeof o.bg === 'string' && HEX.test(o.bg) ? o.bg : undefined,
+    text: num(o.text, 0.8, 1.6),
+    menu: num(o.menu, 0.8, 1.4),
+    uiSound: bool(o.uiSound),
+    motion: bool(o.motion),
+    autoPause: bool(o.autoPause),
+    defLen: num(o.defLen, -180, 2),
+  };
+}
+
 export function loadSettings(): Settings {
   const saved = read<SavedSettings>(SETTINGS_KEY);
   const bindings: Record<number, Bindings> = {};
@@ -176,6 +214,7 @@ export function loadSettings(): Settings {
     volume: num(saved?.volume, 0, 1),
     keysets: record(saved?.keysets, isStr),
     lengths: record(saved?.lengths, isNum),
+    look: lookOf(saved?.look),
     session: typeof saved?.session === 'string' && saved.session.length < 300 ? saved.session : undefined,
     account: typeof saved?.account === 'string' ? saved.account.slice(0, 16) : undefined,
     runFilter: rf && typeof rf === 'object' ? { skip: Array.isArray(rf.skip) ? rf.skip.filter(isStr) : [], noSound: rf.noSound === true, noKeyboard: rf.noKeyboard === true, touchOnly: rf.touchOnly === true } : undefined,

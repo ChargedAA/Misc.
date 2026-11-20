@@ -1529,3 +1529,20 @@ table.boards th:nth-child(2) {
 table.boards th:nth-child(3) {
   width: 28%;
 }
+
+/* Customize: colour swatches, and motion off. */
+.chips .sw {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 7px;
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+.still *,
+.still *::before,
+.still *::after {
+  animation: none !important;
+  transition: none !important;
+}

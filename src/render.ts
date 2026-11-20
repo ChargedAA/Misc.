@@ -72,6 +72,13 @@ export interface PerfStats {
   ticks: number;
 }
 
+/** Customize: in-game text size, 1 = standard. */
+let textScale = 1;
+
+export function setTextScale(x: number): void {
+  textScale = x;
+}
+
 export class View {
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
@@ -124,7 +131,7 @@ export class View {
 
     const ctx = this.ctx;
     // In-game text is sized to be read at a glance mid-game, a little smaller on small screens.
-    const k = Math.max(0.82, Math.min(1, Math.min(cw, ch) / dpr / 720));
+    const k = Math.max(0.82, Math.min(1, Math.min(cw, ch) / dpr / 720)) * textScale;
     this.fontHud = `500 ${Math.round(18 * k * dpr)}px ${FONT}`;
     this.fontTiny = `500 ${Math.round(14.5 * k * dpr)}px ${FONT}`;
     this.fontBig = `300 ${Math.round(56 * k * dpr)}px ${FONT}`;

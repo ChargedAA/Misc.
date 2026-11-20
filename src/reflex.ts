@@ -36,7 +36,8 @@ export const NONE: Answer = { groups: [], label: 'no press' };
 export const SHADE_WHITE = 0;
 export const SHADE_GREY = 1;
 export const SHADE_ACCENT = 2;
-const SHADE_COL = [COL_LINE, '#6c6c74', COL_ACCENT] as const;
+/** The three dot shades; the last follows the chosen accent colour. */
+const shadeCol = (i: number): string => (i === 2 ? COL_ACCENT : i === 1 ? '#6c6c74' : COL_LINE);
 const SHAPE_NAME = ['square', 'circle', 'triangle', 'diamond', 'cross'] as const;
 
 /** The answers a key mode makes available. */
@@ -168,8 +169,8 @@ function scatter(st: Stim, rng: Rng): void {
 }
 
 function strokeFor(v: View, shade: number): void {
-  v.ctx.strokeStyle = SHADE_COL[shade]!;
-  v.ctx.fillStyle = SHADE_COL[shade]!;
+  v.ctx.strokeStyle = shadeCol(shade);
+  v.ctx.fillStyle = shadeCol(shade);
   v.ctx.lineWidth = 2.25 * v.dpr;
 }
 
@@ -405,7 +406,7 @@ class MoreGame implements Game {
     const ctx = v.ctx;
     for (let i = 0; i < st.dots; i++) {
       const sx = i < st.dotsLeft ? cx - off : cx + off;
-      ctx.fillStyle = SHADE_COL[st.dotShade[i]!]!;
+      ctx.fillStyle = shadeCol(st.dotShade[i]!);
       ctx.beginPath();
       ctx.arc(sx + st.dotX[i]! * cell, cy + st.dotY[i]! * cell, cell * 0.27, 0, Math.PI * 2);
       ctx.fill();
@@ -491,13 +492,13 @@ class CableGame implements Game {
 
   draw(v: View, st: Stim, cx: number, cy: number, u: number): void {
     const ctx = v.ctx;
-    ctx.strokeStyle = st.go ? COL_ACCENT : SHADE_COL[SHADE_GREY];
+    ctx.strokeStyle = st.go ? COL_ACCENT : shadeCol(SHADE_GREY);
     ctx.lineWidth = (st.go ? 3 : 1.5) * v.dpr;
     ctx.beginPath();
     ctx.moveTo(cx, cy - 150 * u);
     ctx.lineTo(cx, cy + 30 * u);
     ctx.stroke();
-    ctx.fillStyle = st.go ? COL_ACCENT : SHADE_COL[SHADE_GREY];
+    ctx.fillStyle = st.go ? COL_ACCENT : shadeCol(SHADE_GREY);
     const q = 5 * v.dpr;
     ctx.fillRect(cx - q, cy + 30 * u - q, q * 2, q * 2);
   }
@@ -971,8 +972,8 @@ export class ReflexSession {
 
   private drawIcon(v: View, r: RuleLine, x: number, y: number, size: number): void {
     const ctx = v.ctx;
-    ctx.fillStyle = SHADE_COL[r.shade]!;
-    ctx.strokeStyle = SHADE_COL[r.shade]!;
+    ctx.fillStyle = shadeCol(r.shade);
+    ctx.strokeStyle = shadeCol(r.shade);
     ctx.lineWidth = 1.5 * v.dpr;
     if (r.swatch) ctx.fillRect(x - size * 0.8, y - size * 0.8, size * 1.6, size * 1.6);
     else v.shape(r.shape, x, y, size, r.solid);

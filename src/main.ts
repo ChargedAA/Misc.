@@ -15,10 +15,10 @@ import {
   SND_UI,
   Sfx,
 } from './audio.ts';
-import { COL_MID, SLOT_REFLEX, getMode } from './config.ts';
+import { COL_MID, SLOT_REFLEX, getMode, setColours } from './config.ts';
 import { ACT_REFLEX, Runner } from './loop.ts';
 import { OUT_CORRECT, OUT_EARLY, OUT_LATE, OUT_START, OUT_WRONG, ReflexSession } from './reflex.ts';
-import { View, type Hints, type PerfStats } from './render.ts';
+import { View, setTextScale, type Hints, type PerfStats } from './render.ts';
 import {
   BURST_ACTIVE,
   BURST_LEADIN,
@@ -59,7 +59,7 @@ import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, boardsMenu, boardMenu, playerMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -359,6 +359,26 @@ function menuCtx(): MenuCtx {
 let onlineSuggested = '';
 let onlineNote = '';
 
+function uiClick(): void {
+  if (settings.look?.uiSound !== false) sfx.play(SND_UI);
+}
+
+/** Apply Customize: colours, sizes, motion. */
+function applyLook(): void {
+  const L = settings.look ?? {};
+  const accent = L.accent ?? ACCENTS[0]![1];
+  const bg = L.bg ?? '#0a0a0b';
+  setColours(accent, bg);
+  const root = document.documentElement;
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--bg', bg);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+  root.classList.toggle('still', L.motion === false);
+  uiRoot.style.setProperty('zoom', String(L.menu ?? 1));
+  setTextScale(L.text ?? 1);
+  onResize();
+}
+
 /** Google (or the dev stand-in) has signed someone in: trade the credential for a session. */
 async function onCredential(credential: string): Promise<void> {
   try {
@@ -417,6 +437,10 @@ function buildMenu(n: NavEntry): Menu {
       return searchMenu(c, n.arg);
     case 'boards':
       return boardsMenu(c);
+    case 'account':
+      return accountMenu(c);
+    case 'customize':
+      return customizeMenu(c);
     case 'board':
       return boardMenu(c, n.arg);
     case 'player':
@@ -459,11 +483,11 @@ async function submitScore(r: MiniResult, game: string, keys: number, durationMs
   try {
     const { status, data: out } = await api<{ ok: boolean; rank?: number; total?: number; improved?: boolean; reason?: string }>('/api/scores', {
       token: settings.session,
-      body: { game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rtHeadline: /react/i.test(r.primary.label), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags },
+      body: { game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, level: MINIS.find((m) => m.id === game)?.levels ? currentLevel : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rtHeadline: /react/i.test(r.primary.label), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags },
     });
     if (status === 401) {
       signOut('Your sign-in expired. Sign in again to post scores.');
-      note('Leaderboard: sign in again (Settings)');
+      note('Leaderboard: sign in again (Account)');
       return;
     }
     note(out.ok ? (out.improved ? `Leaderboard: #${out.rank} of ${out.total}` : `Leaderboard: your best stands at #${out.rank} of ${out.total}`) : `Leaderboard: not accepted (${out.reason})`);
@@ -718,7 +742,7 @@ function startGame(game: GameId): void {
     miniInputs = 0;
     setClockShift(0);
     // Sets always play the standard length, so a day's set stays comparable with the last.
-    lengthValue = dailyQueue ? 1 : (settings.lengths?.[game] ?? 1);
+    lengthValue = dailyQueue ? 1 : lengthOf(settings, game);
     const plan = lengthPlan(game, lengthValue);
     setLengthScale(plan.scale);
     miniLimit = plan.limitMs;
@@ -1052,7 +1076,7 @@ function toggleMute(): void {
   settings.muted = !settings.muted;
   sfx.setMuted(settings.muted);
   saveSettings(settings);
-  sfx.play(SND_UI);
+  uiClick();
   if (screen === 'menu') showMenu();
   else if (screen === 'pause') ui.show(pauseHtml(settings.muted), true);
 }
@@ -1098,7 +1122,7 @@ function setKeys(game: GameId, n: number): void {
   if (!e || !picksKeys(game, e.input) || n < 1 || n > 6 || n < (e.minKeys ?? 1)) return;
   settings.keys[game] = n;
   saveSettings(settings);
-  sfx.play(SND_UI);
+  uiClick();
   showMenu();
 }
 
@@ -1133,11 +1157,11 @@ function onAction(action: string, arg: string): void {
   sfx.unlock();
   switch (action) {
     case 'go':
-      sfx.play(SND_UI);
+      uiClick();
       go(arg);
       break;
     case 'back':
-      sfx.play(SND_UI);
+      uiClick();
       back();
       break;
     case 'page':
@@ -1173,14 +1197,14 @@ function onAction(action: string, arg: string): void {
       if (cu) {
         customLevels[id!] = clamp((customLevels[id!] ?? cu.def) + Number(d), cu.min, cu.max);
         saveMap('tension.custom', customLevels);
-        sfx.play(SND_UI);
+        uiClick();
         showMenu();
       }
       break;
     }
     case 'crumb':
       // Re-open from a column further up the path.
-      sfx.play(SND_UI);
+      uiClick();
       truncate(Number(arg) | 0);
       showMenu(-1);
       break;
@@ -1264,7 +1288,7 @@ function onAction(action: string, arg: string): void {
     case 'audiodelay':
       settings.audioOffset = clamp((settings.audioOffset ?? 0) + (arg === '-' ? -10 : 10), -60, 300);
       saveSettings(settings);
-      sfx.play(SND_UI);
+      uiClick();
       showMenu();
       break;
     case 'soundcheck':
@@ -1287,13 +1311,13 @@ function onAction(action: string, arg: string): void {
       else if (arg === 'noSound' || arg === 'noKeyboard' || arg === 'touchOnly') f[arg] = !f[arg];
       settings.runFilter = f;
       saveSettings(settings);
-      sfx.play(SND_UI);
+      uiClick();
       showMenu();
       break;
     }
     case 'lbname': {
       const name = uiRoot.querySelector<HTMLInputElement>('#lbname')?.value ?? '';
-      sfx.play(SND_UI);
+      uiClick();
       void api<{ ok: boolean; name?: string; reason?: string }>('/api/name', { body: { name }, token: settings.session })
         .then(({ status, data }) => {
           if (status === 401) signOut('Your sign-in expired. Sign in again.');
@@ -1313,13 +1337,26 @@ function onAction(action: string, arg: string): void {
       break;
     }
     case 'signout':
-      sfx.play(SND_UI);
+      uiClick();
       signOut('Signed out.');
       showMenu();
       break;
+    case 'look': {
+      const [k, raw] = arg.split(':');
+      if (k === 'reset') settings.look = undefined;
+      else {
+        const v: string | number | boolean = raw === 'true' ? true : raw === 'false' ? false : raw!.startsWith('#') ? raw! : Number(raw);
+        settings.look = { ...settings.look, [k!]: v };
+      }
+      saveSettings(settings);
+      applyLook();
+      uiClick();
+      showMenu();
+      break;
+    }
     case 'board':
       // Another page or another length of the same board: replace, don't stack.
-      sfx.play(SND_UI);
+      uiClick();
       nav[nav.length - 1]!.arg = arg.replace(/^board:/, '');
       showMenu();
       break;
@@ -1329,7 +1366,7 @@ function onAction(action: string, arg: string): void {
       settings.keysets = { ...(settings.keysets ?? {}), [id!]: set ?? '' };
       if (set) settings.keys[id!] = 2;
       saveSettings(settings);
-      sfx.play(SND_UI);
+      uiClick();
       showMenu();
       break;
     }
@@ -1337,11 +1374,11 @@ function onAction(action: string, arg: string): void {
       // Cycle or set the length a game is played at: short, standard, long.
       const [id, v] = arg.split(':');
       const order = lengthsFor(id!).map((l) => l.value);
-      const cur = settings.lengths?.[id!] ?? 1;
+      const cur = lengthOf(settings, id!);
       const next = v !== undefined ? Number(v) : order[(order.indexOf(cur) + 1) % order.length]!;
       settings.lengths = { ...(settings.lengths ?? {}), [id!]: next };
       saveSettings(settings);
-      sfx.play(SND_UI);
+      uiClick();
       showMenu();
       break;
     }
@@ -1420,7 +1457,7 @@ function press(slot: number, ts: number): void {
     const out = reflex.onPress(slot, ts);
     if (out === OUT_CORRECT) sfx.play(SND_CATCH);
     else if (out === OUT_WRONG || out === OUT_EARLY || out === OUT_LATE) sfx.play(SND_FALSE);
-    else if (out === OUT_START) sfx.play(SND_UI);
+    else if (out === OUT_START) uiClick();
     else sfx.play(slot >= 3 ? SND_TAP_R : SND_TAP_L);
   } else if (screen === 'mini' && mini) {
     miniInputs++;
@@ -1516,7 +1553,7 @@ function onKeyDown(e: KeyboardEvent): void {
     } else if (code === 'Space' || code === 'Tab' || code === 'Enter' || code.startsWith('Arrow')) {
       e.preventDefault();
       // Any of these also dismisses a Reflex briefing card.
-      if (!e.repeat && screen === 'reflex' && reflex.ready(stamp(e))) sfx.play(SND_UI);
+      if (!e.repeat && screen === 'reflex' && reflex.ready(stamp(e))) uiClick();
     }
     return;
   }
@@ -1658,6 +1695,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 applyKeys(activeKeys);
+applyLook();
 showMenu();
 
 // Dev-only handle for automated playtesting.
@@ -1680,5 +1718,5 @@ if (import.meta.env.DEV) {
 
 // Switching tabs or apps mid-drill pauses it, rather than letting the clock run on unseen.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && screen === 'mini') pauseMini();
+  if (document.hidden && screen === 'mini' && settings.look?.autoPause !== false) pauseMini();
 });

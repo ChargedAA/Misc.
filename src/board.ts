@@ -15,6 +15,8 @@ export interface Submission {
   /** Length setting (1 standard, 0.5 short, 2 long, 0 endless, -60 a minute...) and key count. */
   len: number;
   keys: number;
+  /** Difficulty level, for games that have them (Rush's window, Ear's reference or none); else 0. */
+  level?: number;
   /** Evidence: how many inputs the run had, how long it lasted, and its reaction times if any. */
   inputs: number;
   durationMs: number;
@@ -74,6 +76,7 @@ export function refuse(s: Submission): string | null {
   if (typeof s.lower !== 'boolean') return 'bad direction';
   if (!(LENGTHS as readonly number[]).includes(s.len)) return 'bad length';
   if (!Number.isInteger(s.keys) || s.keys < 0 || s.keys > 6) return 'bad key count';
+  if (s.level !== undefined && (!Number.isInteger(s.level) || s.level < 0 || s.level > 5000)) return 'bad level';
   if (!Array.isArray(s.flags) || s.flags.length) return 'flagged by fair-play checks';
   if (!Number.isFinite(s.inputs) || s.inputs < 3 || s.inputs > 20000) return 'not enough play';
   if (!Number.isFinite(s.durationMs) || s.durationMs < 4000 || s.durationMs > 4 * 3600 * 1000) return 'implausible duration';
@@ -97,9 +100,9 @@ export function refuse(s: Submission): string | null {
   return null;
 }
 
-/** Board key for a game at a length setting and key count (0 where the count doesn't matter). */
-export function boardKey(game: string, len: number, keys = 0): string {
-  return `b/${game}/${String(len).replace('-', 'm')}${keys ? `/k${keys}` : ''}`;
+/** Board key for a game at a length setting, key count and level (0 where they don't matter). */
+export function boardKey(game: string, len: number, keys = 0, level = 0): string {
+  return `b/${game}/${String(len).replace('-', 'm')}${keys ? `/k${keys}` : ''}${level ? `/l${level}` : ''}`;
 }
 
 /** Put an entry on a board, one entry per account (its best), sorted best first. */

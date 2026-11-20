@@ -246,6 +246,7 @@ export function startMenu(c: MenuCtx): Menu {
       { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
       { label: 'Boards', act: 'go', arg: 'boards', code: 'KeyL', keyName: 'L' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
+      { label: c.online.name ?? 'Account', act: 'go', arg: 'account', code: 'KeyU', keyName: 'U' },
       { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
     ],
     items: [
@@ -401,7 +402,7 @@ const SEARCH_TAGS: Record<string, string> = {
 export function boardsMenu(c: MenuCtx): Menu {
   return {
     title: 'LEADERBOARDS',
-    sub: c.online.name ? `Every game with scores${DOT}you are ${esc(c.online.name)}` : 'Every game with scores. Sign in from Settings to join.',
+    sub: c.online.name ? `Every game with scores${DOT}you are ${esc(c.online.name)}` : 'Every game with scores. Sign in from the Account tab to join.',
     extra: '<div data-online="boards"><p class="muted">Loading…</p></div>',
     items: [],
     wide: true,
@@ -410,13 +411,13 @@ export function boardsMenu(c: MenuCtx): Menu {
 
 /** One board: every player, a page at a time. Arg: game:len:keys:page. */
 export function boardMenu(c: MenuCtx, arg: string): Menu {
-  const [game = '', len = '1', keys = '0', page = '0'] = arg.split(':');
+  const [game = '', len = '1', keys = '0', level = '0', page = '0'] = arg.split(':');
   const e = entry(game);
   const label = c.history.filter((r) => r.game === game && r.vlabel).at(-1)?.vlabel ?? '';
   return {
     title: (e?.name ?? game).toUpperCase(),
     sub: `Leaderboard${DOT}${SKILLS.find((k) => k.id === e?.skill)?.name ?? ''}`,
-    extra: `<div data-online="board" data-game="${esc(game)}" data-len="${Number(len)}" data-keys="${Number(keys) | 0}" data-page="${Number(page) | 0}" data-label="${esc(label)}"><p class="muted">Loading…</p></div>`,
+    extra: `<div data-online="board" data-game="${esc(game)}" data-len="${Number(len)}" data-keys="${Number(keys) | 0}" data-level="${Number(level) | 0}" data-page="${Number(page) | 0}" data-label="${esc(label)}"><p class="muted">Loading…</p></div>`,
     items: e ? [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${game}`, code: 'Space', keyName: 'SPACE' }] : [],
     wide: true,
   };
@@ -514,7 +515,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const lv = level === undefined ? '' : `:${level}`;
   const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
   const keys = keysFor(id, e.input, c.settings.keys[id], e.minKeys);
-  const lenScale = c.settings.lengths?.[id] ?? 1;
+  const lenScale = lengthOf(c.settings, id);
   const min = e.minKeys ?? 1;
   const usesKeys = picksKeys(id, e.input);
   const binds = bindingsFor(c.settings, id, keys);
@@ -616,23 +617,87 @@ function accountHtml(c: MenuCtx): string {
   } else if (!o.name) {
     body = `<div class="lbform"><label for="lbname">Display name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" placeholder="2-16 letters or digits" value="${esc(o.suggested ?? '')}"><button data-act="lbname">Save</button></div><p class="muted">Signed in. Choose the name shown on the leaderboards; it must be unique.</p>`;
   } else {
-    body = `<p class="acct">Signed in as <b>${esc(o.name)}</b><button class="pill" data-act="go" data-arg="player:${esc(o.name)}">Your scores</button><button class="pill" data-act="signout">Sign out</button></p><div class="lbform"><label for="lbname">Change name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" value="${esc(o.name)}"><button data-act="lbname">Save</button></div><p class="muted">Runs that pass the fair-play checks are posted automatically.</p>`;
+    body = `<p class="acct">Signed in as <b>${esc(o.name)}</b><button class="pill" data-act="signout">Sign out</button></p><div class="lbform"><label for="lbname">Change name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" value="${esc(o.name)}"><button data-act="lbname">Save</button></div><p class="muted">Runs that pass the fair-play checks are posted automatically.</p>`;
   }
-  return `<h2>Account</h2>${o.note ? `<p class="cmp">${esc(o.note)}</p>` : ''}${body}`;
+  return `${o.note ? `<p class="cmp">${esc(o.note)}</p>` : ''}${body}`;
+}
+
+export const ACCENTS: [string, string][] = [
+  ['Orange', '#ff5a36'],
+  ['Red', '#ff3d5a'],
+  ['Yellow', '#ffcc33'],
+  ['Green', '#33d17a'],
+  ['Cyan', '#33c9e0'],
+  ['Blue', '#4d8dff'],
+  ['Violet', '#a07bff'],
+  ['Pink', '#ff5fae'],
+];
+
+export const BACKGROUNDS: [string, string][] = [
+  ['Near black', '#0a0a0b'],
+  ['Black', '#000000'],
+  ['Charcoal', '#16161a'],
+];
+
+/** Settings → Customize: every option as a row of chips, applied as soon as it is picked. */
+export function customizeMenu(c: MenuCtx): Menu {
+  const L = c.settings.look ?? {};
+  const row = (title: string, note: string, key: string, opts: [string, string | number | boolean][], cur: string | number | boolean) =>
+    `<h2>${title}${note ? ` <span>${note}</span>` : ''}</h2><div class="chips">${opts
+      .map(([label, v]) => `<button data-act="look" data-arg="${key}:${v}" aria-pressed="${v === cur}">${key === 'accent' ? `<i class="sw" style="background:${v}"></i>` : ''}${label}</button>`)
+      .join('')}</div>`;
+  return {
+    title: 'CUSTOMIZE',
+    sub: 'Changes apply straight away and are kept on this device',
+    extra: [
+      row('Accent colour', 'the one colour used for targets, hits and highlights', 'accent', ACCENTS, L.accent ?? '#ff5a36'),
+      row('Background', '', 'bg', BACKGROUNDS, L.bg ?? '#0a0a0b'),
+      row('Text size in games', 'labels, counts and prompts drawn in the games', 'text', [['Small', 0.85], ['Standard', 1], ['Large', 1.2], ['Extra large', 1.4]], L.text ?? 1),
+      row('Menu size', '', 'menu', [['Compact', 0.9], ['Standard', 1], ['Large', 1.12], ['Extra large', 1.25]], L.menu ?? 1),
+      row('Menu sounds', 'clicks when moving through menus; game sounds are separate', 'uiSound', [['On', true], ['Off', false]], L.uiSound ?? true),
+      row('Motion', 'menu slide animations', 'motion', [['On', true], ['Off', false]], L.motion ?? true),
+      row('Default length', 'for drills you have not chosen a length for', 'defLen', [['Short', 0.5], ['Standard', 1], ['Long', 2], ['1 min', -60], ['3 min', -180]], L.defLen ?? 1),
+      row('Pause when you switch away', 'switching tabs or apps mid-drill pauses it', 'autoPause', [['On', true], ['Off', false]], L.autoPause ?? true),
+      '<p><button class="pill" data-act="look" data-arg="reset:1">Back to defaults</button></p>',
+    ].join(''),
+    items: [],
+    wide: true,
+  };
+}
+
+/** The length a drill plays at: its own choice, else the default length where the drill offers it. */
+export function lengthOf(s: Settings, id: string): number {
+  const own = s.lengths?.[id];
+  if (own !== undefined) return own;
+  const d = s.look?.defLen ?? 1;
+  return lengthsFor(id).some((l) => l.value === d) ? d : 1;
+}
+
+/** The account tab: sign in, your name, and your scores on the boards. */
+export function accountMenu(c: MenuCtx): Menu {
+  const o = c.online;
+  return {
+    title: 'ACCOUNT',
+    sub: o.name ? `Signed in as ${esc(o.name)}` : o.session ? 'Signed in: choose a display name' : 'Sign in to post to the leaderboards',
+    extra: `${accountHtml(c)}${o.name ? `<h2>Your scores <span>best on each board</span></h2><div data-online="player" data-name="${esc(o.name)}" data-self="1"><p class="muted">Loading…</p></div>` : ''}`,
+    items: [{ label: 'Leaderboards', desc: 'Every game with scores', act: 'go', arg: 'boards', code: 'KeyL', keyName: 'L' }],
+    wide: true,
+  };
 }
 
 export function settingsMenu(c: MenuCtx, note = ''): Menu {
   return {
     title: 'SETTINGS',
-    extra: `${note ? `<p class="cmp">${note}</p>` : ''}${accountHtml(c)}`,
+    extra: note ? `<p class="cmp">${note}</p>` : '',
     items: [
-      { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
-      { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
-      { label: 'Volume', desc: 'Press to step through 25, 50, 75 and 100%', meta: `${Math.round((c.settings.volume ?? 0.8) * 100)}%`, act: 'volume' },
-      { label: 'Sound check', desc: 'Tap along to clicks for 12 seconds, so the rhythm games allow for how late sound reaches you', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
-      { label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
-      { label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
-      { label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },
+      { label: 'Customize', desc: 'Colours, text size, menu sounds and motion, default length, auto-pause', act: 'go', arg: 'customize', code: 'Space', keyName: 'SPACE' },
+      { slot: 0, label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
+      { slot: 1, label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
+      { slot: 2, label: 'Volume', desc: 'Press to step through 25, 50, 75 and 100%', meta: `${Math.round((c.settings.volume ?? 0.8) * 100)}%`, act: 'volume' },
+      { slot: 3, label: 'Sound check', desc: 'Tap along to clicks for 12 seconds, so the rhythm games allow for how late sound reaches you', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
+      { slot: 4, label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
+      { slot: 5, label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
+      { slot: 6, label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },
     ],
   };
 }
@@ -735,11 +800,14 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
         .join('')}</table>`
     : '';
   const lbKeys = usesKeys ? (filter || c.settings.keys[id] || 2) : 0;
+  // Games with levels show the board for the level last played.
+  const lbLevel = e.def?.levels ? (c.levels[id] ?? e.def.levels[0]!.value) : 0;
+  const lbLevelName = e.def?.levels ? (e.def.levels.find((l) => l.value === lbLevel)?.label ?? `${lbLevel} ${e.def.custom?.unit ?? ''}`) : '';
   return {
     title: e.name.toUpperCase(),
     sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
-    extra: `${seg}${body}<h2>Leaderboard <span>standard length${lbKeys ? `${DOT}${lbKeys} keys` : ''}${c.online.name ? `${DOT}you are ${esc(c.online.name)}` : `${DOT}sign in from Settings to join`}</span></h2><div data-online="top" data-game="${id}" data-len="1" data-keys="${lbKeys}" data-label="${esc(all[all.length - 1]?.vlabel ?? '')}"><p class="muted">Loading…</p></div>${table}`,
+    extra: `${seg}${body}<h2>Leaderboard <span>standard length${lbKeys ? `${DOT}${lbKeys} keys` : ''}${lbLevelName ? `${DOT}${esc(lbLevelName)}` : ''}${c.online.name ? `${DOT}you are ${esc(c.online.name)}` : `${DOT}sign in (U, Account) to join`}</span></h2><div data-online="top" data-game="${id}" data-len="1" data-keys="${lbKeys}" data-level="${lbLevel}" data-label="${esc(all[all.length - 1]?.vlabel ?? '')}"><p class="muted">Loading…</p></div>${table}`,
     items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}`, code: 'Space', keyName: 'SPACE' }],
   };
 }
