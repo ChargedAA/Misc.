@@ -15,7 +15,7 @@ export const SND_UI = 8;
 export const SND_SURGE = 9;
 /** Five pickup ticks, rising with the chain: SND_RING + 0..4. */
 export const SND_RING = 10;
-/** Seven plucked tones on a pentatonic scale, low to high: SND_TONE + 0..6. */
+/** Seven mallet tones on a pentatonic scale, low to high: SND_TONE + 0..6. */
 export const SND_TONE = 15;
 /** Metronome: SND_BEAT, and a brighter SND_BEAT_UP for the first beat of a bar. */
 export const SND_BEAT = 22;
@@ -213,21 +213,12 @@ export class Sfx {
     const penta = [0, 2, 4, 7, 9];
     for (let i = 0; i < 5; i++) this.make(ctx, SND_RING + i, 0.2, 0, strike(880 * Math.pow(2, penta[i]! / 12), 0.06, 0.12, 3.01));
 
-    // Plucked tones (Karplus-Strong): a noise burst through a damped delay line.
+    // Melodic tones: a soft felt mallet, exactly in tune (A4 = 440 Hz, equal temperament): a
+    // sine with a gentle octave overtone and no pitch bend at the start. E4 up to F#5, pentatonic.
     const scale = [0, 2, 4, 7, 9, 12, 14];
     for (let i = 0; i < 7; i++) {
-      const f = 330 * Math.pow(2, scale[i]! / 12);
-      const period = Math.max(2, Math.round(rate / f));
-      const line = new Float32Array(period);
-      for (let j = 0; j < period; j++) line[j] = this.noise() * 0.5;
-      let idx = 0;
-      this.make(ctx, SND_TONE + i, 0.5, 0, (t) => {
-        const a = line[idx]!;
-        const next = (idx + 1) % period;
-        line[idx] = (a + line[next]!) * 0.5 * 0.996;
-        idx = next;
-        return a * 0.3 * Math.min(1, (0.5 - t) / 0.05);
-      });
+      const f = 440 * Math.pow(2, (64 + scale[i]! - 69) / 12);
+      this.make(ctx, SND_TONE + i, 0.6, 0, strike(f, 0.22, 0.26, 2, 0));
     }
     // Metronome: a woodblock with a sharp, clear onset; the first beat of a bar higher.
     this.make(ctx, SND_BEAT, 0.09, 0, wood(784, 0.03, 0.3));
