@@ -43,10 +43,9 @@ export interface Settings {
   volume?: number;
   /** Two-key games played on another pair of keys: 'shift' or 'arrows'. */
   keysets?: Record<string, string>;
-  /** Name shown on leaderboards; empty means nothing is ever sent. */
-  lbName?: string;
-  /** A random id for this device, so a player's entries stay one entry. */
-  device?: string;
+  /** Signed-in session for the leaderboards (a token the server signed), and the display name. */
+  session?: string;
+  account?: string;
   /** What Random and Endless draw from: skills left out, and kinds of game to skip. */
   runFilter?: { skip: string[]; noSound?: boolean; noKeyboard?: boolean; touchOnly?: boolean };
   /** Rounds or length chosen per game, where a game offers the choice. */
@@ -177,8 +176,8 @@ export function loadSettings(): Settings {
     volume: num(saved?.volume, 0, 1),
     keysets: record(saved?.keysets, isStr),
     lengths: record(saved?.lengths, isNum),
-    lbName: typeof saved?.lbName === 'string' ? saved.lbName.slice(0, 16) : undefined,
-    device: typeof saved?.device === 'string' && /^[a-z0-9]{12,40}$/.test(saved.device) ? saved.device : undefined,
+    session: typeof saved?.session === 'string' && saved.session.length < 300 ? saved.session : undefined,
+    account: typeof saved?.account === 'string' ? saved.account.slice(0, 16) : undefined,
     runFilter: rf && typeof rf === 'object' ? { skip: Array.isArray(rf.skip) ? rf.skip.filter(isStr) : [], noSound: rf.noSound === true, noKeyboard: rf.noKeyboard === true, touchOnly: rf.touchOnly === true } : undefined,
   };
 }

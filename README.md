@@ -391,18 +391,30 @@ the input's `event.timeStamp`, so they include display and input latency.
 
 ## Leaderboards and fair play
 
-Set a name in Settings to join the shared leaderboards; without one nothing is
-sent. Each game has boards per length and key count, shown on its stats page.
+**Boards** (`L` on the home screen) lists every game with scores, grouped by
+skill. Each board shows every player, 50 to a page, with chips for the game's
+other lengths and key counts; a player's name opens their best on every board.
+Each game's stats page shows its top ten and a link to the whole board.
+
+To post scores, sign in with Google in Settings and choose a display name
+(unique; your Google name and email are never shown). Playing never needs an
+account. Each account has one entry per board, its best.
+
 Runs are checked twice. In the browser, a run is not saved, and goes on no
 board, if its input came from a script (untrusted events), the browser is
 under automation, the page's timing functions were replaced, the game clock ran
 at a different speed from the wall clock, or the timing is beyond human: taps
 evenly spaced to 1%, keys held for identical lengths, more than 30 presses a
-second, or reaction after reaction under 100 ms. The server
-(`netlify/functions/scores.ts`, rules in `src/board.ts`) checks again: names,
-units, plausible values, enough real input, reaction times that agree with a
-reaction headline, and a rate limit per device. Scores live in Netlify Blobs.
-`npm run dev` answers the same API from memory, so it can be tried locally.
+second, or reaction after reaction under 100 ms. The server checks again:
+plausible values, enough real input, reaction times that agree with a reaction
+headline, and a rate limit per account.
+
+The API is one Netlify Function (`netlify/functions/api.ts`; scoring rules in
+`src/board.ts`) with data in Netlify Blobs. Sign-in uses Google Identity
+Services: the server verifies Google's signature on the ID token (audience =
+the client ID in `src/google.ts`) and issues its own signed session. Deploy
+previews and branch deploys use a separate store. `npm run dev` serves the same
+API from memory with a stand-in sign-in, so all of it can be tried locally.
 
 ## Tech
 

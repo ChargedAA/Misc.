@@ -56,9 +56,10 @@ import { SKILLS } from './minis/kit.ts';
 import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
+import { api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
-import { Ui, controlsHtml, handKeys, leaderboardHtml, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, boardsMenu, boardMenu, playerMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -351,7 +352,38 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k) };
+  return { settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote } };
+}
+
+/** Name Google suggested at sign-in, and a message for the account block. */
+let onlineSuggested = '';
+let onlineNote = '';
+
+/** Google (or the dev stand-in) has signed someone in: trade the credential for a session. */
+async function onCredential(credential: string): Promise<void> {
+  try {
+    const { status, data } = await api<{ token?: string; name?: string | null; suggested?: string | null; reason?: string }>('/api/auth', { body: { credential } });
+    if (status !== 200 || !data.token) {
+      onlineNote = `Sign-in failed: ${data.reason ?? status}`;
+    } else {
+      settings.session = data.token;
+      settings.account = data.name ?? undefined;
+      onlineSuggested = data.suggested ?? '';
+      onlineNote = data.name ? '' : 'Signed in. Now choose a display name.';
+      saveSettings(settings);
+    }
+  } catch {
+    onlineNote = 'Sign-in needs the live site.';
+  }
+  if (screen === 'menu') showMenu();
+}
+
+function signOut(note = ''): void {
+  settings.session = undefined;
+  settings.account = undefined;
+  saveSettings(settings);
+  googleSignedOut();
+  onlineNote = note;
 }
 
 function buildMenu(n: NavEntry): Menu {
@@ -383,6 +415,12 @@ function buildMenu(n: NavEntry): Menu {
       return customMenu(c, n.arg);
     case 'search':
       return searchMenu(c, n.arg);
+    case 'boards':
+      return boardsMenu(c);
+    case 'board':
+      return boardMenu(c, n.arg);
+    case 'player':
+      return playerMenu(c, n.arg);
     default:
       return startMenu(c);
   }
@@ -394,8 +432,9 @@ function showMenu(dir = 0): void {
   screen = 'menu';
   listening = '';
   ui.show(columnsHtml(nav.map((n) => ({ menu: buildMenu(n), sel: n.sel })), dir));
-  const lb = uiRoot.querySelector<HTMLElement>('#lb');
-  if (lb) void fillBoard(lb);
+  void fillOnline(uiRoot, settings.session ? (settings.account ?? '') : '');
+  const gsi = uiRoot.querySelector<HTMLElement>('#gsi');
+  if (gsi) googleButton(gsi, (c) => void onCredential(c));
   const q = uiRoot.querySelector<HTMLInputElement>('#q');
   if (q) {
     q.addEventListener('input', () => {
@@ -409,34 +448,25 @@ function showMenu(dir = 0): void {
   }
 }
 
-/** Load a game's leaderboard into its stats page. */
-async function fillBoard(el: HTMLElement): Promise<void> {
-  try {
-    const res = await fetch(`/api/scores?game=${encodeURIComponent(el.dataset.game ?? '')}&len=${el.dataset.len ?? '1'}&keys=${el.dataset.keys ?? '0'}`);
-    if (!res.ok) throw new Error(String(res.status));
-    const data = (await res.json()) as { entries: { name: string; value: number; unit: string; lower: boolean; at: number }[] };
-    el.innerHTML = leaderboardHtml(data.entries, settings.lbName ?? '', el.dataset.label ?? '');
-  } catch {
-    el.innerHTML = '<p class="muted">The leaderboard shows on the live site.</p>';
-  }
-}
-
-/** Send a verified run to the leaderboard, if the player has chosen a name. */
+/** Send a verified run to the leaderboard, if the player is signed in with a name. */
 async function submitScore(r: MiniResult, game: string, keys: number, durationMs: number): Promise<void> {
-  if (!settings.lbName || !settings.device) return;
+  if (!settings.session || !settings.account) return;
   const note = (t: string) => {
     const el = uiRoot.querySelector('#lbnote');
     if (el) el.textContent = t;
   };
   note('Sending to the leaderboard…');
   try {
-    const res = await fetch('/api/scores', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ device: settings.device, name: settings.lbName, game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rtHeadline: /react/i.test(r.primary.label), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags }),
+    const { status, data: out } = await api<{ ok: boolean; rank?: number; total?: number; improved?: boolean; reason?: string }>('/api/scores', {
+      token: settings.session,
+      body: { game, value: Math.round(r.primary.value * 100) / 100, unit: r.primary.unit, lower: !!r.primary.lower, len: lengthValue, keys: picksKeys(game, MINIS.find((m) => m.id === game)?.input ?? 'keys') ? keys : 0, inputs: miniInputs, durationMs: Math.round(durationMs), rtHeadline: /react/i.test(r.primary.label), rts: (r.rts ?? []).slice(0, 200).map(Math.round), flags: integrityFlags },
     });
-    const out = (await res.json()) as { ok: boolean; rank?: number; reason?: string };
-    note(out.ok ? (out.rank && out.rank <= 100 ? `Leaderboard: #${out.rank}` : 'Leaderboard: not in the top 100 yet') : `Leaderboard: not accepted (${out.reason})`);
+    if (status === 401) {
+      signOut('Your sign-in expired. Sign in again to post scores.');
+      note('Leaderboard: sign in again (Settings)');
+      return;
+    }
+    note(out.ok ? (out.improved ? `Leaderboard: #${out.rank} of ${out.total}` : `Leaderboard: your best stands at #${out.rank} of ${out.total}`) : `Leaderboard: not accepted (${out.reason})`);
   } catch {
     note('');
   }
@@ -1262,15 +1292,37 @@ function onAction(action: string, arg: string): void {
       break;
     }
     case 'lbname': {
-      const input = uiRoot.querySelector<HTMLInputElement>('#lbname');
-      const name = (input?.value ?? '').replace(/[^A-Za-z0-9 _-]/g, '').trim().slice(0, 16);
-      settings.lbName = name.length >= 2 ? name : '';
-      if (!settings.device) settings.device = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 20);
-      saveSettings(settings);
+      const name = uiRoot.querySelector<HTMLInputElement>('#lbname')?.value ?? '';
       sfx.play(SND_UI);
-      showMenu();
+      void api<{ ok: boolean; name?: string; reason?: string }>('/api/name', { body: { name }, token: settings.session })
+        .then(({ status, data }) => {
+          if (status === 401) signOut('Your sign-in expired. Sign in again.');
+          else if (data.ok) {
+            settings.account = data.name;
+            saveSettings(settings);
+            onlineNote = `Your name is ${data.name}.`;
+          } else onlineNote = data.reason ?? 'That name did not work.';
+        })
+        .catch(() => (onlineNote = 'Needs the live site.'))
+        .finally(() => screen === 'menu' && showMenu());
       break;
     }
+    case 'devsignin': {
+      const id = (uiRoot.querySelector<HTMLInputElement>('#devname')?.value ?? '').trim() || 'tester';
+      void onCredential(`dev:${id}`);
+      break;
+    }
+    case 'signout':
+      sfx.play(SND_UI);
+      signOut('Signed out.');
+      showMenu();
+      break;
+    case 'board':
+      // Another page or another length of the same board: replace, don't stack.
+      sfx.play(SND_UI);
+      nav[nav.length - 1]!.arg = arg.replace(/^board:/, '');
+      showMenu();
+      break;
     case 'keyset': {
       // Play a two-key game on another pair of keys, or back on the usual ones.
       const [id, set] = arg.split(':');
@@ -1407,7 +1459,7 @@ function onKeyDown(e: KeyboardEvent): void {
     }
     if (code === 'Enter') {
       e.preventDefault();
-      onAction('lbname', '');
+      onAction(e.target.id === 'devname' ? 'devsignin' : 'lbname', '');
     } else if (code === 'Escape') e.target.blur();
     return;
   }

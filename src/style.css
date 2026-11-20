@@ -4,6 +4,7 @@
   --mid: #8b8b92;
   --dim: #55555d;
   --faint: #1b1b1e;
+  --accent: #ff5a36;
   color-scheme: dark;
 }
 
@@ -1415,4 +1416,98 @@ table.board tr.me td {
 /* Items with no key of their own (search results, long lists) show no empty badge. */
 .kb:empty {
   visibility: hidden;
+}
+
+/* Leaderboards: names and games as quiet links, small pill buttons, a pager. */
+button.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--line);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--faint);
+  text-underline-offset: 3px;
+}
+
+button.link:hover,
+button.link:focus-visible {
+  text-decoration-color: var(--mid);
+}
+
+button.link.me {
+  color: var(--accent);
+}
+
+button.pill {
+  padding: 6px 12px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  color: var(--line);
+  font-size: 12.5px;
+}
+
+button.pill:hover:not(:disabled) {
+  border-color: var(--mid);
+}
+
+button.pill:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 0;
+  color: var(--mid);
+  font-size: 12.5px;
+}
+
+.acct {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: var(--mid);
+}
+
+.acct b {
+  color: var(--line);
+  font-weight: 500;
+  margin-right: auto;
+}
+
+.gsi {
+  min-height: 44px;
+  margin: 4px 0 8px;
+}
+
+table.board small,
+.chips small {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+table.board td:first-child {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+table.boards td:first-child {
+  color: var(--line);
+}
+
+table.board th:nth-child(2),
+table.board td:nth-child(2) {
+  text-align: left;
+}
+
+table.boards th:nth-child(3),
+table.boards td:nth-child(3) {
+  text-align: left;
 }

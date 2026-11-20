@@ -195,15 +195,6 @@ export function controlsHtml(id: string, input: string, keys: number, b: Binding
     .join('')}</span>`;
 }
 
-/** A game's top scores; your own name picked out. */
-export function leaderboardHtml(entries: { name: string; value: number; unit: string; lower: boolean; at: number }[], me: string, label = ''): string {
-  if (!entries.length) return '<p class="muted">No scores yet. Set a name in Settings and play it to be first.</p>';
-  const fmt = (e: (typeof entries)[number]) => fmtPrimary(e.value, { label: '', value: e.value, unit: e.unit, decimals: e.unit === 's' || e.unit === '/s' ? 1 : 0 });
-  return `<table class="board"><tr><th>#</th><th>name</th><th>${esc(label || 'result')} · ${entries[0]!.lower ? 'lower is better' : 'higher is better'}</th><th>when</th></tr>${entries
-    .map((e, i) => `<tr${e.name === me ? ' class="me"' : ''}><td>${i + 1}</td><td>${esc(e.name)}</td><td>${fmt(e)}</td><td>${shortDate(e.at)}</td></tr>`)
-    .join('')}</table>`;
-}
-
 export function pauseHtml(muted: boolean): string {
   return `<section class="screen">
   <h1>PAUSED</h1>

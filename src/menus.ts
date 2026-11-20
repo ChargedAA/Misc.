@@ -204,6 +204,8 @@ export interface MenuCtx {
   custom: Record<string, number>;
   /** Best record for a game at a key count. */
   bestFor: (id: string, keys: number) => RunRecord | null;
+  /** Leaderboard account: how sign-in works here, and who is signed in. */
+  online: { mode: 'google' | 'dev' | 'none'; session?: string; name: string | null; suggested?: string; note?: string };
 }
 
 /** "best 222 ms": a game's best on its headline number, the one results lead with. Score for the built-in games. */
@@ -242,6 +244,7 @@ export function startMenu(c: MenuCtx): Menu {
     tools: [
       { label: 'Find', act: 'go', arg: 'search', code: 'KeyF', keyName: 'F' },
       { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },
+      { label: 'Boards', act: 'go', arg: 'boards', code: 'KeyL', keyName: 'L' },
       { label: 'Stats', act: 'go', arg: 'stats', code: 'KeyS', keyName: 'S' },
       { label: 'Settings', act: 'go', arg: 'settings', code: 'KeyO', keyName: 'O' },
     ],
@@ -393,6 +396,42 @@ const SEARCH_TAGS: Record<string, string> = {
   judgement: 'estimate perception',
   reasoning: 'logic puzzle maths math',
 };
+
+/** Every leaderboard. */
+export function boardsMenu(c: MenuCtx): Menu {
+  return {
+    title: 'LEADERBOARDS',
+    sub: c.online.name ? `Every game with scores${DOT}you are ${esc(c.online.name)}` : 'Every game with scores. Sign in from Settings to join.',
+    extra: '<div data-online="boards"><p class="muted">Loading…</p></div>',
+    items: [],
+    wide: true,
+  };
+}
+
+/** One board: every player, a page at a time. Arg: game:len:keys:page. */
+export function boardMenu(c: MenuCtx, arg: string): Menu {
+  const [game = '', len = '1', keys = '0', page = '0'] = arg.split(':');
+  const e = entry(game);
+  const label = c.history.filter((r) => r.game === game && r.vlabel).at(-1)?.vlabel ?? '';
+  return {
+    title: (e?.name ?? game).toUpperCase(),
+    sub: `Leaderboard${DOT}${SKILLS.find((k) => k.id === e?.skill)?.name ?? ''}`,
+    extra: `<div data-online="board" data-game="${esc(game)}" data-len="${Number(len)}" data-keys="${Number(keys) | 0}" data-page="${Number(page) | 0}" data-label="${esc(label)}"><p class="muted">Loading…</p></div>`,
+    items: e ? [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${game}`, code: 'Space', keyName: 'SPACE' }] : [],
+    wide: true,
+  };
+}
+
+/** One player's bests on every board. */
+export function playerMenu(c: MenuCtx, name: string): Menu {
+  return {
+    title: name.toUpperCase(),
+    sub: name === c.online.name ? 'Your scores on the leaderboards' : 'Player',
+    extra: `<div data-online="player" data-name="${esc(name)}"><p class="muted">Loading…</p></div>`,
+    items: [],
+    wide: true,
+  };
+}
 
 /** Rank games for a search: name first, then skill and group, then the description. */
 export function searchGames(q: string): Entry[] {
@@ -562,10 +601,30 @@ export function statsMenu(c: MenuCtx, page: number): Menu {
   };
 }
 
+/** Settings' account block: sign in, choose a name, or sign out. */
+function accountHtml(c: MenuCtx): string {
+  const o = c.online;
+  let body: string;
+  if (!o.session) {
+    body =
+      o.mode === 'google'
+        ? '<div id="gsi" class="gsi"></div>'
+        : o.mode === 'dev'
+          ? '<div class="lbform"><input id="devname" maxlength="16" autocomplete="off" placeholder="any test account id"><button data-act="devsignin">Sign in (dev server)</button></div>'
+          : `<p class="muted">${location.protocol === 'file:' ? 'Signing in needs the live site; this is a local copy.' : 'Sign-in is not set up on this site yet.'}</p>`;
+    body += '<p class="muted">Sign in with Google to post to the leaderboards. Your Google name and email are never shown: you pick a display name. Playing never needs an account.</p>';
+  } else if (!o.name) {
+    body = `<div class="lbform"><label for="lbname">Display name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" placeholder="2-16 letters or digits" value="${esc(o.suggested ?? '')}"><button data-act="lbname">Save</button></div><p class="muted">Signed in. Choose the name shown on the leaderboards; it must be unique.</p>`;
+  } else {
+    body = `<p class="acct">Signed in as <b>${esc(o.name)}</b><button class="pill" data-act="go" data-arg="player:${esc(o.name)}">Your scores</button><button class="pill" data-act="signout">Sign out</button></p><div class="lbform"><label for="lbname">Change name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" value="${esc(o.name)}"><button data-act="lbname">Save</button></div><p class="muted">Runs that pass the fair-play checks are posted automatically.</p>`;
+  }
+  return `<h2>Account</h2>${o.note ? `<p class="cmp">${esc(o.note)}</p>` : ''}${body}`;
+}
+
 export function settingsMenu(c: MenuCtx, note = ''): Menu {
   return {
     title: 'SETTINGS',
-    extra: `${note ? `<p class="cmp">${note}</p>` : ''}<div class="lbform"><label for="lbname">Leaderboard name</label><input id="lbname" maxlength="16" autocomplete="off" spellcheck="false" placeholder="leave empty to stay off the boards" value="${(c.settings.lbName ?? '').replace(/"/g, '')}"><button data-act="lbname">Save</button></div><p class="muted">With a name set, verified runs (no scripts, no impossible timing) go to the shared leaderboards on the live site. Only the name, the game and the result are shown.</p>`,
+    extra: `${note ? `<p class="cmp">${note}</p>` : ''}${accountHtml(c)}`,
     items: [
       { label: 'Keys', desc: 'Rebind the keys for each key count', act: 'keys' },
       { label: `Sound ${c.settings.muted ? 'off' : 'on'}`, desc: 'Tones, ticks and the metronome', act: 'mute' },
@@ -680,7 +739,7 @@ export function gameStatsMenu(c: MenuCtx, id: string, filter: number): Menu {
     title: e.name.toUpperCase(),
     sub: `Stats${DOT}${SKILLS.find((k) => k.id === e.skill)?.name ?? ''}`,
     wide: true,
-    extra: `${seg}${body}<h2>Leaderboard <span>standard length${lbKeys ? `${DOT}${lbKeys} keys` : ''}${c.settings.lbName ? `${DOT}you are ${esc(c.settings.lbName)}` : `${DOT}set a name in Settings to join`}</span></h2><div id="lb" data-game="${id}" data-len="1" data-keys="${lbKeys}" data-label="${esc(all[all.length - 1]?.vlabel ?? '')}"><p class="muted">Loading…</p></div>${table}`,
+    extra: `${seg}${body}<h2>Leaderboard <span>standard length${lbKeys ? `${DOT}${lbKeys} keys` : ''}${c.online.name ? `${DOT}you are ${esc(c.online.name)}` : `${DOT}sign in from Settings to join`}</span></h2><div data-online="top" data-game="${id}" data-len="1" data-keys="${lbKeys}" data-label="${esc(all[all.length - 1]?.vlabel ?? '')}"><p class="muted">Loading…</p></div>${table}`,
     items: [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${id}`, code: 'Space', keyName: 'SPACE' }],
   };
 }
