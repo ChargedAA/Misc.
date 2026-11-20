@@ -621,8 +621,11 @@ class Rotate implements Mini {
       this.drawShape(v, this.cells, a.cx + 140 * a.u, a.cy, cell, this.angle, this.mirror);
       if (this.drawnAt === 0) this.drawnAt = gameNow();
     } else if (this.state === 2 && this.feedback) message(v, a, this.feedback, '', COL_MID);
-    ctx.fillStyle = COL_DIM;
-    ctx.fillRect(Math.round(a.cx), a.cy - 80 * a.u, dpr, 160 * a.u);
+    // The divider between the two shapes, only while they show (feedback text sits across it).
+    if (this.state === 1) {
+      ctx.fillStyle = COL_DIM;
+      ctx.fillRect(Math.round(a.cx), a.cy - 80 * a.u, dpr, 160 * a.u);
+    }
     ctx.fillStyle = COL_MID;
     v.text(`same, turned  ${handLabel(this.env, -1)}`, a.cx - 150 * a.u, a.bottom - 20 * dpr, v.fontTiny, 'center');
     v.text(`mirror image  ${handLabel(this.env, 1)}`, a.cx + 150 * a.u, a.bottom - 20 * dpr, v.fontTiny, 'center');
