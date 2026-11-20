@@ -1,7 +1,8 @@
 // What each control does, per game, shown next to the keys on the drill page and the ready card.
 // Tokens: L = the left hand's keys, R = the right hand's, ANY = any of your keys, BOTH = both
 // hands together, OUTER_L / OUTER_R = the outermost key on each side, MID = the other keys,
-// TAP = click or tap the board. Anything else is shown as written (1-4, Enter, arrows...).
+// TAP = click or tap the board. A MID row is left out when there are no middle keys; a BOTH row
+// next to a MID row is only shown when MID is left out (it is the two-key alternative). Anything else is shown as written (1-4, Enter, arrows...).
 
 export type Control = [keys: string, action: string];
 
@@ -26,7 +27,7 @@ export const CONTROLS: Record<string, Control[]> = {
   flipper: [['L', 'left flipper'], ['R', 'right flipper']],
   lanes: [['L', 'move left'], ['R', 'move right']],
   hurdles: [['ANY', 'jump']],
-  rush: [['OUTER_L', 'move left'], ['OUTER_R', 'move right'], ['MID', 'jump']],
+  rush: [['OUTER_L', 'move left'], ['OUTER_R', 'move right'], ['MID', 'jump'], ['BOTH', 'both together: jump']],
   aim: [['TAP', 'hit each target']],
   whack: [['TAP', 'hit the white discs']],
   sprint: [['ANY', 'tap as fast as you can']],

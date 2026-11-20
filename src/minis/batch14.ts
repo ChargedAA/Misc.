@@ -73,6 +73,9 @@ interface Obstacle {
 /** Track speed in track heights per second. */
 const TRACK_SPEED = 0.9;
 
+/** Two presses this close together, one per side, count as pressing both at once. */
+const CHORD_MS = 90;
+
 class Endless implements Mini {
   private env!: MiniEnv;
   private readonly kind: Kind;
@@ -97,6 +100,8 @@ class Endless implements Mini {
   private lastWindow = 0;
   private travelled = 0;
   private last = 0;
+  /** The last sideways press, so the other side within CHORD_MS turns the pair into a jump. */
+  private side: { side: number; ts: number; undo: (() => void) | null } | null = null;
 
   constructor(kind: Kind) {
     this.kind = kind;
@@ -130,30 +135,58 @@ class Endless implements Mini {
     this.held |= 1 << slot;
     if (this.over) return;
     const r = this.role(slot);
-    if (r === -1 || r === 1) {
-      const to = clamp(this.lane + r, 0, 2);
-      if (to !== this.lane) {
-        this.laneFrom = this.lane;
-        this.lane = to;
-        this.laneAt = ts;
-        this.env.sound(r > 0 ? SND_TAP_R : SND_TAP_L);
-        const o = this.ob;
-        if (o && !o.done && o.type === 0 && !o.blocked[to] && !o.answeredAt && ts >= o.at) o.answeredAt = ts;
+    if ((r === -1 || r === 1) && this.kind === 'mix') {
+      // Both outer keys together jump, so Rush works with just two keys (or two pads).
+      const prev = this.side;
+      if (prev && prev.side === -r && ts - prev.ts <= CHORD_MS) {
+        prev.undo?.();
+        this.side = null;
+        this.jump(ts);
+        return;
       }
-    } else if (r === 2) {
-      const o = this.ob;
-      if (o && !o.done && o.type === 1 && !o.jumped && ts >= o.at) {
-        o.jumped = true;
-        o.answeredAt = ts;
-        this.hopAt = ts;
-        this.hopUntil = o.hitAt + 180;
-        this.env.sound(SND_TAP_R);
-      } else if (ts > this.hopUntil) {
-        // A hop with nothing to clear: harmless, just a little bounce.
-        this.hopAt = ts;
-        this.hopUntil = ts + 220;
-        this.env.sound(SND_TAP_WEAK);
-      }
+      this.side = { side: r, ts, undo: this.move(r, ts) };
+      return;
+    }
+    if (r === -1 || r === 1) this.move(r, ts);
+    else if (r === 2) this.jump(ts);
+  }
+
+  /** Step one lane; returns how to take the step back (if it moved). */
+  private move(r: number, ts: number): (() => void) | null {
+    const to = clamp(this.lane + r, 0, 2);
+    if (to === this.lane) return null;
+    const before = { lane: this.lane, from: this.laneFrom, at: this.laneAt };
+    this.laneFrom = this.lane;
+    this.lane = to;
+    this.laneAt = ts;
+    this.env.sound(r > 0 ? SND_TAP_R : SND_TAP_L);
+    const o = this.ob;
+    let answered = false;
+    if (o && !o.done && o.type === 0 && !o.blocked[to] && !o.answeredAt && ts >= o.at) {
+      o.answeredAt = ts;
+      answered = true;
+    }
+    return () => {
+      this.lane = before.lane;
+      this.laneFrom = before.from;
+      this.laneAt = before.at;
+      if (answered && o) o.answeredAt = 0;
+    };
+  }
+
+  private jump(ts: number): void {
+    const o = this.ob;
+    if (o && !o.done && o.type === 1 && !o.jumped && ts >= o.at) {
+      o.jumped = true;
+      o.answeredAt = ts;
+      this.hopAt = ts;
+      this.hopUntil = o.hitAt + 180;
+      this.env.sound(SND_TAP_R);
+    } else if (ts > this.hopUntil) {
+      // A hop with nothing to clear: harmless, just a little bounce.
+      this.hopAt = ts;
+      this.hopUntil = ts + 220;
+      this.env.sound(SND_TAP_WEAK);
     }
   }
 
@@ -664,9 +697,9 @@ export const BATCH14: MiniDef[] = [
     name: 'Rush',
     skill: 'reaction',
     blurb: 'Blocks and bars, at random. Sidestep or jump, and do not mix them up.',
-    how: `Blocks or bars pop up at random. Your outermost key on each side moves the ball; every other key (Space with three keys) jumps. Choose fast and right. ${ENDLESS_HOW}`,
+    how: `Blocks or bars pop up at random. Your outermost key on each side moves the ball; every other key (Space with three keys) jumps, and so do both outer keys pressed together (that is how to jump with two keys). Choose fast and right. ${ENDLESS_HOW}`,
     input: 'keys',
-    minKeys: 3,
+    minKeys: 2,
     levels: ENDLESS_LEVELS,
     custom: ENDLESS_CUSTOM,
     make: () => new Endless('mix'),

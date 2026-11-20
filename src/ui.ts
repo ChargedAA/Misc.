@@ -189,7 +189,9 @@ export function controlsHtml(id: string, input: string, keys: number, b: Binding
     return `<span class="kb wide">${tok}</span>`;
   };
   // Tap entries only for games that take taps.
-  const rows = map.filter(([k]) => k !== 'TAP' || input !== 'keys');
+  const hasMid = [...left, ...reflex, ...right].some((k: string) => k !== left[0] && k !== right[right.length - 1]);
+  const midRow = map.some(([k]) => k === 'MID');
+  const rows = map.filter(([k]) => (k !== 'TAP' || input !== 'keys') && (k !== 'MID' || hasMid) && !(k === 'BOTH' && midRow && hasMid));
   return `<span class="ctls">${rows
     .map(([k, act]) => `<span class="ctl">${keysOf(k)}<span class="act">${act}</span></span>`)
     .join('')}</span>`;
