@@ -8,6 +8,7 @@
 //   GET  /api/scores?game=&len=&keys=&level=&offset=&limit=   every player on one board, best first
 //   GET  /api/boards                    every board that has scores: player count and the leader
 //   GET  /api/player?name=              one player's best on every board
+//   GET  /api/overall?offset=&limit=    every player ranked across all games
 //
 // Every scoring rule lives in board.ts. Who a request comes from is decided here, from a session
 // token this API signed after the sign-in credential was verified (by Google, on the live site).
@@ -40,6 +41,42 @@ type Bests = Record<string, { game: string; len: number; keys: number; level: nu
 
 /** What the boards page lists, kept up to date on every submission. */
 type Index = Record<string, { game: string; len: number; keys: number; level: number; count: number; top: { name: string; value: number; unit: string; lower: boolean } }>;
+
+/**
+ * The overall table: each player's points on every board they are on. On a board of N players,
+ * rank r earns 100 * (N - r + 1) / N, so first is always 100. A player's total counts their best
+ * board for each game, so playing one game at every length or key count doesn't multiply it.
+ */
+type Overall = Record<string, { name: string; pts: Record<string, number> }>;
+
+export function boardPoints(rank: number, count: number): number {
+  return Math.round((100 * (count - rank + 1)) / count);
+}
+
+/** Re-score one board in the overall table (everyone on it moves when the board changes). */
+function rescore(overall: Overall, key: string, board: Entry[]): void {
+  board.forEach((e, i) => {
+    const row = (overall[e.uid] ??= { name: e.name, pts: {} });
+    row.name = e.name;
+    row.pts[key] = boardPoints(i + 1, board.length);
+  });
+}
+
+/** Totals from the table: best board per game, summed. */
+export function totals(overall: Overall): { name: string; total: number; games: number; wins: number }[] {
+  return Object.values(overall)
+    .map((row) => {
+      const perGame = new Map<string, number>();
+      let wins = 0;
+      for (const [key, p] of Object.entries(row.pts)) {
+        const game = key.split('/')[1]!;
+        perGame.set(game, Math.max(perGame.get(game) ?? 0, p));
+        if (p === 100) wins++;
+      }
+      return { name: row.name, total: [...perGame.values()].reduce((a, b) => a + b, 0), games: perGame.size, wins };
+    })
+    .sort((a, b) => b.total - a.total || b.wins - a.wins || a.name.localeCompare(b.name));
+}
 
 const SESSION_DAYS = 60;
 
@@ -166,6 +203,11 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
         }
       }
       await store.setJSON('index', index);
+      const overall = (await read<Overall>(store, 'overall')) ?? {};
+      if (overall[uid]) {
+        overall[uid].name = name;
+        await store.setJSON('overall', overall);
+      }
     }
     return json({ ok: true, name });
   }
@@ -195,6 +237,9 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       const top = out.board[0]!;
       index[key] = { game: s.game, len: s.len, keys: s.keys, level, count: out.board.length, top: { name: top.name, value: top.value, unit: top.unit, lower: top.lower } };
       await store.setJSON('index', index);
+      const overall = (await read<Overall>(store, 'overall')) ?? {};
+      rescore(overall, key, out.board);
+      await store.setJSON('overall', overall);
     }
     return json({ ok: true, rank: out.rank, total: out.board.length, improved: out.improved });
   }
@@ -217,6 +262,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (route === '/api/boards' && req.method === 'GET') {
     const index = (await read<Index>(store, 'index')) ?? {};
     return json({ boards: Object.values(index) });
+  }
+
+  if (route === '/api/overall' && req.method === 'GET') {
+    const offset = Math.max(0, Number(url.searchParams.get('offset') ?? '0') | 0);
+    const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '50') | 0));
+    const all = totals((await read<Overall>(store, 'overall')) ?? {});
+    return json({ total: all.length, entries: all.slice(offset, offset + limit).map((r, i) => ({ rank: offset + i + 1, ...r })) });
   }
 
   if (route === '/api/player' && req.method === 'GET') {

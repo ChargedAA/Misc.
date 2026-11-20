@@ -244,6 +244,25 @@ async function fillOne(el: HTMLElement, me: string): Promise<void> {
         ? `<div class="pager"><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, level, page - 1)}"${page <= 0 ? ' disabled' : ''}>← Better</button><span>page ${page + 1} of ${pages}</span><button class="pill" data-act="board" data-arg="${boardArg(d.game!, len, keys, level, page + 1)}"${page >= pages - 1 ? ' disabled' : ''}>Next →</button></div>`
         : '';
       el.innerHTML = `${chips}<p class="muted">${data.total} player${data.total === 1 ? '' : 's'}${DOT}${boardName(d.game!, len, keys, level)}</p>${data.total ? rowsHtml(data.entries, me, d.label || 'result') : '<p class="muted">Nobody on this board yet.</p>'}${nav}`;
+    } else if (d.online === 'overall') {
+      // Everyone ranked across all games; a preview (data-limit) or the whole table, by page.
+      const preview = Number(d.limit ?? 0);
+      const page = Number(d.page ?? 0);
+      const { data } = await api<{ total: number; entries: { rank: number; name: string; total: number; games: number; wins: number }[] }>(`/api/overall?offset=${preview ? 0 : page * PAGE}&limit=${preview || PAGE}`);
+      if (!data.total) {
+        el.innerHTML = '<p class="muted">Nobody on the boards yet.</p>';
+        return;
+      }
+      const rows = `<table class="board"><tr><th>#</th><th>player</th><th>games</th><th>firsts</th><th>points</th></tr>${data.entries
+        .map((r) => `<tr${r.name === me ? ' class="me"' : ''}><td>${r.rank}</td><td>${playerLink(r.name, me)}</td><td>${r.games}</td><td>${r.wins}</td><td>${r.total}</td></tr>`)
+        .join('')}</table>`;
+      const pages = Math.max(1, Math.ceil(data.total / PAGE));
+      const more = preview
+        ? data.total > preview ? `<p><button class="pill" data-act="go" data-arg="overall:0">All ${data.total} players →</button></p>` : ''
+        : pages > 1
+          ? `<div class="pager"><button class="pill" data-act="board" data-arg="overall:${page - 1}"${page <= 0 ? ' disabled' : ''}>← Higher</button><span>page ${page + 1} of ${pages}</span><button class="pill" data-act="board" data-arg="overall:${page + 1}"${page >= pages - 1 ? ' disabled' : ''}>Next →</button></div>`
+          : '';
+      el.innerHTML = `${rows}${more}`;
     } else if (d.online === 'boards') {
       const { data } = await api<{ boards: BoardSummary[] }>('/api/boards');
       if (!data.boards.length) {

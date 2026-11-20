@@ -59,7 +59,7 @@ import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -445,6 +445,8 @@ function buildMenu(n: NavEntry): Menu {
       return boardMenu(c, n.arg);
     case 'player':
       return playerMenu(c, n.arg);
+    case 'overall':
+      return overallMenu(c, n.arg);
     default:
       return startMenu(c);
   }
@@ -1357,7 +1359,7 @@ function onAction(action: string, arg: string): void {
     case 'board':
       // Another page or another length of the same board: replace, don't stack.
       uiClick();
-      nav[nav.length - 1]!.arg = arg.replace(/^board:/, '');
+      nav[nav.length - 1]!.arg = arg.replace(/^(board|overall):/, '');
       showMenu();
       break;
     case 'keyset': {

@@ -29,4 +29,4 @@ export default async (req: Request, context?: { deploy?: { context?: string } })
   return handle(req, { store: getStore({ name, consistency: 'strong' }) as unknown as Store, verify: verifyGoogle });
 };
 
-export const config = { path: ['/api/auth', '/api/me', '/api/name', '/api/scores', '/api/boards', '/api/player'] };
+export const config = { path: ['/api/auth', '/api/me', '/api/name', '/api/scores', '/api/boards', '/api/player', '/api/overall'] };

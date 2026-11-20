@@ -403,7 +403,7 @@ export function boardsMenu(c: MenuCtx): Menu {
   return {
     title: 'LEADERBOARDS',
     sub: c.online.name ? `Every game with scores${DOT}you are ${esc(c.online.name)}` : 'Every game with scores. Sign in from the Account tab to join.',
-    extra: '<div data-online="boards"><p class="muted">Loading…</p></div>',
+    extra: `<h2>Overall <span>points across every game${DOT}<button class="link" data-act="go" data-arg="overall:0">how it's scored</button></span></h2><div data-online="overall" data-limit="10"><p class="muted">Loading…</p></div><h2>By game</h2><div data-online="boards"><p class="muted">Loading…</p></div>`,
     items: [],
     wide: true,
   };
@@ -419,6 +419,17 @@ export function boardMenu(c: MenuCtx, arg: string): Menu {
     sub: `Leaderboard${DOT}${SKILLS.find((k) => k.id === e?.skill)?.name ?? ''}`,
     extra: `<div data-online="board" data-game="${esc(game)}" data-len="${Number(len)}" data-keys="${Number(keys) | 0}" data-level="${Number(level) | 0}" data-page="${Number(page) | 0}" data-label="${esc(label)}"><p class="muted">Loading…</p></div>`,
     items: e ? [{ label: 'Play', desc: 'Open the game', act: 'go', arg: `game:${game}`, code: 'Space', keyName: 'SPACE' }] : [],
+    wide: true,
+  };
+}
+
+/** Everyone ranked across all games. Arg: page. */
+export function overallMenu(c: MenuCtx, arg: string): Menu {
+  return {
+    title: 'OVERALL',
+    sub: c.online.name ? `Every player, across every game${DOT}you are ${esc(c.online.name)}` : 'Every player, across every game',
+    extra: `<p class="muted">On each game's board, first place scores 100 and the rest score by how many they beat: on a board of 20, 10th scores 55. Your total adds your best board for each game, so play more games to climb; playing one game at every length doesn't count twice.</p><div data-online="overall" data-page="${Number(arg) | 0}"><p class="muted">Loading…</p></div>`,
+    items: [],
     wide: true,
   };
 }

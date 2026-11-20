@@ -148,4 +148,15 @@ test('scores: every player on a board, pages, boards list, player pages, renames
   assert.equal((await call('/api/scores?game=snap&len=1&keys=2&limit=1')).data.entries[0].name, 'Leader');
   assert.equal(((await call('/api/boards')).data.boards as { game: string; top: { name: string } }[]).find((b) => b.game === 'snap')!.top.name, 'Leader');
   assert.equal((await call('/api/player?name=P59')).status, 404, 'the old name is free again');
+  // Overall: best board per game, summed; first place on a board is 100.
+  const overall = (await call('/api/overall?limit=100')).data as { total: number; entries: { name: string; total: number; games: number; wins: number }[] };
+  assert.equal(overall.total, 60);
+  const p5 = overall.entries.find((e) => e.name === 'P5')!;
+  assert.equal(p5.games, 1, 'two snap boards still count as one game');
+  assert.equal(p5.wins, 1, 'alone on the level-1 board, so first there');
+  assert.equal(p5.total, 100);
+  const p3o = overall.entries.find((e) => e.name === 'P3')!;
+  assert.equal(p3o.games, 2);
+  assert.equal(overall.entries[0]!.name, 'P3', 'two games beat one');
+  assert.equal(overall.entries.find((e) => e.name === 'Leader')!.total, 100, 'renamed, and first on snap');
 });
