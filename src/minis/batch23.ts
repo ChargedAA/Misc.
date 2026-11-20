@@ -7,6 +7,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { ship } from './sprites.ts';
 import { arena, footer, handLabel, header, mean, median, message, ms, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -171,18 +172,8 @@ class Comet implements Mini {
     const [cx, cy] = P(this.x, this.y);
     const blink = now - this.hurtAt < 1200 && Math.floor(now / 100) % 2 === 0;
     if (!blink) {
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(this.ang);
-      ctx.fillStyle = COL_ACCENT;
-      const s = 11 * a.u;
-      ctx.beginPath();
-      ctx.moveTo(s, 0);
-      ctx.lineTo(-s * 0.7, s * 0.6);
-      ctx.lineTo(-s * 0.7, -s * 0.6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+      // The ship: nose along its heading, a flame behind (it never stops).
+      ship(ctx, cx, cy, 8.5 * a.u, this.ang + Math.PI / 2, true, [COL_ACCENT, '#b8402a']);
     }
     if (!this.started) message(v, { ...a, cy: a.cy + size * 0.25 }, 'hold a key to turn: left anticlockwise, right clockwise', 'you always move forward. collect the white dots, miss the mines and the walls', COL_MID);
     if (this.over) message(v, a, `${this.dots} dots`, 'out of lives');

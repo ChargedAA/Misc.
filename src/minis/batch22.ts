@@ -6,6 +6,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } fr
 import { SND_CATCH, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, ball, keeper } from './sprites.ts';
 import { Stair, arena, footer, foreperiod, handLabel, header, mean, median, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -383,28 +384,15 @@ class Goalie implements Mini {
     ctx.stroke();
     ctx.fillStyle = COL_FAINT;
     ctx.fillRect(a.cx - gw * 1.4, gy, gw * 2.8, dpr);
-    // The keeper: a short bar with a head; slides and tips with the dive.
-    const since = this.dive !== 0 ? Math.max(0, now - Math.max(this.diveAt, this.state === 0 ? this.diveAt : this.diveAt)) : 0;
+    // The net: a faint grid inside the frame.
+    ctx.fillStyle = COL_FAINT;
+    for (let i = 1; i < 12; i++) ctx.fillRect(a.cx - gw + (i * gw * 2) / 12, gy - gh, dpr, gh);
+    for (let i = 1; i < 5; i++) ctx.fillRect(a.cx - gw, gy - gh + (i * gh) / 5, gw * 2, dpr);
+    // The keeper: slides across and tips over with the dive.
+    const since = this.dive !== 0 ? Math.max(0, now - this.diveAt) : 0;
     const go = this.dive !== 0 ? ease(since / 260) : 0;
     const kx = a.cx + this.dive * go * gw * 0.62;
-    const tilt = this.dive * go * 0.9;
-    const kw = gw * 0.26;
-    const ky = gy - gh * 0.45;
-    ctx.save();
-    ctx.translate(kx, ky);
-    ctx.rotate(tilt);
-    ctx.strokeStyle = COL_LINE;
-    ctx.lineWidth = 3 * dpr;
-    ctx.beginPath();
-    ctx.moveTo(-kw, 0);
-    ctx.lineTo(kw, 0);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, gh * 0.4);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(0, -10 * a.u, 7 * a.u, 0, TAU);
-    ctx.stroke();
-    ctx.restore();
+    keeper(ctx, kx, gy, gh * 0.085, this.dive * go * 0.85, TONE.light);
     // The spot and the ball.
     const spotY = Math.min(a.bottom - 40 * a.u, gy + gh * 2.2);
     ctx.fillStyle = COL_DIM;
@@ -420,10 +408,7 @@ class Goalie implements Mini {
       by = spotY + (ty - spotY) * t;
       br = 9 * a.u * (1 - 0.5 * t);
     }
-    ctx.fillStyle = this.state === 2 && !this.outcomeOk ? COL_ACCENT : COL_LINE;
-    ctx.beginPath();
-    ctx.arc(bx, by, br, 0, TAU);
-    ctx.fill();
+    ball(ctx, bx, by, br, this.state === 2 && !this.outcomeOk ? [COL_ACCENT, '#b8402a'] : TONE.light);
     // The kicker's run-up: a dot closing in on the ball.
     if (this.state === 0) {
       const p = Math.min(1, (now - this.runFrom) / Math.max(1, this.at - this.runFrom));

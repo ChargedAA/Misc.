@@ -9,6 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, lander } from './sprites.ts';
 import { Stair, arena, clamp, footer, handLabel, header, mean, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 // --- Tower ------------------------------------------------------------------------
@@ -241,17 +242,12 @@ class Lander implements Mini {
     }
     const lx = x0 + this.x * W;
     const ly = ground - this.y * H - 12 * a.u;
-    ctx.fillStyle = this.state === 1 && !this.lastOk ? COL_MID : COL_ACCENT;
-    ctx.beginPath();
-    ctx.moveTo(lx, ly - 12 * a.u);
-    ctx.lineTo(lx - 10 * a.u, ly + 10 * a.u);
-    ctx.lineTo(lx + 10 * a.u, ly + 10 * a.u);
-    ctx.closePath();
-    ctx.fill();
-    if (this.state === 0 && up && this.fuel > 0) {
-      ctx.fillStyle = COL_MID;
-      ctx.fillRect(lx - 3 * a.u, ly + 12 * a.u, 6 * a.u, (8 + Math.random() * 8) * a.u);
-    }
+    // The lander; each engine's flame follows the hand firing it (one hand: both, as one thrust).
+    const firing = this.state === 0 && this.fuel > 0 && up > 0;
+    const flick = 0.75 + Math.random() * 0.25;
+    const fl = firing && (twoHands ? l : true) ? flick : 0;
+    const fr = firing && (twoHands ? r : true) ? flick : 0;
+    lander(ctx, lx, ly - 6 * a.u, 7.8 * a.u, fl, fr, 0, this.state === 1 && !this.lastOk ? TONE.mid : TONE.light);
     // Descent speed gauge with the safe band.
     const gx = a.right - 24 * a.u;
     ctx.fillStyle = COL_DIM;

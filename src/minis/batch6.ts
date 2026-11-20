@@ -6,10 +6,11 @@
 //   Orbit   - each hand flips the direction of its own orbiting dot.
 //   Drum    - read a short left/right/both pattern and play it in time.
 
-import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
+import { COL_FAINT, ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, gunslinger } from './sprites.ts';
 import {
   Stair,
   arena,
@@ -135,24 +136,29 @@ class Duel implements Mini {
     const dpr = v.dpr;
     header(v, touch, 'you', String(this.wins), 'them', String(this.losses));
     const half = Math.min(220 * a.u, (a.right - a.left) / 2 - 30 * a.u);
-    // Two figures: a post each, facing off.
-    for (const s of [-1, 1]) {
-      ctx.fillStyle = s > 0 ? COL_LINE : COL_MID;
-      ctx.fillRect(a.cx + s * half - 2 * dpr, a.cy - 40 * a.u, 4 * dpr, 80 * a.u);
-    }
+    // Two gunslingers facing off: them on the left, you on the right. After a round, the winner
+    // has drawn and the loser is down; a jump start draws with no one to shoot.
+    const k = 7.4 * a.u;
+    const feet = a.cy + 46 * a.u;
+    const won = this.state === 2 && this.verdict === 'you win the round';
+    const lost = this.state === 2 && this.verdict === 'they were faster';
+    const early = this.state === 2 && this.verdict === 'drew too early';
+    gunslinger(ctx, a.cx - half, feet, k, 1, lost ? 'fire' : won ? 'down' : 'ready', TONE.mid);
+    gunslinger(ctx, a.cx + half, feet, k, -1, won || early ? 'fire' : lost ? 'down' : 'ready', TONE.light);
+    ctx.fillStyle = COL_FAINT;
+    ctx.fillRect(a.cx - half - 40 * a.u, feet, half * 2 + 80 * a.u, dpr);
     ctx.fillStyle = COL_MID;
-    v.text('them', a.cx - half, a.cy + 64 * a.u, v.fontTiny, 'center');
-    v.text('you', a.cx + half, a.cy + 64 * a.u, v.fontTiny, 'center');
+    v.text('them', a.cx - half, feet + 20 * a.u, v.fontTiny, 'center');
+    v.text('you', a.cx + half, feet + 20 * a.u, v.fontTiny, 'center');
     if (this.state === 1) {
       if (this.drawnAt === 0) this.drawnAt = gameNow();
       ctx.fillStyle = COL_ACCENT;
-      ctx.fillRect(a.cx - half + 12 * a.u, a.cy - 2 * dpr, half * 2 - 24 * a.u, 4 * dpr);
-      v.text('DRAW', a.cx, a.cy - 24 * a.u, v.fontHud, 'center');
+      v.text('DRAW', a.cx, feet - 100 * a.u, v.fontBig, 'center');
     } else if (this.state === 2) {
-      message(v, { ...a, cy: a.cy - 70 * a.u }, this.verdict, this.lastMine ? `you ${Math.round(this.lastMine)} ms  ·  them ${Math.round(this.lastThem)} ms` : this.verdict === 'drew too early' ? '' : `them ${Math.round(this.lastThem)} ms`);
+      message(v, { ...a, cy: feet - 120 * a.u }, this.verdict, this.lastMine ? `you ${Math.round(this.lastMine)} ms  ·  them ${Math.round(this.lastThem)} ms` : this.verdict === 'drew too early' ? '' : `them ${Math.round(this.lastThem)} ms`);
     } else {
       ctx.fillStyle = COL_DIM;
-      v.text('wait for it', a.cx, a.cy - 24 * a.u, v.fontTiny, 'center');
+      v.text('wait for it', a.cx, feet - 100 * a.u, v.fontTiny, 'center');
     }
     footer(v, touch, this.held);
     return false;

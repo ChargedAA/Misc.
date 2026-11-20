@@ -8,6 +8,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../conf
 import { SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { ball, ngon } from './sprites.ts';
 import {
   arena,
   footer,
@@ -303,9 +304,13 @@ class Pole implements Mini {
     ctx.fillRect(a.cx + stop - 2 * dpr, ground - 14 * a.u, 2 * dpr, 14 * a.u);
     const cx = a.cx + this.x * ppm;
     // Cart.
-    ctx.strokeStyle = COL_MID;
-    ctx.lineWidth = 1.5 * dpr;
-    ctx.strokeRect(cx - 24 * a.u, ground - 16 * a.u, 48 * a.u, 16 * a.u);
+    // The cart: a shaded block on two wheels.
+    ctx.fillStyle = COL_MID;
+    ctx.fillRect(cx - 24 * a.u, ground - 18 * a.u, 48 * a.u, 11 * a.u);
+    ctx.fillStyle = '#5d5d65';
+    ctx.fillRect(cx - 24 * a.u, ground - 10 * a.u, 48 * a.u, 3 * a.u);
+    ngon(ctx, cx - 14 * a.u, ground - 5 * a.u, 5 * a.u, 6, COL_DIM);
+    ngon(ctx, cx + 14 * a.u, ground - 5 * a.u, 5 * a.u, 6, COL_DIM);
     if (this.push) {
       ctx.fillStyle = COL_MID;
       ctx.fillRect(cx + (this.push > 0 ? -34 : 24) * a.u, ground - 9 * a.u, 10 * a.u, 2 * dpr);
@@ -313,16 +318,26 @@ class Pole implements Mini {
     // Pole.
     const tx = cx + Math.sin(this.th) * Lpx;
     const ty = ground - 16 * a.u - Math.cos(this.th) * Lpx;
-    ctx.strokeStyle = this.over ? COL_MID : COL_LINE;
-    ctx.lineWidth = 3 * dpr;
+    // The pole: a solid bar, lit on one side, with a weight on top.
+    const nx = Math.cos(this.th) * 3 * a.u;
+    const ny = Math.sin(this.th) * 3 * a.u;
+    ctx.fillStyle = this.over ? COL_MID : COL_LINE;
+    ctx.beginPath();
+    ctx.moveTo(cx - nx, ground - 16 * a.u - ny);
+    ctx.lineTo(cx, ground - 16 * a.u);
+    ctx.lineTo(tx, ty);
+    ctx.lineTo(tx - nx, ty - ny);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = this.over ? COL_DIM : '#a3a3ab';
     ctx.beginPath();
     ctx.moveTo(cx, ground - 16 * a.u);
+    ctx.lineTo(cx + nx, ground - 16 * a.u + ny);
+    ctx.lineTo(tx + nx, ty + ny);
     ctx.lineTo(tx, ty);
-    ctx.stroke();
-    ctx.fillStyle = COL_ACCENT;
-    ctx.beginPath();
-    ctx.arc(tx, ty, 7 * a.u, 0, TAU);
+    ctx.closePath();
     ctx.fill();
+    ball(ctx, tx, ty, 8 * a.u, [COL_ACCENT, '#b8402a']);
     // Gust indicator.
     if (Math.abs(this.gust) > 0.3) {
       ctx.fillStyle = COL_DIM;

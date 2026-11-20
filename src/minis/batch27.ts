@@ -12,6 +12,7 @@ import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } fr
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, ball, bat, ngon, person } from './sprites.ts';
 import { arena, footer, foreperiod, handLabel, header, mean, median, ms, scaled, sideOf, type Arena, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -232,25 +233,20 @@ class Bat implements Mini {
     ctx.fillRect(plate - 2 * v.dpr, y - 50 * a.u, 4 * v.dpr, 100 * a.u);
     ctx.fillStyle = COL_FAINT;
     ctx.fillRect(plate, y + 30 * a.u, x0 - plate, v.dpr);
-    ctx.fillStyle = COL_MID;
-    ctx.beginPath();
-    ctx.arc(x0, y - 20 * a.u, 10 * a.u, 0, TAU);
-    ctx.fill();
-    // The bat: swings round when you press.
+    // The pitcher: arm cocks back in the wind-up and comes over with the pitch.
+    const k = 6.2 * a.u;
+    const feet = y + 30 * a.u;
+    const pitchArm = this.state === 0 ? 2.6 : this.state === 1 ? Math.max(0.4, 2.6 - (now - this.t0) / 60) : 0.4;
+    const [px, py] = person(ctx, x0, feet, k, -1, pitchArm, TONE.mid);
+    if (this.state === 0) ball(ctx, px, py, 5 * a.u);
+    // The batter, and the bat: swings round when you press.
     const swing = this.swungAt ? Math.min(1, (now - this.swungAt) / 120) : 0;
-    ctx.save();
-    ctx.translate(plate - 20 * a.u, y);
-    ctx.rotate(-1.2 + swing * 2.2);
-    ctx.fillStyle = COL_LINE;
-    ctx.fillRect(0, -3 * v.dpr, 70 * a.u, 6 * v.dpr);
-    ctx.restore();
+    const [hx, hy] = person(ctx, plate - 34 * a.u, feet, k, 1, 1.9 - swing * 0.9, TONE.light);
+    bat(ctx, hx, hy, 72 * a.u, -1.2 + swing * 2.2, TONE.light);
     if (this.state >= 1) {
       const p = this.state === 1 ? this.pos(now) : 1;
       const bx = x0 + (plate - x0) * Math.min(1.1, p);
-      ctx.fillStyle = this.state === 2 && this.outcomeOk ? COL_LINE : COL_ACCENT;
-      ctx.beginPath();
-      ctx.arc(bx, y, 7 * a.u, 0, TAU);
-      ctx.fill();
+      ball(ctx, bx, y, 7 * a.u, this.state === 2 && this.outcomeOk ? TONE.light : [COL_ACCENT, '#b8402a']);
     }
     if (this.state === 2) note(v, a, this.outcome, this.outcomeOk ? COL_MID : COL_ACCENT);
     else note(v, a, 'press as the ball reaches the plate. some pitches slow down halfway');
@@ -878,17 +874,25 @@ class Flipper implements Mini {
       const up = now - this.flipAt[side]! < 150 ? 1 : 0;
       const pivot = side ? X(0.92) : X(0.08);
       const tip = side ? X(0.55) : X(0.45);
-      ctx.strokeStyle = up ? COL_ACCENT : COL_LINE;
-      ctx.lineWidth = 4 * v.dpr;
+      // A tapered paddle from a round pivot.
+      const ty = Y(up ? 0.8 : 0.9);
+      const py = Y(0.84);
+      const dx = tip - pivot;
+      const dy = ty - py;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * 7 * a.u;
+      const ny = (dx / len) * 7 * a.u;
+      ctx.fillStyle = up ? COL_ACCENT : COL_LINE;
       ctx.beginPath();
-      ctx.moveTo(pivot, Y(0.84));
-      ctx.lineTo(tip, Y(up ? 0.8 : 0.9));
-      ctx.stroke();
+      ctx.moveTo(pivot + nx, py + ny);
+      ctx.lineTo(tip + nx * 0.35, ty + ny * 0.35);
+      ctx.lineTo(tip - nx * 0.35, ty - ny * 0.35);
+      ctx.lineTo(pivot - nx, py - ny);
+      ctx.closePath();
+      ctx.fill();
+      ngon(ctx, pivot, py, 8 * a.u, 8, up ? '#b8402a' : '#a3a3ab');
     }
-    ctx.fillStyle = COL_LINE;
-    ctx.beginPath();
-    ctx.arc(X(this.bx), Y(this.by), 8 * a.u, 0, TAU);
-    ctx.fill();
+    ball(ctx, X(this.bx), Y(this.by), 8 * a.u, TONE.light);
     ctx.fillStyle = COL_MID;
     v.text(handLabel(this.env, -1), X(0.2), Y(0.97), v.fontTiny, 'center');
     v.text(handLabel(this.env, 1), X(0.8), Y(0.97), v.fontTiny, 'center');

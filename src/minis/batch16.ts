@@ -9,6 +9,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_TAP_L, SND_TAP_R, SND_TONE } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_SQUARE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, car } from './sprites.ts';
 import { arena, clamp, footer, handLabel, header, median, message, ms, pct, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -162,15 +163,9 @@ class Swerve extends Steer {
       ctx.fillStyle = h.done && Math.abs(this.x - h.x) < h.w / 2 + 0.06 ? COL_ACCENT : COL_LINE;
       ctx.fillRect(toX(h.x - h.w / 2), y - 10 * a.u, h.w * half, 20 * a.u);
     }
-    // The car: a small wedge.
+    // The car, from above; its nose turns as you steer.
     const cx = toX(this.x);
-    ctx.fillStyle = now - this.hitFlash < 400 ? COL_MID : COL_ACCENT;
-    ctx.beginPath();
-    ctx.moveTo(cx, carY - 16 * a.u);
-    ctx.lineTo(cx - 10 * a.u, carY + 10 * a.u);
-    ctx.lineTo(cx + 10 * a.u, carY + 10 * a.u);
-    ctx.closePath();
-    ctx.fill();
+    car(ctx, cx, carY - 4 * a.u, 7.8 * a.u, steerOf(this.held), now - this.hitFlash < 400 ? TONE.mid : [COL_ACCENT, '#b8402a']);
     if (now - this.t0 < 3500 && !this.over) message(v, { ...a, cy: a.top + 30 * a.u }, `hold ${handLabel(this.env, -1)} / ${handLabel(this.env, 1)} to steer`, 'blocks pop up in your path: get out of the way', COL_MID);
     if (this.over) message(v, a, `${this.cleared} cleared`, this.rts.length ? `median reaction ${Math.round(median(this.rts))} ms` : '');
     footer(v, touch, this.held);

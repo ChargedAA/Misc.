@@ -12,6 +12,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
+import { TONE, ball, crate as crateBox, jumper, ngon, person, rowboat } from './sprites.ts';
 import { arena, footer, handLabel, header, mean, median, ms, scaled, sideOf, type Arena, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -131,25 +132,32 @@ class Hoop implements Mini {
     const Y = (m: number) => ground - m * ppm;
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(X(-0.5), ground, 11 * ppm, v.dpr);
-    // Hoop: a backboard and a rim.
+    // Hoop: a post, a backboard panel, a rim and a net.
+    ctx.fillStyle = '#5d5d65';
+    ctx.fillRect(X(this.dist + 0.42), Y(3), 0.1 * ppm, 3 * ppm);
     ctx.fillStyle = COL_MID;
-    ctx.fillRect(X(this.dist + 0.35), Y(4), 3 * v.dpr, 1.2 * ppm);
-    ctx.fillRect(X(this.dist + 0.35), Y(3), 2 * v.dpr, 3 * ppm);
-    ctx.strokeStyle = COL_LINE;
-    ctx.lineWidth = 2 * v.dpr;
+    ctx.fillRect(X(this.dist + 0.3), Y(4.05), 0.12 * ppm, 1.25 * ppm);
+    ctx.fillStyle = COL_DIM;
+    ctx.fillRect(X(this.dist + 0.3), Y(3.55), 0.12 * ppm, 0.4 * ppm);
+    ctx.fillStyle = COL_ACCENT;
+    ctx.fillRect(X(this.dist - 0.23), Y(3) - 1.5 * v.dpr, 0.53 * ppm, 3 * v.dpr);
+    ctx.strokeStyle = COL_MID;
+    ctx.lineWidth = v.dpr;
     ctx.beginPath();
-    ctx.moveTo(X(this.dist - 0.23), Y(3));
-    ctx.lineTo(X(this.dist + 0.23), Y(3));
-    ctx.stroke();
-    // You.
-    ctx.fillStyle = COL_MID;
-    ctx.fillRect(X(-0.1), Y(1.8), 0.2 * ppm, 1.8 * ppm);
-    if (this.state === 2 || this.state === 3) {
-      ctx.fillStyle = COL_ACCENT;
-      ctx.beginPath();
-      ctx.arc(X(this.bx), Y(this.by), 0.12 * ppm, 0, TAU);
-      ctx.fill();
+    for (let i = 0; i <= 4; i++) {
+      const top = X(this.dist - 0.23 + i * 0.115);
+      const bot = X(this.dist - 0.15 + i * 0.075);
+      ctx.moveTo(top, Y(3));
+      ctx.lineTo(bot, Y(2.6));
     }
+    ctx.moveTo(X(this.dist - 0.19), Y(2.8));
+    ctx.lineTo(X(this.dist + 0.19), Y(2.8));
+    ctx.stroke();
+    // You: the arm lifts as you charge and follows through on the shot.
+    const arm = this.state === 1 ? 2.9 : this.state === 2 ? 2.2 : 0.35;
+    const [hx, hy] = person(ctx, X(0), Y(0), 0.2 * ppm, 1, arm, TONE.mid);
+    if (this.state === 0 || this.state === 1) ball(ctx, hx, hy - 0.08 * ppm, 0.12 * ppm, [COL_ACCENT, '#b8402a']);
+    if (this.state === 2 || this.state === 3) ball(ctx, X(this.bx), Y(this.by), 0.12 * ppm, [COL_ACCENT, '#b8402a']);
     // The power meter while you hold.
     const p = this.state === 1 ? ((now - this.chargeAt) / 1600) % 1 : this.state >= 2 ? this.power : 0;
     ctx.strokeStyle = COL_DIM;
@@ -272,10 +280,7 @@ class Rope implements Mini {
     const air = now - this.jumpAt;
     const lift = air < 420 ? Math.sin((air / 420) * Math.PI) * 50 * a.u : 0;
     const blink = now - this.hitAt < 600 && Math.floor(now / 80) % 2 === 0;
-    if (!blink) {
-      ctx.fillStyle = COL_ACCENT;
-      ctx.fillRect(a.cx - 8 * a.u, ground - 50 * a.u - lift, 16 * a.u, 50 * a.u);
-    }
+    if (!blink) jumper(ctx, a.cx, ground - lift, 7.6 * a.u, air < 420 ? Math.sin((air / 420) * Math.PI) : 0, now - this.hitAt < 600 ? [COL_ACCENT, '#b8402a'] : TONE.light);
     ctx.fillStyle = COL_DIM;
     ctx.fillRect(a.cx - span, ground, span * 2, v.dpr);
     if (!this.started) note(v, a, 'press any key to start, then press to jump just before the rope reaches your feet');
@@ -673,24 +678,12 @@ class Row implements Mini {
       }
       ctx.stroke();
     }
-    // The boat, pointing its heading, with oars that flash when pulled.
-    ctx.save();
-    ctx.translate(a.cx, boatY);
-    ctx.rotate(this.heading);
-    ctx.strokeStyle = COL_LINE;
-    ctx.lineWidth = 2 * v.dpr;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 9 * a.u, 26 * a.u, 0, 0, TAU);
-    ctx.stroke();
-    for (const s of [-1, 1]) {
-      const fresh = now - this.lastStroke[s < 0 ? 0 : 1]! < 200;
-      ctx.strokeStyle = fresh ? COL_ACCENT : COL_MID;
-      ctx.beginPath();
-      ctx.moveTo(s * 8 * a.u, 0);
-      ctx.lineTo(s * 40 * a.u, fresh ? 14 * a.u : -6 * a.u);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // The boat, pointing its heading; an oar sweeps back as it is pulled.
+    const sweep = (i: number) => {
+      const t = (now - this.lastStroke[i]!) / 260;
+      return t < 1 ? -0.5 + Math.sin(t * Math.PI) * 0.9 : -0.5;
+    };
+    rowboat(ctx, a.cx, boatY, 6.2 * a.u, this.heading, sweep(0), sweep(1), TONE.light);
     note(v, a, `${handLabel(this.env, -1)} pulls the left oar, ${handLabel(this.env, 1)} the right. even strokes go straight; one side turns you`);
     footer(v, touch, this.held);
     return false;
@@ -813,8 +806,13 @@ class Crane implements Mini {
     ctx.fillRect(X(0), Y(0.93), w, v.dpr);
     ctx.fillStyle = COL_LINE;
     ctx.fillRect(X(this.pad - this.padW / 2), Y(0.92), this.padW * w, 4 * v.dpr);
+    // The trolley on the jib: a block on two wheels.
     ctx.fillStyle = COL_MID;
-    ctx.fillRect(X(this.x) - 12 * a.u, Y(0.1) - 8 * a.u, 24 * a.u, 10 * a.u);
+    ctx.fillRect(X(this.x) - 14 * a.u, Y(0.1) - 12 * a.u, 28 * a.u, 11 * a.u);
+    ctx.fillStyle = '#5d5d65';
+    ctx.fillRect(X(this.x) - 14 * a.u, Y(0.1) - 4 * a.u, 28 * a.u, 3 * a.u);
+    ngon(ctx, X(this.x) - 8 * a.u, Y(0.1) - 13 * a.u, 3 * a.u, 6, COL_DIM);
+    ngon(ctx, X(this.x) + 8 * a.u, Y(0.1) - 13 * a.u, 3 * a.u, 6, COL_DIM);
     const L = 0.45;
     const hx = this.x + Math.sin(this.th) * L;
     const hy = 0.1 + Math.cos(this.th) * L;
@@ -825,9 +823,7 @@ class Crane implements Mini {
     ctx.lineTo(X(this.state === 0 ? hx : this.x + Math.sin(this.th) * L), Y(this.state === 0 ? hy : 0.1 + Math.cos(this.th) * L));
     ctx.stroke();
     const crate: [number, number] = this.state === 0 ? [hx, hy] : [this.cx, Math.min(0.88, this.cy)];
-    ctx.strokeStyle = COL_ACCENT;
-    ctx.lineWidth = 2 * v.dpr;
-    ctx.strokeRect(X(crate[0]) - 14 * a.u, Y(crate[1]), 28 * a.u, 24 * a.u);
+    crateBox(ctx, X(crate[0]) - 15 * a.u, Y(crate[1]), 30 * a.u, 26 * a.u);
     note(v, a, `hold ${handLabel(this.env, -1)} or ${handLabel(this.env, 1)} to move the crane. let the swing settle. both together to drop it on the pad`);
     footer(v, touch, this.held);
     return false;
