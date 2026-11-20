@@ -1,7 +1,7 @@
 // What each control does, per game, shown next to the keys on the drill page and the ready card.
 // Tokens: L = the left hand's keys, R = the right hand's, ANY = any of your keys, BOTH = both
 // hands together, OUTER_L / OUTER_R = the outermost key on each side, MID = the other keys,
-// TAP = click or tap the board. A MID row is left out when there are no middle keys; a BOTH row
+// TAP = click or tap the board, KeyX = that letter key itself (KeyR = the R key, not the right hand). A MID row is left out when there are no middle keys; a BOTH row
 // next to a MID row is only shown when MID is left out (it is the two-key alternative). Anything else is shown as written (1-4, Enter, arrows...).
 
 export type Control = [keys: string, action: string];
@@ -80,7 +80,7 @@ export const CONTROLS: Record<string, Control[]> = {
   row: [['L', 'left oar'], ['R', 'right oar']],
   crane: [['L', 'hold to move left'], ['R', 'hold to move right'], ['BOTH', 'drop']],
   drone: [['L', 'left rotor'], ['R', 'right rotor'], ['BOTH', 'lift']],
-  etch: [['A D', 'across'], ['I K', 'up and down']],
+  etch: [['A D', 'across'], ['I K', 'up and down'], ['arrows', 'or the arrows (W S also go up and down)']],
   back: [['L', 'same place as n back'], ['R', 'same note as n back']],
   spot: [['L', 'all the same'], ['R', 'something changed']],
   hold: [['L', 'sum is false'], ['R', 'sum is true'], ['TAP', 'tap the squares at the end']],
@@ -116,7 +116,7 @@ export const CONTROLS: Record<string, Control[]> = {
   sum: [['L', 'false'], ['R', 'true'], ['TAP', 'or tap']],
   compare: [['L', 'left is bigger'], ['R', 'right is bigger'], ['TAP', 'or tap']],
   relate: [['L', 'false'], ['R', 'true'], ['TAP', 'or tap']],
-  probe: [['TAP', 'pick shapes'], ['L', 'no'], ['R', 'yes']],
+  probe: [['1–8', 'pick a shape to test'], ['TAP', 'or tap it'], ['L', 'no'], ['R', 'yes'], ['Space', 'next rule']],
   shells: [['1–5', 'choose a cup'], ['TAP', 'or tap the cup']],
   series: [['1–4', 'choose'], ['TAP', 'or tap']],
   matrix: [['1–4', 'choose'], ['TAP', 'or tap']],
@@ -130,8 +130,8 @@ export const CONTROLS: Record<string, Control[]> = {
   latin: [['1–4', 'fill the cell'], ['TAP', 'select · cycle']],
   slide: [['arrows', 'slide into the gap'], ['TAP', 'or tap a tile']],
   maze: [['arrows', 'move'], ['W A S D', 'or these']],
-  digits: [['0–9', 'type it'], ['Enter', 'done']],
-  running: [['0–9', 'type them'], ['Enter', 'done']],
+  digits: [['0–9', 'type it; it checks itself when complete'], ['Backspace', 'fix a mistake'], ['TAP', 'or tap the keypad']],
+  running: [['0–9', 'type the last ones; it checks itself'], ['Backspace', 'fix a mistake'], ['TAP', 'or tap the keypad']],
   guess: [['0–9', 'your estimate'], ['Enter', 'done']],
   chain: [['0–9', 'the total'], ['Enter', 'done']],
   tally: [['0–9', 'the count'], ['Enter', 'done']],
@@ -143,11 +143,11 @@ export const CONTROLS: Record<string, Control[]> = {
   recall: [['A–Z', 'type a word'], ['Space', 'next word'], ['Enter', 'done']],
   crack: [['1–5', 'pick shapes'], ['Enter', 'try']],
   plan: [['1–6', 'add a job'], ['Backspace', 'undo']],
-  intune: [['1', 'in tune'], ['2', 'out of tune'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  octave: [['1–5', 'the octave'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  note: [['1–0 - =', 'the note, C to B'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  interval: [['1–0 - = [', 'the interval, unison to octave'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  chord: [['1–0 - =', 'the root, then the type'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  contour: [['1–4', 'the shape'], ['R', 'hear it again'], ['TAP', 'or tap']],
-  scale: [['1–8', 'the scale'], ['R', 'hear it again'], ['TAP', 'or tap']],
+  intune: [['1', 'in tune'], ['2', 'out of tune'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  octave: [['1–5', 'the octave'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  note: [['1–0 - =', 'the note, C to B'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  interval: [['1–0 - = [', 'the interval, unison to octave'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  chord: [['1–0 - =', 'the root, then the type'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  contour: [['1–4', 'the shape'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
+  scale: [['1–8', 'the scale'], ['KeyR', 'hear it again'], ['TAP', 'or tap']],
 };

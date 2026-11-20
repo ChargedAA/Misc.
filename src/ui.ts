@@ -183,6 +183,8 @@ export function controlsHtml(id: string, input: string, keys: number, b: Binding
     const list =
       tok === 'L' ? left : tok === 'R' ? (right.length ? right : left) : tok === 'ANY' ? all : tok === 'OUTER_L' ? left.slice(0, 1) : tok === 'OUTER_R' ? right.slice(-1) : tok === 'MID' ? all.filter((k) => k !== left[0] && k !== right[right.length - 1]) : null;
     if (list) return list.map(kbd).join('');
+    // A literal letter key (the R in "R: hear it again"), as distinct from the R hand token.
+    if (/^Key[A-Z]$/.test(tok)) return kbd(tok);
     if (tok === 'BOTH') return `${kbd(left[0] ?? '')}+${kbd((right[0] ?? left[0]) ?? '')}`;
     if (tok === 'TAP') return '';
     if (tok === '') return '';

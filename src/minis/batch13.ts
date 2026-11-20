@@ -587,7 +587,8 @@ class Sync implements Mini {
       }
       // After the drop: where the ball was when you pressed, against the line.
       if (this.state === 1 && press) {
-        const py = line - (cross - press) * speed;
+        // Very early or late presses: keep the marker and its label inside the play area.
+        const py = Math.max(top + 30 * a.u, Math.min(line + 50 * a.u, line - (cross - press) * speed));
         ctx.fillStyle = COL_LINE;
         ctx.fillRect(x - 18 * a.u, py - dpr, 36 * a.u, 2 * dpr);
         ctx.fillStyle = COL_MID;

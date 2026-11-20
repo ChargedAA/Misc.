@@ -1641,9 +1641,18 @@ function onPointerDown(e: PointerEvent): void {
     return;
   }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
+    if (!mini.pointer) {
+      // A game that takes taps but has no tap handler of its own (Ruler, Bat, Morse...): a tap is
+      // a key press on that side of the screen, held until the finger lifts.
+      const slot = (e.clientX - rect.left) * view.dpr < view.w / 2 ? 0 : 3;
+      pointerSlot[e.pointerId & 63] = slot + 1;
+      integrity.note(e, stamp(e));
+      press(slot, stamp(e));
+      return;
+    }
     miniInputs++;
     integrity.note(e, stamp(e));
-    mini.pointer?.((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
+    mini.pointer((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
     return;
   }
   if (hit < 0) return;

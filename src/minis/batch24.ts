@@ -195,18 +195,27 @@ abstract class KeySeq implements Mini {
       const chars = this.p.codes.map(charOf);
       const showChars = this.p.show.length === chars.length ? [...this.p.show] : null;
       if (showChars) {
-        ctx.font = v.fontBig;
-        const w = ctx.measureText('M').width * 0.75;
+        // Space the letters by the widest one, and shrink the font if the word would not fit.
+        let font = v.fontBig;
+        ctx.font = font;
+        let w = Math.max(...showChars.map((c) => ctx.measureText(c).width)) * 1.12;
+        const room = (a.right - a.left) * 0.94;
+        if (w * showChars.length > room) {
+          const px = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 0);
+          const k = room / (w * showChars.length);
+          if (px) font = font.replace(/\d+(?:\.\d+)?px/, `${Math.floor(px * k)}px`);
+          w *= k;
+        }
         const x0 = a.cx - ((chars.length - 1) * w) / 2;
         showChars.forEach((c, k) => {
           const done = k < this.pos;
           if (hidden && !done) {
             ctx.fillStyle = COL_DIM;
-            v.text('·', x0 + k * w, a.cy, v.fontBig, 'center');
+            v.text('·', x0 + k * w, a.cy, font, 'center');
             return;
           }
           ctx.fillStyle = this.state === 2 && !this.lastOk ? COL_ACCENT : done ? COL_LINE : k === this.pos ? COL_MID : COL_DIM;
-          v.text(c, x0 + k * w, a.cy, v.fontBig, 'center');
+          v.text(c, x0 + k * w, a.cy, font, 'center');
         });
       } else {
         ctx.fillStyle = COL_LINE;

@@ -425,7 +425,8 @@ class Plan implements Mini {
       v.text(`${j.value}`, x0 + 14 * unit + 14 * a.u, y + rowH / 2 + 4 * dpr, v.fontHud, 'left');
       if (pickedAt >= 0) {
         ctx.fillStyle = COL_MID;
-        v.text(`#${pickedAt + 1}`, x0 - 20 * a.u, y + rowH / 2 + 4 * dpr, v.fontTiny, 'right');
+        // Its place in your order, after the value (beside the row number it crowded on phones).
+        v.text(`#${pickedAt + 1}`, x0 + 14 * unit + 44 * a.u, y + rowH / 2 + 4 * dpr, v.fontTiny, 'left');
       }
     });
     ctx.fillStyle = COL_MID;

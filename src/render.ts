@@ -134,7 +134,9 @@ export class View {
     const k = Math.max(0.82, Math.min(1, Math.min(cw, ch) / dpr / 720)) * textScale;
     this.fontHud = `500 ${Math.round(18 * k * dpr)}px ${FONT}`;
     this.fontTiny = `500 ${Math.round(14.5 * k * dpr)}px ${FONT}`;
-    this.fontBig = `300 ${Math.round(56 * k * dpr)}px ${FONT}`;
+    // The big numbers and words also follow the width, so on a phone they keep their distance
+    // from the labels laid out around them (those positions scale with the arena).
+    this.fontBig = `300 ${Math.round(56 * k * Math.min(1, cw / dpr / 600) * dpr)}px ${FONT}`;
     this.fontPad = `500 ${Math.round(14 * k * dpr)}px ${FONT}`;
     this.fontMono = `${Math.round(11 * dpr)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     this.advHud = this.measureDigits(this.fontHud);
@@ -210,6 +212,43 @@ export class View {
     ctx.font = font;
     ctx.textAlign = align;
     ctx.textBaseline = 'alphabetic';
+    // A line wider than the screen shrinks to fit rather than running off the edges; if even a
+    // small size will not fit, it wraps (upward near the bottom, downward near the top).
+    const room = this.w - 24 * this.dpr;
+    let w = ctx.measureText(s).width;
+    if (w > room) {
+      const px = Number(/(\d+(?:\.\d+)?)px/.exec(font)?.[1] ?? 0);
+      if (px) {
+        const minPx = 11 * this.dpr;
+        const size = Math.max(minPx, Math.floor((px * room) / w));
+        const small = font.replace(/\d+(?:\.\d+)?px/, `${size}px`);
+        ctx.font = small;
+        w = ctx.measureText(s).width;
+        if (w > room) {
+          const lines: string[] = [];
+          let cur = '';
+          for (const word of s.split(' ')) {
+            const next = cur ? `${cur} ${word}` : word;
+            if (cur && ctx.measureText(next).width > room) {
+              lines.push(cur);
+              cur = word;
+            } else cur = next;
+          }
+          if (cur) lines.push(cur);
+          const lh = size * 1.3;
+          const up = y > this.h / 2;
+          lines.forEach((line, i) => {
+            const ly = up ? y - (lines.length - 1 - i) * lh : y + i * lh;
+            ctx.fillText(line, align === 'center' ? x : align === 'right' || align === 'end' ? Math.min(x, this.w - 12 * this.dpr) : Math.max(x, 12 * this.dpr), ly);
+          });
+          return;
+        }
+      }
+    }
+    const left = align === 'center' ? x - w / 2 : align === 'right' || align === 'end' ? x - w : x;
+    const pad = 12 * this.dpr;
+    if (left < pad) x += pad - left;
+    else if (left + w > this.w - pad) x -= left + w - (this.w - pad);
     ctx.fillText(s, x, y);
   }
 

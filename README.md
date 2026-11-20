@@ -21,7 +21,8 @@ the left hand's keys and the Mind skills on the right hand's:
 | `V` | Coordination | `,` | Reasoning |
 | `A` | Dexterity (the whole keyboard) | `.` | Ear (pitch, intervals, chords) |
 
-`F` Find, `R` Random, `S` Stats and `O` Settings sit in the header. **Find**
+`F` Find, `R` Random, `L` Boards, `S` Stats, `U` Account and `O` Settings sit in
+the header. **Find**
 (also `/` from any menu) searches every drill by name, skill or idea (pitch,
 balance, typing); arrows and `Enter` pick a result. Everywhere, `Space`
 is the main action, `Esc` goes back, letters pick list items, and named actions
@@ -71,7 +72,7 @@ not saved; neither are practice runs.
 | Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
 | Lanes | The ball rolls on. Blocks pop up ahead: sidestep them. | keys, 2+ keys |
 | Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
-| Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 3+ keys |
+| Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 2+ keys |
 | Lights | Five lights come on one by one, then go out together. Go. | keys or tap |
 | Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
 | Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
@@ -278,13 +279,13 @@ not saved; neither are practice runs.
 | --- | --- | --- |
 | Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
 | Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
-| In tune | A reference note, then two more: which one matches it? | tap or click |
-| Octave | Middle C for reference, then a note: which octave is it in? | tap or click |
-| Note | C for reference, then a note: name it. | tap or click |
-| Interval | Two notes: how far apart? | tap or click |
-| Chord | Three notes at once: major, minor, diminished or augmented? | tap or click |
-| Contour | A short melody: which shape did it make? | tap or click |
-| Scale | A scale goes up: major or minor? | keys, 2+ keys |
+| In tune | One note, no reference: is it in tune? | tap or click |
+| Octave | A note: which octave is it in? | tap or click |
+| Note | A note in any octave: name it. | tap or click |
+| Interval | Two notes, up, down or together: how far apart? | tap or click |
+| Chord | A chord: name it, root and type. | tap or click |
+| Contour | A melody: which of four near-identical shapes? | tap or click |
+| Scale | A scale: major, which minor, or which mode? | tap or click |
 
 ## Why these games
 
@@ -389,14 +390,22 @@ as JSON from Settings.
 Reaction times run from the frame a stimulus was drawn (`performance.now()`) to
 the input's `event.timeStamp`, so they include display and input latency.
 
+## Customize
+
+Settings → Customize: accent colour (eight), background (near black, black,
+charcoal), text size in games, menu size, menu sounds, menu motion, a default
+length for drills you have not set, and whether switching away pauses a drill.
+
 ## Leaderboards and fair play
 
-**Boards** (`L` on the home screen) lists every game with scores, grouped by
-skill. Each board shows every player, 50 to a page, with chips for the game's
+**Boards** (`L` on the home screen) opens with the **overall** table: every
+player ranked across all games (on each board, first scores 100 and the rest by
+how many they beat; a total adds your best board per game). Below it, every game
+with scores, grouped by skill. Each board shows every player, 50 to a page, with chips for the game's
 other lengths and key counts; a player's name opens their best on every board.
 Each game's stats page shows its top ten and a link to the whole board.
 
-To post scores, sign in with Google in Settings and choose a display name
+To post scores, sign in with Google on the Account tab (`U`) and choose a display name
 (unique; your Google name and email are never shown). Playing never needs an
 account. Each account has one entry per board, its best.
 
@@ -415,6 +424,12 @@ Services: the server verifies Google's signature on the ID token (audience =
 the client ID in `src/google.ts`) and issues its own signed session. Deploy
 previews and branch deploys use a separate store. `npm run dev` serves the same
 API from memory with a stand-in sign-in, so all of it can be tried locally.
+
+## Credits
+
+The typing and word drills draw from the 5,000 most common English words, from
+[Monkeytype](https://github.com/monkeytypegame/monkeytype)'s `english_5k` list
+(GPL-3.0); see `src/minis/words.ts`.
 
 ## Tech
 

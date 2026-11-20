@@ -312,7 +312,8 @@ class Endless implements Mini {
     // Side text.
     ctx.fillStyle = COL_MID;
     const sx = x0 + laneW * 3 + 40 * a.u;
-    if (sx < a.right - 60 * a.u) {
+    // Beside the track, once the opening hint has gone (on narrow screens they would meet).
+    if (sx < a.right - 60 * a.u && (now - this.t0 >= 3500 || this.over)) {
       v.text(this.rts.length ? `median ${Math.round(med)} ms` : '', sx, a.top + 30 * a.u, v.fontTiny, 'left');
       v.text(this.fixed ? `fixed ${this.fixed} ms` : 'progressing', sx, a.top + 50 * a.u, v.fontTiny, 'left');
     }
