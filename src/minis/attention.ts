@@ -381,7 +381,7 @@ class Switch implements Mini {
   private top = true;
   private prevTop = true;
   private drawnAt = 0;
-  private readonly win = new Stair(2200, 100, 700, 2600);
+  private readonly win = new Stair(2200, 100, 250, 2600);
   private rep: number[] = [];
   private sw: number[] = [];
   private errors = 0;

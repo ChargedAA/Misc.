@@ -506,7 +506,7 @@ class Shape implements Mini {
   /** Answer by the outline (most rounds) or, when cued, by the word. */
   private byWord = false;
   private drawnAt = 0;
-  private readonly win = new Stair(1500, 80, 500, 2000);
+  private readonly win = new Stair(1500, 80, 250, 2000);
   private same: number[] = [];
   private clash: number[] = [];
   private errors = 0;

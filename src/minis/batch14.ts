@@ -116,7 +116,7 @@ class Endless implements Mini {
   }
 
   private windowMs(): number {
-    return this.fixed > 0 ? this.fixed : Math.max(230, 800 - this.cleared * 8);
+    return this.fixed > 0 ? this.fixed : Math.max(120, 800 - this.cleared * 8);
   }
 
   /** What a slot does here: -1 / +1 move, 2 jump, 0 nothing. */

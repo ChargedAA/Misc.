@@ -17,7 +17,7 @@ const TAU = Math.PI * 2;
 // --- Pitch ------------------------------------------------------------------------
 
 /** Pitch differences in cents (100 cents = one semitone), easy to hard. */
-const CENTS = [200, 150, 100, 70, 50, 35, 25, 18, 12, 8, 5];
+const CENTS = [200, 150, 100, 70, 50, 35, 25, 18, 12, 8, 5, 3, 2, 1];
 const PITCH_TRIALS = 30;
 
 class Pitch implements Mini {
@@ -608,7 +608,7 @@ class Letters implements Mini {
 
   private make(now: number): void {
     // Short words first, longer as you go.
-    const maxLen = Math.min(6, 4 + Math.floor(this.solved / 3));
+    const maxLen = Math.min(7, 4 + Math.floor(this.solved / 3));
     let pool = WORDS.filter((w) => w.length <= maxLen && !this.used.has(w));
     if (!pool.length) {
       // Every word used: start the list again (but not with the one just solved).

@@ -64,7 +64,7 @@ class Shells implements Mini {
     this.n = this.level < 4 ? 3 : this.level < 8 ? 4 : 5;
     this.pos = [...Array(this.n).keys()];
     const count = 4 + (this.level % 4) * 2 + Math.floor(this.level / 4);
-    this.swapMs = Math.max(230, 520 - this.level * 25);
+    this.swapMs = Math.max(100, 520 - this.level * 25);
     this.swaps = [];
     for (let k = 0; k < count; k++) {
       const a = rint(0, this.n - 1);
@@ -123,7 +123,7 @@ class Shells implements Mini {
     if (ok) {
       this.right++;
       this.bestSwaps = Math.max(this.bestSwaps, this.swaps.length);
-      this.level = Math.min(11, this.level + 1);
+      this.level = Math.min(24, this.level + 1);
       this.env.sound(SND_CATCH);
     } else {
       this.level = Math.max(0, this.level - 1);

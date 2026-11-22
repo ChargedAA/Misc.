@@ -482,7 +482,7 @@ class Cross implements Mini {
   private crossAt = 0;
   private dir = 1;
   /** Share of the path near the end that is hidden. Grows as you get good. */
-  private readonly hide = new Stair(0, 0.08, 0, 0.72, 2);
+  private readonly hide = new Stair(0, 0.08, 0, 0.96, 2);
   private errs: number[] = [];
   private last = 0;
   private pressed = false;

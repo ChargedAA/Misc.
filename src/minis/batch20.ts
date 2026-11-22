@@ -297,7 +297,7 @@ const HOLD_ROUNDS = 8;
 
 class Hold implements Mini {
   private env!: MiniEnv;
-  private readonly span = new Stair(2, 1, 2, 7);
+  private readonly span = new Stair(2, 1, 2, 12);
   /** Cells to remember (0..15 on a 4x4 grid), shown one at a time, each followed by a sum. */
   private cells: number[] = [];
   private k = 0;
@@ -482,7 +482,7 @@ const CHAIN_ROUNDS = 10;
 
 class Chain implements Mini {
   private env!: MiniEnv;
-  private readonly len = new Stair(3, 1, 2, 10);
+  private readonly len = new Stair(3, 1, 2, 20);
   private startN = 0;
   private ops: string[] = [];
   private answer = 0;
@@ -535,7 +535,7 @@ class Chain implements Mini {
   }
 
   private step(): number {
-    return Math.max(900, 1700 - this.round * 40);
+    return Math.max(400, 1700 - this.round * 40);
   }
 
   private type(d: string, ts: number): void {

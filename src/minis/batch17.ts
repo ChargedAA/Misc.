@@ -297,6 +297,8 @@ class Merge implements Mini {
   private verdict = '';
   private held = 0;
   private last = 0;
+  /** Road width over the layout unit, from the last frame drawn (collisions use the same geometry). */
+  private wu = 640;
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
@@ -350,10 +352,14 @@ class Merge implements Mini {
     }
     if (this.state <= 1) {
       for (const c of this.cars) c.x += this.speed * dt;
-      // The junction is at x = 0.5. While crossing, any car within your car's length of it is a hit.
+      // A hit is exactly what you see: your car (20 by 32) overlapping a car in the lane (44 by
+      // 20). Your car drives from 70 below the lane's centre to 70 above, so it is only in the
+      // lane for the middle part of the crossing.
       if (this.state === 1) {
         const p = (now - this.goAt) / 1000 / CROSS_S;
-        if (p < 1 && this.cars.some((c) => Math.abs(c.x - 0.5) < 0.06)) {
+        const inLane = Math.abs(70 - 140 * p) < 16 + 10;
+        const reach = (22 + 10) / this.wu;
+        if (p < 1 && inLane && this.cars.some((c) => Math.abs(c.x - 0.5) < reach)) {
           this.crashes++;
           this.verdict = 'too close';
           this.env.sound(SND_LURCH);
@@ -376,6 +382,7 @@ class Merge implements Mini {
     const dpr = v.dpr;
     header(v, touch, 'merged', String(this.safe), 'round', `${Math.min(this.round + 1, scaled(MERGE_ROUNDS))} / ${scaled(MERGE_ROUNDS)}`, 3 - this.crashes);
     const W = Math.min(a.right - a.left, 640 * a.u);
+    this.wu = W / a.u;
     const x0 = a.cx - W / 2;
     const roadY = a.cy - 10 * a.u;
     ctx.fillStyle = COL_DIM;
@@ -563,7 +570,7 @@ class Pour implements Mini {
 
 class Route implements Mini {
   private env!: MiniEnv;
-  private readonly len = new Stair(3, 1, 2, 12);
+  private readonly len = new Stair(3, 1, 2, 24);
   private turns: number[] = [];
   private k = 0;
   private state = 0; // 0 memorise, 1 driving, 2 feedback
@@ -745,7 +752,7 @@ export const BATCH17: MiniDef[] = [
     name: 'Merge',
     skill: 'judgement',
     blurb: 'Cars stream past the junction. Pull out into the first safe gap.',
-    how: 'You are waiting at a junction while a stream of cars goes by. Press (or tap) to pull across. You need about a second to clear the lane. Go too soon and you are hit; wait for the whole stream and it counts, but slowly. Twelve junctions.',
+    how: 'You are waiting at a junction while a stream of cars goes by. Press (or tap) to pull across. Your car is hit only if it touches a passing car, exactly as drawn. Go too soon and you are hit; wait for the whole stream and it counts, but slowly. Twelve junctions.',
     input: 'both',
     make: () => new Merge(),
   },

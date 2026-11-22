@@ -48,7 +48,7 @@ class Side implements Mini {
   private grey = false;
   private pos = -1;
   private drawnAt = 0;
-  private readonly win = new Stair(1200, 60, 380, 1500);
+  private readonly win = new Stair(1200, 60, 200, 1500);
   private same: number[] = [];
   private cross: number[] = [];
   private errors = 0;

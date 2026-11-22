@@ -24,17 +24,21 @@ the left hand's keys and the Mind skills on the right hand's:
 `F` Find, `R` Random, `L` Boards, `S` Stats, `U` Account and `O` Settings sit in
 the header. **Find**
 (also `/` from any menu) searches every drill by name, skill or idea (pitch,
-balance, typing); arrows and `Enter` pick a result. Everywhere, `Space`
-is the main action, `Esc` goes back, letters pick list items, and named actions
-use their initial (`S` stats, `P` practice, `L` length, `R` restart, `F` finish,
-`Q` quit, `N` skip). Descriptions appear when you hover over an item.
+balance, typing); arrows and `Enter` pick a result. The same keys mean the same thing on every screen. `Space` (or `Enter`) goes
+forward: start, resume, again, next, or a menu's main item. `Esc` backs out: back,
+pause, or stop the set. `N` skips to the next drill wherever there is one, `R`
+plays again or restarts, `F` finishes and scores a drill early, `Q` quits
+without a score, `S` opens stats and `L` changes the length. In menus, letters
+pick the items. Descriptions appear when you hover over an item.
 
 One page at a time, with the path back above it; `Esc` goes back.
 
 A skill's page starts with a three-drill **routine** (`Space`), then lists every
 drill grouped by what it trains, each on its own key. A drill's page gives
 numbered steps naming your actual keys, the controls, a **length** choice
-(short, standard, long, 1 min, 3 min or endless; `L` cycles it), a key count
+(3 lives, short, standard, long, 1 min, 3 min or endless; `L` cycles it).
+**3 lives** plays until your third mistake and is the default wherever a drill
+has clear mistakes (94 of them); change the default in Customize, a key count
 only for the games where it matters, a choice of keys for two-key games (usual,
 Shift keys or arrows), then **Start** (`Space`), **Practice** (`P`, plays it
 through but saves nothing) and **Stats** (`S`).

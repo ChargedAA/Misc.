@@ -302,7 +302,7 @@ class Clock implements Mini {
 // --- First ------------------------------------------------------------------------
 
 /** Arrival-time differences in ms, easy to hard. */
-const GAPS = [450, 340, 260, 200, 150, 115, 90, 70, 55, 42, 32];
+const GAPS = [450, 340, 260, 200, 150, 115, 90, 70, 55, 42, 32, 24, 18, 13, 10];
 const FIRST_TRIALS = 28;
 
 class First implements Mini {

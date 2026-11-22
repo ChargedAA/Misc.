@@ -282,17 +282,83 @@ export const ROUNDS: Record<string, [number, string]> = {
   sync: [24, 'drops'],
   tempo: [5, 'rounds'],
   where: [15, 'trials'],
+  tilt: [30, 'trials'],
+  faster: [30, 'trials'],
+  shade: [30, 'trials'],
+  hunt: [30, 'letters'],
+  chords: [24, 'chords'],
+  type: [25, 'words'],
+  dial: [16, 'numbers'],
+  fingers: [5, 'patterns'],
+  flip: [30, 'keys'],
+  sweep: [9, 'sweeps'],
+  ghost: [16, 'words'],
+  taps: [14, 'rounds'],
+  arrows: [16, 'rounds'],
+  reverse: [14, 'words'],
+  combo: [14, 'combos'],
+  schulte: [3, 'tables'],
+  trail: [3, 'boards'],
+  maze: [5, 'mazes'],
+  hanoi: [3, 'towers'],
+  slide: [4, 'puzzles'],
+  toggle: [5, 'puzzles'],
+  latin: [4, 'puzzles'],
+  target: [10, 'targets'],
+  gauges: [60, 's'],
+  tally: [8, 'rounds'],
+  angle: [14, 'trials'],
+  duration: [14, 'trials'],
+  centroid: [14, 'clouds'],
+  align: [10, 'lines'],
+  closer: [30, 'trials'],
+  topple: [24, 'stacks'],
+  recall: [4, 'lists'],
+  queue: [14, 'queues'],
+  beeps: [12, 'rounds'],
+  sounds: [2, 'boards'],
+  tune: [10, 'tones'],
+  pattern: [12, 'puzzles'],
+  ruler: [12, 'catches'],
+  bat: [20, 'pitches'],
+  fly: [45, 's'],
+  radar: [60, 's'],
+  stamp: [30, 'boxes'],
+  drive: [10, 'shots'],
+  hoop: [15, 'shots'],
+  morse: [14, 'letters'],
+  etch: [4, 'paths'],
+  row: [60, 's'],
+  crane: [8, 'crates'],
+  pedal: [45, 's'],
+  intune: [24, 'notes'],
+  octave: [16, 'notes'],
+  note: [20, 'notes'],
+  interval: [20, 'questions'],
+  chord: [16, 'chords'],
+  contour: [14, 'melodies'],
+  scale: [16, 'scales'],
 };
 
 /**
  * The length choices a game offers. Positive values scale the standard round count; a
  * negative value is a time limit in seconds; 0 is endless.
  */
+/**
+ * Games that can be played until three mistakes: they have rounds, and they say when you get one
+ * wrong (the mistake sound), which is what the framework counts. Length value -1.
+ */
+export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'back', 'switch', 'choice', 'shape', 'aim', 'rotate', 'count', 'glance', 'spot', 'stream', 'side', 'where', 'flicker', 'meet', 'longer', 'more', 'middle', 'tilt', 'faster', 'shade', 'series', 'relate', 'matrix', 'balance', 'running', 'exact', 'ears', 'guess', 'shells', 'again', 'link', 'except', 'sync', 'lights', 'first', 'merge', 'pour', 'probe', 'plan', 'crack', 'pitch', 'bank', 'opposite', 'line', 'hold', 'chain', 'flow', 'away', 'late', 'remind', 'parry', 'goalie', 'hunt', 'chords', 'type', 'dial', 'fingers', 'flip', 'sweep', 'ghost', 'taps', 'arrows', 'reverse', 'combo', 'schulte', 'trail', 'maze', 'hanoi', 'slide', 'toggle', 'latin', 'target', 'tally', 'closer', 'topple', 'recall', 'queue', 'beeps', 'pattern', 'ruler', 'bat', 'stamp', 'morse', 'crane', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale']);
+
+/** The length value for "until three mistakes". */
+export const LIVES_LEN = -1;
+
 export function lengthsFor(id: string): { value: number; label: string }[] {
   const r = ROUNDS[id];
   if (!r) return [];
   const timedGame = r[1] === 's';
   return [
+    ...(LIVES.has(id) ? [{ value: LIVES_LEN, label: '3 lives' }] : []),
     { value: 0.5, label: 'Short' },
     { value: 1, label: 'Standard' },
     { value: 2, label: 'Long' },
@@ -306,6 +372,7 @@ export function roundsLabel(id: string, value: number): string {
   const r = ROUNDS[id];
   if (!r) return '';
   if (value === 0) return 'until you stop';
+  if (value === LIVES_LEN) return 'until 3 mistakes';
   if (value < 0) return 'as many as fit';
   const n = Math.max(2, Math.round(r[0] * value));
   return r[1] === 's' ? `${n} s` : `${n} ${r[1]}`;
@@ -316,7 +383,7 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
   const r = ROUNDS[id];
   if (!r || value === 1) return { scale: 1, limitMs: 0 };
   if (value > 0) return { scale: value, limitMs: 0 };
-  if (value === 0) return { scale: 200, limitMs: 0 };
+  if (value === 0 || value === LIVES_LEN) return { scale: 200, limitMs: 0 };
   // Timed: a timed drill just runs for that long; a round game plays rounds until the clock ends it.
   return r[1] === 's' ? { scale: -value / r[0], limitMs: 0 } : { scale: 200, limitMs: -value * 1000 };
 }

@@ -101,7 +101,7 @@ class Swerve extends Steer {
   }
 
   private windowMs(): number {
-    return Math.max(380, 950 - this.cleared * 12);
+    return Math.max(180, 950 - this.cleared * 12);
   }
 
   protected override onPress(side: number, ts: number): void {

@@ -23,7 +23,7 @@ const FEINT_SHARE = 0.3;
 class Parry implements Mini {
   private env!: MiniEnv;
   /** How long a real attack takes to land (ms). */
-  private readonly travel = new Stair(700, 40, 260, 900, 2);
+  private readonly travel = new Stair(700, 40, 120, 900, 2);
   private levels: number[] = [];
   private n = 0;
   private state = 0; // 0 guard, 1 attack, 2 outcome
@@ -253,7 +253,7 @@ const GOALIE_SHOTS = 24;
 class Goalie implements Mini {
   private env!: MiniEnv;
   /** Ball flight time from the spot to the line (ms). */
-  private readonly flight = new Stair(900, 50, 330, 1100, 2);
+  private readonly flight = new Stair(900, 50, 160, 1100, 2);
   private levels: number[] = [];
   private n = 0;
   private state = 0; // 0 run-up, 1 ball in flight, 2 outcome

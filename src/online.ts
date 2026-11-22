@@ -9,7 +9,7 @@ import { esc, fmtPrimary, shortDate } from './ui.ts';
 
 export const PAGE = 50;
 
-const LENGTH_NAMES: Record<string, string> = { '1': 'Standard', '0.5': 'Short', '2': 'Long', '0': 'Endless', '-60': '1 min', '-180': '3 min' };
+const LENGTH_NAMES: Record<string, string> = { '1': 'Standard', '0.5': 'Short', '2': 'Long', '0': 'Endless', '-60': '1 min', '-180': '3 min', '-1': '3 lives' };
 
 export function lengthName(len: number): string {
   return LENGTH_NAMES[String(len)] ?? String(len);

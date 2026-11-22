@@ -257,7 +257,7 @@ class Glance implements Mini {
   private centreRight = 0;
   private placeRight = 0;
   private gotCentre = false;
-  private readonly show = new Stair(400, 30, 30, 600);
+  private readonly show = new Stair(400, 30, 16, 600);
   private best = 600;
   private rects: [number, number, number, number, number][] = [];
 
@@ -430,7 +430,7 @@ class Spot implements Mini {
   private state = 0; // 0 first look, 1 blank, 2 second look (answer), 3 feedback
   private at = 0;
   private i = 0;
-  private readonly size = new Stair(4, 1, 2, 10);
+  private readonly size = new Stair(4, 1, 2, 20);
   private hits = 0;
   private misses = 0;
   private fas = 0;
@@ -673,7 +673,7 @@ class Swing implements Mini {
   private bottomAt = 0;
   private state = 0; // 0 swinging, 1 feedback
   private at = 0;
-  private readonly hide = new Stair(0, 0.1, 0, 0.7);
+  private readonly hide = new Stair(0, 0.1, 0, 0.95);
   private errs: number[] = [];
   private last = 0;
   private held = 0;
@@ -811,7 +811,7 @@ class Stream implements Mini {
   private at = 0;
   private pressed = false;
   private pressedOk = false;
-  private readonly rate = new Stair(220, 15, 70, 300);
+  private readonly rate = new Stair(220, 15, 30, 300);
   private hits = 0;
   private misses = 0;
   private fas = 0;

@@ -1,9 +1,9 @@
 // Twenty-ninth batch: Ear. Pitch training, from "is this in tune" to naming chords.
 //   In tune  - one note: in tune or not? (no reference)
-//   Octave   - a note: which octave? (with C4 first, or perfect pitch)
-//   Note     - a note: name it (with C first, or perfect pitch)
+//   Octave   - a note: which octave? (no reference)
+//   Note     - a note: name it (no reference)
 //   Interval - two notes, up, down or together: how far apart?
-//   Chord    - a chord: name its root and its type (with C first, or perfect pitch)
+//   Chord    - a chord: name its root and its type (no reference)
 //   Contour  - a melody: which of four near-identical shapes did it make?
 //   Scale    - a scale: which one (major, the minors, the modes)?
 
@@ -62,10 +62,8 @@ abstract class EarQuiz implements Mini {
   private playEnds = 0;
   private rts: number[] = [];
 
-  /** With a reference note first (level 0, the default), or perfect pitch (level 1). */
-  protected get absolute(): boolean {
-    return this.env.level === 1;
-  }
+  /** No reference note is ever played first: every note is named from memory. */
+  protected readonly absolute = true;
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
@@ -210,16 +208,11 @@ abstract class EarQuiz implements Mini {
   }
 }
 
-/** Ear games that can be played with a reference note or from memory. */
-const REF_LEVELS = [
-  { label: 'With a reference', desc: 'C plays first, so you can work it out from there', value: 0 },
-  { label: 'Perfect pitch', desc: 'No reference: name it from memory', value: 1 },
-];
 
 // --- In tune ------------------------------------------------------------------------
 
 /** Mistunings, in cents, each about 20% smaller than the last: from half a semitone to 2 cents. */
-const MISTUNE = [50, 40, 32, 25, 20, 16, 13, 10, 8, 6, 5, 4, 3, 2];
+const MISTUNE = [50, 40, 32, 25, 20, 16, 13, 10, 8, 6, 5, 4, 3, 2, 1.5, 1];
 
 class InTune extends EarQuiz {
   protected readonly total = scaled(24);
@@ -601,10 +594,10 @@ class Scale extends EarQuiz {
 
 export const BATCH29: MiniDef[] = [
   { id: 'intune', name: 'In tune', skill: 'ear', blurb: 'One note, no reference: is it in tune?', how: 'One note plays, with nothing to compare it to. Is it in tune (A = 440 Hz, as on a tuned piano) or out of tune? Half are in tune. Get them right and the out-of-tune ones get closer to true. Press 1 for in tune, 2 for out of tune (or tap); R plays it again. Scored in cents. Needs sound on.', input: 'pointer', make: () => new InTune() },
-  { id: 'octave', name: 'Octave', skill: 'ear', blurb: 'A note: which octave is it in?', how: 'A note plays. Which octave is it in, from 2 (low) to 6 (high)? Notes near the edges (A, B, C) come up often. With a reference, middle C (C4) plays first; with perfect pitch there is no reference. Tap or press 1 to 5; R plays it again. Needs sound on.', input: 'pointer', levels: REF_LEVELS, make: () => new Octave() },
-  { id: 'note', name: 'Note', skill: 'ear', blurb: 'A note in any octave: name it.', how: 'A note plays, in any octave. Name it: all twelve, sharps and flats included. With a reference, C plays first; with perfect pitch there is no reference. Tap or press its key (1 to 0, then - and =); R plays it again. Needs sound on.', input: 'pointer', levels: REF_LEVELS, make: () => new Note() },
+  { id: 'octave', name: 'Octave', skill: 'ear', blurb: 'A note: which octave is it in?', how: 'A note plays. Which octave is it in, from 2 (low) to 6 (high)? Notes near the edges (A, B, C) come up often. Tap or press 1 to 5; R plays it again. Needs sound on.', input: 'pointer', make: () => new Octave() },
+  { id: 'note', name: 'Note', skill: 'ear', blurb: 'A note in any octave: name it.', how: 'A note plays, in any octave. Name it: all twelve, sharps and flats included. Tap or press its key (1 to 0, then - and =); R plays it again. Needs sound on.', input: 'pointer', make: () => new Note() },
   { id: 'interval', name: 'Interval', skill: 'ear', blurb: 'Two notes, up, down or together: how far apart?', how: 'Two notes play: going up, coming down, or struck together. Name the interval, from unison to octave, all thirteen from the start. Tap or press its key (1 to 0, then - = [); R plays it again. Needs sound on.', input: 'pointer', make: () => new Interval() },
-  { id: 'chord', name: 'Chord', skill: 'ear', blurb: 'A chord: name it, root and type.', how: 'A chord plays. Name it in two steps: first its root note (C to B), then its type: major, minor, diminished, augmented, sus2, sus4, then the sevenths, and later inversions. Both must be right. With a reference, C plays first; with perfect pitch there is no reference. Tap or press keys; R plays it again. Needs sound on.', input: 'pointer', levels: REF_LEVELS, make: () => new Chord() },
+  { id: 'chord', name: 'Chord', skill: 'ear', blurb: 'A chord: name it, root and type.', how: 'A chord plays. Name it in two steps: first its root note (C to B), then its type: major, minor, diminished, augmented, sus2, sus4, then the sevenths, and later inversions. Both must be right. Tap or press keys; R plays it again. Needs sound on.', input: 'pointer', make: () => new Chord() },
   { id: 'contour', name: 'Contour', skill: 'ear', blurb: 'A melody: which of four near-identical shapes?', how: 'A melody of six to nine notes plays, in small steps. Four shapes show lines going up and down that differ by only a move or two: pick the one the melody followed. Tap or press 1 to 4; R plays it again. Needs sound on.', input: 'pointer', make: () => new Contour() },
   { id: 'scale', name: 'Scale', skill: 'ear', blurb: 'A scale: major, which minor, or which mode?', how: 'A scale plays. Name it: major, natural, harmonic or melodic minor; then the modes (dorian, mixolydian, lydian, phrygian) join, and some go down instead of up. Tap or press its number; R plays it again. Needs sound on.', input: 'pointer', make: () => new Scale() },
 ];

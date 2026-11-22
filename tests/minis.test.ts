@@ -193,3 +193,40 @@ test('every game starts and runs at short and at endless length', async () => {
     Math.random = realRandom;
   }
 });
+
+test('every game copes with its staircases at both extremes (no hangs, no crashes)', async () => {
+  const { Stair } = await import('../src/minis/kit.ts');
+  const view = fakeView();
+  useClock();
+  try {
+    for (const def of MINIS) {
+      for (const extreme of ['min', 'max'] as const) {
+        clock = 1000;
+        const rng = new Rng(hash(def.id) + (extreme === 'min' ? 1 : 2));
+        Math.random = () => rng.next();
+        const game = def.make() as unknown as Record<string, unknown> & ReturnType<typeof def.make>;
+        game.start({ mode: MODES[1]!, labels: ['Z', 'X', 'C', 'B', 'N', 'M', 'SPACE'], sound: () => {}, muted: false, level: def.levels ? def.levels[0]!.value : undefined }, clock);
+        // Push every staircase the game owns to one end of its range.
+        const stairs = Object.values(game).flatMap((v) => (v instanceof Stair ? [v] : Array.isArray(v) ? v.filter((x) => x instanceof Stair) : []));
+        for (const st of stairs) st.level = extreme === 'min' ? st.min : st.max;
+        const t0 = realNow();
+        for (let f = 0; f < 2400; f++) {
+          clock += 16.7;
+          if (Math.random() < 0.06) {
+            const k = Math.random() < 0.5 ? 0 : 3;
+            game.press(k, clock);
+            game.release?.(k, clock + 40);
+          }
+          if (Math.random() < 0.04) game.pointer?.(Math.random() * 1280, Math.random() * 800, clock);
+          if (Math.random() < 0.03) game.typeKey?.(TYPED[Math.floor(Math.random() * TYPED.length)]!, clock);
+          if (game.frame(clock, view, touch)) break;
+          assert.ok(realNow() - t0 < 6000, `${def.id} with staircases at ${extreme}: too slow (hang?)`);
+        }
+        assert.ok(Number.isFinite(game.result().score), `${def.id} at ${extreme}: score`);
+      }
+    }
+  } finally {
+    restoreClock();
+    Math.random = realRandom;
+  }
+});

@@ -188,7 +188,7 @@ const FLOW_DOTS = 140;
 class Flow implements Mini {
   private env!: MiniEnv;
   /** Percent of dots moving together. */
-  private readonly coh = new Stair(50, 6, 4, 90, 2);
+  private readonly coh = new Stair(50, 6, 1, 90, 2);
   private levels: number[] = [];
   private trial = 0;
   private state = 0; // 0 gap, 1 dots, 2 feedback
@@ -328,7 +328,7 @@ const AWAY_PER = 8;
 class Away implements Mini {
   private env!: MiniEnv;
   /** Arrow exposure in ms, one staircase per rule. */
-  private readonly expo = [new Stair(220, 20, 40, 400, 2), new Stair(260, 20, 40, 400, 2)];
+  private readonly expo = [new Stair(220, 20, 16, 400, 2), new Stair(260, 20, 16, 400, 2)];
   private levels: [number[], number[]] = [[], []];
   private block = 0;
   private trial = 0;
@@ -495,7 +495,7 @@ const LATE_BEATS = 6;
 class Late implements Mini {
   private env!: MiniEnv;
   /** How late the odd beat lands (ms). */
-  private readonly off = new Stair(90, 8, 6, 160, 2);
+  private readonly off = new Stair(90, 8, 2, 160, 2);
   private levels: number[] = [];
   private trial = 0;
   private state = 0; // 0 gap, 1 playing, 2 answer, 3 feedback

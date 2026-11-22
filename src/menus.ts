@@ -323,13 +323,13 @@ export function randomMenu(c?: MenuCtx): Menu {
     sub: 'Random drills back to back, each about a minute. A ready card before each one.',
     extra,
     items: [
-      { label: 'Three drills', desc: 'About three minutes', act: 'quick', arg: 'all:3' },
-      { label: 'Five drills', desc: 'About five minutes', act: 'quick', arg: 'all:5' },
-      { label: 'Ten drills', desc: 'About ten minutes', act: 'quick', arg: 'all:10' },
-      { label: 'One of each skill', desc: 'One from each skill you have chosen', act: 'quick', arg: 'each:10' },
-      { heading: 'Endless', label: 'Everything', desc: 'Random drills until you stop', act: 'quick', arg: 'endless:all' },
-      { label: 'Reflexes only', desc: 'Reaction, speed, timing, coordination, dexterity', act: 'quick', arg: 'endless:body' },
-      { label: 'Mind only', desc: 'Memory, attention, judgement, reasoning, ear', act: 'quick', arg: 'endless:mind' },
+      { label: 'Three drills', desc: 'About three minutes', act: 'quick', arg: 'all:3', code: 'Space', keyName: 'SPACE', hero: true },
+      { label: 'Five drills', desc: 'About five minutes', act: 'quick', arg: 'all:5', slot: 0 },
+      { label: 'Ten drills', desc: 'About ten minutes', act: 'quick', arg: 'all:10', slot: 1 },
+      { label: 'One of each skill', desc: 'One from each skill you have chosen', act: 'quick', arg: 'each:10', slot: 2 },
+      { heading: 'Endless', label: 'Everything', desc: 'Random drills until you stop', act: 'quick', arg: 'endless:all', slot: 3 },
+      { label: 'Reflexes only', desc: 'Reaction, speed, timing, coordination, dexterity', act: 'quick', arg: 'endless:body', slot: 4 },
+      { label: 'Mind only', desc: 'Memory, attention, judgement, reasoning, ear', act: 'quick', arg: 'endless:mind', slot: 5 },
     ],
     enter: { label: 'Three drills', act: 'quick', arg: 'all:3' },
   };
@@ -489,8 +489,11 @@ function levelMenu(c: MenuCtx, e: Entry): Menu {
   const def = e.def!;
   const last = c.levels[e.id] ?? 0;
   const custom = c.custom[e.id] ?? def.custom?.def ?? 0;
-  const items: Item[] = def.levels!.map((l) => ({ label: l.label, desc: l.desc, meta: l.value === last ? 'last used' : '', act: 'go', arg: `gamekeys:${e.id}:${l.value}`, current: l.value === last }));
-  if (def.custom) items.push({ label: 'Custom', desc: `Your own window, now ${custom} ${def.custom.unit}`, meta: last === custom && !def.levels!.some((l) => l.value === last) ? 'last used' : '', act: 'go', arg: `custom:${e.id}`, slot: 6 });
+  // Space, as everywhere, goes forward: the difficulty you played last. Letters pick the others.
+  const lastName = def.levels!.find((l) => l.value === last)?.label ?? `Custom, ${last} ${def.custom?.unit ?? ''}`;
+  const items: Item[] = [{ label: `Play: ${lastName}`, desc: 'The difficulty you played last', act: 'go', arg: `gamekeys:${e.id}:${last}`, code: 'Space', keyName: 'SPACE', hero: true }];
+  def.levels!.forEach((l, i) => items.push({ label: l.label, desc: l.desc, meta: l.value === last ? 'last used' : '', act: 'go', arg: `gamekeys:${e.id}:${l.value}`, current: l.value === last, slot: i }));
+  if (def.custom) items.push({ label: 'Custom', desc: `Your own window, now ${custom} ${def.custom.unit}`, meta: last === custom && !def.levels!.some((l) => l.value === last) ? 'last used' : '', act: 'go', arg: `custom:${e.id}`, ...(def.levels!.length < 6 ? { slot: def.levels!.length } : { code: 'Comma', keyName: ',' }) });
   return {
     title: e.name.toUpperCase(),
     sub: `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
@@ -667,7 +670,7 @@ export function customizeMenu(c: MenuCtx): Menu {
       row('Menu size', '', 'menu', [['Compact', 0.9], ['Standard', 1], ['Large', 1.12], ['Extra large', 1.25]], L.menu ?? 1),
       row('Menu sounds', 'clicks when moving through menus; game sounds are separate', 'uiSound', [['On', true], ['Off', false]], L.uiSound ?? true),
       row('Motion', 'menu slide animations', 'motion', [['On', true], ['Off', false]], L.motion ?? true),
-      row('Default length', 'for drills you have not chosen a length for', 'defLen', [['Short', 0.5], ['Standard', 1], ['Long', 2], ['1 min', -60], ['3 min', -180]], L.defLen ?? 1),
+      row('Default length', 'for drills you have not chosen a length for (3 lives: until three mistakes, where a drill has it)', 'defLen', [['3 lives', -1], ['Short', 0.5], ['Standard', 1], ['Long', 2], ['1 min', -60], ['3 min', -180]], L.defLen ?? -1),
       row('Pause when you switch away', 'switching tabs or apps mid-drill pauses it', 'autoPause', [['On', true], ['Off', false]], L.autoPause ?? true),
       '<p><button class="pill" data-act="look" data-arg="reset:1">Back to defaults</button></p>',
     ].join(''),
@@ -680,7 +683,8 @@ export function customizeMenu(c: MenuCtx): Menu {
 export function lengthOf(s: Settings, id: string): number {
   const own = s.lengths?.[id];
   if (own !== undefined) return own;
-  const d = s.look?.defLen ?? 1;
+  // Three lives by default where a drill has it; otherwise standard.
+  const d = s.look?.defLen ?? -1;
   return lengthsFor(id).some((l) => l.value === d) ? d : 1;
 }
 

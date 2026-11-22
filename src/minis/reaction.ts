@@ -198,7 +198,7 @@ class Stop implements Mini {
   private drawnAt = 0;
   private feedback = '';
   private good = true;
-  private readonly ssd = new Stair(250, 50, 50, 900, 1);
+  private readonly ssd = new Stair(250, 50, 50, 1400, 1);
   private goRts: number[] = [];
   private goErrors = 0;
   private goMisses = 0;
@@ -358,7 +358,7 @@ class Flank implements Mini {
   private dir = 1;
   private congruent = true;
   private drawnAt = 0;
-  private readonly win = new Stair(1300, 70, 420, 1600);
+  private readonly win = new Stair(1300, 70, 250, 1600);
   private con: number[] = [];
   private inc: number[] = [];
   private errors = 0;

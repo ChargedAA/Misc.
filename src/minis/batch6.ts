@@ -191,7 +191,7 @@ class Where implements Mini {
   private state = 0; // 0 show, 1 blank, 2 answer, 3 feedback
   private at = 0;
   private i = 0;
-  private readonly k = new Stair(3, 1, 2, 9);
+  private readonly k = new Stair(3, 1, 2, 16);
   private errs: number[] = [];
   private lastX = 0;
   private lastY = 0;

@@ -15,7 +15,7 @@ import {
   SND_UI,
   Sfx,
 } from './audio.ts';
-import { COL_MID, SLOT_REFLEX, getMode, setColours } from './config.ts';
+import { COL_ACCENT, COL_DIM, COL_MID, SLOT_REFLEX, getMode, setColours } from './config.ts';
 import { ACT_REFLEX, Runner } from './loop.ts';
 import { OUT_CORRECT, OUT_EARLY, OUT_LATE, OUT_START, OUT_WRONG, ReflexSession } from './reflex.ts';
 import { View, setTextScale, type Hints, type PerfStats } from './render.ts';
@@ -53,7 +53,7 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
+import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
@@ -283,6 +283,18 @@ function frame(now: number): void {
     if (done) finishBurst();
   } else if (screen === 'mini' && mini) {
     const done = mini.frame(now - clockShift(), view, touch);
+    if (lengthValue === LIVES_LEN) {
+      // Lives left, at the top; the third mistake ends the run once its feedback has shown.
+      const d = view.dpr;
+      for (let i = 0; i < 3; i++) {
+        view.ctx.fillStyle = i < livesLeft ? COL_ACCENT : COL_DIM;
+        view.ctx.fillRect(view.ox + (i - 1) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
+      }
+      if (livesEndAt && performance.now() >= livesEndAt) {
+        finishMini();
+        return;
+      }
+    }
     // Timed and endless play: a countdown, or a reminder of how to stop, at the top.
     if (miniLimit || lengthValue === 0) {
       const left = miniLimit - (now - clockShift() - miniStartAt);
@@ -724,8 +736,16 @@ function endRun(): void {
   ui.show(dailySummaryHtml(dailyRows, total, total, label));
 }
 
+/** Three lives: mistakes left, and when the run ends after the last one. */
+let livesLeft = 3;
+let livesEndAt = 0;
+
+/** Set when the player chose Finish on the pause screen; such runs stay off the leaderboards. */
+let finishedEarly = false;
+
 function startGame(game: GameId): void {
   lastGame = game;
+  finishedEarly = false;
   integrity.reset();
   // A stats page opened over an old result has nothing to return to once a new game starts.
   nav = nav.filter((n) => !n.over);
@@ -750,7 +770,13 @@ function startGame(game: GameId): void {
     miniLimit = plan.limitMs;
     mini = e.def.make();
     miniStartAt = performance.now();
-    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => sfx.play(id), soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan) => sfx.tone(hz, d, pan), note: (hz, d, delay) => sfx.note(hz, d, delay), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
+    livesLeft = 3;
+    livesEndAt = 0;
+    mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => {
+      sfx.play(id);
+      // Three lives: the mistake sounds are the mistakes.
+      if (lengthValue === LIVES_LEN && (id === SND_FALSE || id === SND_LURCH) && livesLeft > 0 && --livesLeft === 0) livesEndAt = performance.now() + 900;
+    }, soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan) => sfx.tone(hz, d, pan), note: (hz, d, delay) => sfx.note(hz, d, delay), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);
@@ -958,8 +984,12 @@ function finishMini(): void {
     return;
   }
   const r = mini.result();
-  // A session with no input at all, or too short to save, counts for nothing:
-  // no score, no best, no history, no streak.
+  // Short runs still count (finished early, or a game over that came quickly): enough real play
+  // and something measured is scored and saved, whatever the game's own minimum.
+  const played = performance.now() - clockShift() - miniStartAt;
+  const measured = Number.isFinite(r.primary.value) && (!r.primary.lower || !!r.primary.zeroOk || r.primary.value > 0);
+  if (!r.saved && miniInputs >= 3 && played >= 5000 && measured) r.saved = true;
+  // A session with no input at all counts for nothing: no score, no best, no history, no streak.
   if (miniInputs === 0) r.saved = false;
   // Fair play: input from a script, machine-regular timing or impossible reactions mean the run is not saved.
   const verdict = integrity.verdict(r.rts ?? []);
@@ -1032,7 +1062,10 @@ function finishMini(): void {
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp, integrityFlags));
-  if (r.saved && !integrityFlags.length && Number.isFinite(r.primary.value)) void submitScore(r, miniDef.id, keys, performance.now() - clockShift() - miniStartAt);
+  if (r.saved && finishedEarly) {
+    const el = uiRoot.querySelector('#lbnote');
+    if (el) el.textContent = 'Finished early: kept in your stats. Leaderboards take complete runs only.';
+  } else if (r.saved && !integrityFlags.length && Number.isFinite(r.primary.value)) void submitScore(r, miniDef.id, keys, performance.now() - clockShift() - miniStartAt);
 }
 
 function showKeys(): void {
@@ -1240,6 +1273,8 @@ function onAction(action: string, arg: string): void {
       nextDaily();
       break;
     case 'endrun':
+      // From a pause screen too: the drill in progress is dropped, the set's recap shows.
+      if (screen === 'miniPause') mini = null;
       endRun();
       break;
     case 'readygo':
@@ -1394,6 +1429,7 @@ function onAction(action: string, arg: string): void {
     case 'minifinish':
       sfx.unlock();
       screen = 'mini';
+      finishedEarly = true;
       finishMini();
       break;
     case 'miniquit':
@@ -1562,15 +1598,18 @@ function onKeyDown(e: KeyboardEvent): void {
 
   if (screen === 'pause') {
     if (e.repeat) return;
+    // Same keys as every pause screen: Space, Enter or Esc resume, R restarts, Q quits, 0 mutes;
+    // a lane key also jumps straight back in.
     const slot = keymap.get(code);
-    if (slot !== undefined && slot !== SLOT_REFLEX) {
+    if (code === 'Space' || code === 'Enter' || code === 'Escape') resume();
+    else if (code === 'KeyR') startGame('climb');
+    else if (code === 'KeyQ' || code === 'Backspace') showMenu(-1);
+    else if (code === 'Digit0') toggleMute();
+    else if (slot !== undefined && slot !== SLOT_REFLEX) {
       e.preventDefault();
       resume();
       press(slot, stamp(e));
-    } else if (code === 'Enter') resume();
-    else if (code === 'KeyR') startGame('climb');
-    else if (code === 'Escape') showMenu(-1);
-    else if (code === 'Digit0') toggleMute();
+    }
     return;
   }
 

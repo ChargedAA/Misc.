@@ -499,7 +499,7 @@ class Meet implements Mini {
 // --- Longer -----------------------------------------------------------------------
 
 /** Percentage differences, easy to hard. */
-const DIFFS = [24, 20, 16, 13, 10, 8, 6.5, 5, 4, 3.2, 2.5, 2, 1.6, 1.3, 1];
+const DIFFS = [24, 20, 16, 13, 10, 8, 6.5, 5, 4, 3.2, 2.5, 2, 1.6, 1.3, 1, 0.7, 0.5];
 const LONG_TRIALS = 30;
 
 class Longer implements Mini {
@@ -618,7 +618,7 @@ class Longer implements Mini {
 // --- More -------------------------------------------------------------------------
 
 /** Ratios of the bigger cloud to the smaller, easy to hard. */
-const RATIOS = [2, 1.75, 1.55, 1.4, 1.3, 1.22, 1.16, 1.12, 1.09, 1.07, 1.05];
+const RATIOS = [2, 1.75, 1.55, 1.4, 1.3, 1.22, 1.16, 1.12, 1.09, 1.07, 1.05, 1.035, 1.025];
 const MORE_TRIALS = 30;
 
 class More implements Mini {

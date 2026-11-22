@@ -48,7 +48,7 @@ class Aim implements Mini {
   private hits = 0;
   private misses = 0;
   private times: number[] = [];
-  private readonly size = new Stair(0.07, 0.006, 0.022, 0.09);
+  private readonly size = new Stair(0.07, 0.006, 0.01, 0.09);
   private started = false;
   private geo = { x0: 0, y0: 0, w: 1, h: 1, s: 1 };
   private fade = 0;
@@ -666,7 +666,7 @@ class Count implements Mini {
   private at = 0;
   private i = 0;
   private correct = 0;
-  private readonly show = new Stair(700, 60, 80, 900);
+  private readonly show = new Stair(700, 60, 30, 900);
   private optRects: [number, number, number, number][] = [];
   private shortest = 900;
 

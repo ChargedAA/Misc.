@@ -159,7 +159,7 @@ abstract class Threshold implements Mini {
 
 // --- Tilt -------------------------------------------------------------------------
 
-const TILTS = [8, 6, 4.5, 3.5, 2.7, 2.1, 1.6, 1.25, 1, 0.8, 0.6, 0.45];
+const TILTS = [8, 6, 4.5, 3.5, 2.7, 2.1, 1.6, 1.25, 1, 0.8, 0.6, 0.45, 0.33, 0.25];
 
 class Tilt extends Threshold {
   protected readonly diffLabel = 'tilt';
@@ -225,7 +225,7 @@ class Tilt extends Threshold {
 
 // --- Faster -----------------------------------------------------------------------
 
-const SPEED_RATIOS = [1.6, 1.45, 1.33, 1.25, 1.19, 1.15, 1.12, 1.09, 1.07, 1.05, 1.04];
+const SPEED_RATIOS = [1.6, 1.45, 1.33, 1.25, 1.19, 1.15, 1.12, 1.09, 1.07, 1.05, 1.04, 1.03, 1.02];
 
 class Faster extends Threshold {
   protected readonly diffLabel = 'ratio';
@@ -286,7 +286,7 @@ class Faster extends Threshold {
 // --- Shade ------------------------------------------------------------------------
 
 /** Brightness differences in 0-255 steps. */
-const SHADES = [28, 22, 17, 13, 10, 8, 6, 5, 4, 3, 2];
+const SHADES = [28, 22, 17, 13, 10, 8, 6, 5, 4, 3, 2, 1.5, 1];
 
 class Shade extends Threshold {
   protected readonly diffLabel = 'difference';
@@ -424,7 +424,7 @@ class Sum implements Mini {
       this.times.push(ts - this.shownAt);
       if (++this.run >= 3) {
         this.run = 0;
-        this.level = Math.min(8, this.level + 1);
+        this.level = Math.min(14, this.level + 1);
       }
     } else {
       this.wrong++;

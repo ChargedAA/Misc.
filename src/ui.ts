@@ -201,13 +201,15 @@ export function controlsHtml(id: string, input: string, keys: number, b: Binding
 
 export function pauseHtml(muted: boolean): string {
   return `<section class="screen">
-  <h1>PAUSED</h1>
-  <div class="rows">
-    <button class="row" data-act="resume">Resume<span class="k">enter or a key</span></button>
-    <button class="row" data-act="restart">Restart<span class="k">r</span></button>
-    <button class="row" data-act="mute">Sound ${muted ? 'off' : 'on'}<span class="k">0</span></button>
-    <button class="row" data-act="menu">Menu<span class="k">esc</span></button>
-  </div>
+  <p class="rpos">paused</p>
+  <h1>CLIMB</h1>
+  <p class="msub">Press a lane key to jump straight back in.</p>
+  ${foot([
+    ['Resume', 'resume', 'space', 'Space Enter Escape'],
+    ['Restart', 'restart', 'r', 'KeyR'],
+    [`Sound ${muted ? 'off' : 'on'}`, 'mute', '0', 'Digit0'],
+    ['Quit, no score', 'menu', 'q', 'KeyQ Backspace'],
+  ])}
 </section>`;
 }
 
@@ -246,7 +248,12 @@ export function miniPauseHtml(name: string, inSet: boolean, practice: boolean): 
     ['Resume', 'miniresume', 'space', 'Space Enter Escape'],
     ['Restart', 'minirestart', 'r', 'KeyR'],
     ['Finish and score it', 'minifinish', 'f', 'KeyF'],
-    [inSet ? 'Skip this drill' : 'Quit, no score', 'miniquit', 'q', 'KeyQ Backspace'],
+    ...(inSet
+      ? ([
+          ['Skip to the next', 'miniquit', 'n', 'KeyN'],
+          ['Stop the set', 'endrun', 'q', 'KeyQ Backspace'],
+        ] as [string, string, string, string][])
+      : ([['Quit, no score', 'miniquit', 'q', 'KeyQ Backspace']] as [string, string, string, string][])),
   ])}
 </section>`;
 }
@@ -298,7 +305,7 @@ function cpsBlock(c: CpsStats, labels: string[], showJitter: boolean): string {
 }
 
 const AGAIN: [string, string, string, string][] = [
-  ['Again', 'again', 'space', 'Space Enter'],
+  ['Again', 'again', 'space', 'Space Enter KeyR'],
   ['Stats', 'gamestats', 's', 'KeyS'],
   ['Back', 'menu', 'esc', 'Escape Backspace'],
 ];
@@ -481,19 +488,19 @@ export function miniResultsHtml(
   const skill = SKILLS.find((k) => k.id === e?.skill)?.name ?? '';
   const actions: [string, string, string, string][] = daily?.practice
     ? [
-        ['Practise again', 'practiceagain', 'space', 'Space'],
-        ['Play it for real', 'forreal', 'enter', 'Enter'],
+        ['Play it for real', 'forreal', 'space', 'Space Enter'],
+        ['Practise again', 'practiceagain', 'r', 'KeyR'],
         ['Back', 'menu', 'esc', 'Escape Backspace'],
       ]
     : daily
     ? daily.nextName
       ? [
-          [`Next: ${daily.nextName}`, 'dailynext', 'space', 'Space Enter'],
+          [`Next: ${daily.nextName}`, 'dailynext', 'space', 'Space Enter KeyN'],
           ['Stats', 'gamestats', 's', 'KeyS'],
-          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape Backspace'],
+          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
         ]
       : [
-          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'space', 'Space Enter'],
+          [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'space', 'Space Enter KeyN'],
           ['Stats', 'gamestats', 's', 'KeyS'],
         ]
     : AGAIN;
@@ -510,7 +517,7 @@ export function miniResultsHtml(
   <h1>${(e?.name ?? id).toUpperCase()}</h1>
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
-  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : flags.length ? `<p class="warn">Not saved: this run did not look like a person playing. ${flags.join('; ')}.</p>` : r.saved ? compareLine(p, cmp) : '<p class="warn">Too short to count: nothing was scored or saved. Play it through to get a result.</p>'}
+  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : flags.length ? `<p class="warn">Not saved: this run did not look like a person playing. ${flags.join('; ')}.</p>` : r.saved ? compareLine(p, cmp) : '<p class="warn">Nothing measured yet, so nothing was scored or saved. A run counts once there are a few real answers (three inputs over five seconds or more).</p>'}
   ${r.saved && !practice ? '<p class="muted" id="lbnote"></p>' : ''}
   ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
@@ -616,7 +623,7 @@ export function readyHtml(r: ReadyInfo): string {
   ${foot([
     ['Start', 'readygo', 'space', 'Space Enter'],
     ['Skip to the next', 'skip', 'n', 'KeyN'],
-    [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape Backspace'],
+    [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
   ])}
 </section>`;
 }

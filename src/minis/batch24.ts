@@ -464,7 +464,7 @@ class Sweep extends KeySeq {
 
 class Ghost extends KeySeq {
   protected readonly total = scaled(16);
-  private readonly expo = new Stair(900, 100, 150, 1500, 2);
+  private readonly expo = new Stair(900, 100, 40, 1500, 2);
   private levels: number[] = [];
   private right = 0;
 

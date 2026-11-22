@@ -182,7 +182,7 @@ const LINK_ROUNDS = 8;
 
 class Link implements Mini {
   private env!: MiniEnv;
-  private readonly n = new Stair(3, 1, 2, 8);
+  private readonly n = new Stair(3, 1, 2, 9);
   private pairs: { shape: number; grey: boolean; digit: number }[] = [];
   private order: number[] = [];
   private q = 0;

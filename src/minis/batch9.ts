@@ -61,7 +61,7 @@ interface Premise {
 
 class Relate implements Mini {
   private env!: MiniEnv;
-  private readonly items = new Stair(3, 1, 3, 5);
+  private readonly items = new Stair(3, 1, 3, 7);
   private order: number[] = [];
   private premises: Premise[] = [];
   private q: Premise = { a: 0, b: 0, above: true };
@@ -599,7 +599,7 @@ const RUN_ROUNDS = 10;
 
 class Running implements Mini {
   private env!: MiniEnv;
-  private readonly n = new Stair(3, 1, 2, 9);
+  private readonly n = new Stair(3, 1, 2, 14);
   private stream = '';
   private typed = '';
   private state = 0; // 0 streaming, 1 typing, 2 feedback

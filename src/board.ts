@@ -12,7 +12,7 @@ export interface Submission {
   value: number;
   unit: string;
   lower: boolean;
-  /** Length setting (1 standard, 0.5 short, 2 long, 0 endless, -60 a minute...) and key count. */
+  /** Length setting (1 standard, 0.5 short, 2 long, 0 endless, -60 a minute, -1 three lives) and key count. */
   len: number;
   keys: number;
   /** Difficulty level, for games that have them (Rush's window, Ear's reference or none); else 0. */
@@ -62,7 +62,7 @@ function median(a: readonly number[]): number {
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
 }
 
-export const LENGTHS = [1, 0.5, 2, 0, -60, -180] as const;
+export const LENGTHS = [1, 0.5, 2, 0, -60, -180, -1] as const;
 
 /**
  * Why a submission is refused, or null if it is acceptable. Floors and ceilings are set at what

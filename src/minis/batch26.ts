@@ -419,7 +419,7 @@ class Align implements Mini {
 class Closer implements Mini {
   private env!: MiniEnv;
   private readonly total = scaled(30);
-  private readonly ratio = new Stair(30, 3, 3, 45, 2);
+  private readonly ratio = new Stair(30, 3, 1, 45, 2);
   private levels: number[] = [];
   private i = 0;
   private state = 0;
