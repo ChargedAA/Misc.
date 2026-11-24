@@ -583,6 +583,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
       },
       { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyP', keyName: 'P' },
       { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
+      { label: 'Copy link', desc: 'A link straight to this game, to send to someone', meta: `#${id}`, act: 'share', arg: id, code: 'KeyK', keyName: 'K' },
     ],
     enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
     after: best ? `<p class="best">${bestLine(id, best)}</p>` : '',

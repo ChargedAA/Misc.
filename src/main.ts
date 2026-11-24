@@ -512,6 +512,7 @@ function showMenu(dir = 0): void {
   stopLoop();
   screen = 'menu';
   listening = '';
+  syncHash();
   ui.show(columnsHtml(nav.map((n) => ({ menu: buildMenu(n), sel: n.sel })), dir));
   void fillOnline(uiRoot, settings.session ? (settings.account ?? '') : '');
   const gsi = uiRoot.querySelector<HTMLElement>('#gsi');
@@ -588,6 +589,48 @@ function back(): void {
 function truncate(level: number): void {
   nav.length = Math.max(1, Math.min(nav.length, level + 1));
   nav[nav.length - 1]!.sel = undefined;
+}
+
+// --- Links to games ------------------------------------------------------------------
+
+/** The game a link names: tension-game.netlify.app/#snap opens Snap's page. */
+function linkedGame(): string | null {
+  const id = decodeURIComponent(location.hash.replace(/^#\/?/, '')).toLowerCase();
+  return id && entry(id) ? id : null;
+}
+
+/** Open the page a link names, with its skill page behind it so Back goes somewhere sensible. */
+function openLinked(): boolean {
+  const id = linkedGame();
+  const e = id ? entry(id) : undefined;
+  if (!id || !e) return false;
+  nav = [{ kind: 'start', arg: '', page: 0 }, { kind: 'skill', arg: e.skill, page: 0 }, { kind: 'game', arg: id, page: 0 }];
+  return true;
+}
+
+/** The address bar shows the open game's link, so it can be copied from there too. */
+function syncHash(): void {
+  const top = nav[nav.length - 1];
+  const want = top && (top.kind === 'game' || top.kind === 'gamekeys') ? `#${top.arg.split(':')[0]}` : '';
+  if (location.hash !== want) window.history.replaceState(null, '', location.pathname + location.search + want);
+}
+
+async function shareGame(id: string): Promise<void> {
+  const url = `${location.origin}${location.pathname}#${id}`;
+  const name = entry(id)?.name ?? id;
+  let note = 'Link copied';
+  try {
+    if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+      await navigator.share({ title: `TENSION · ${name}`, url });
+      note = '';
+    } else await navigator.clipboard.writeText(url);
+  } catch {
+    note = url;
+  }
+  if (!note) return;
+  const el = [...uiRoot.querySelectorAll<HTMLElement>('[data-act="share"]')].pop();
+  const meta = el?.querySelector<HTMLElement>('.m');
+  if (meta) meta.textContent = note;
 }
 
 // --- Showcase ------------------------------------------------------------------------
@@ -1385,6 +1428,9 @@ function onAction(action: string, arg: string): void {
     case 'dailynext':
       nextDaily();
       break;
+    case 'share':
+      void shareGame(arg);
+      break;
     case 'scstart':
       uiClick();
       startShowcase();
@@ -1904,7 +1950,13 @@ document.addEventListener('visibilitychange', () => {
 applyKeys(activeKeys);
 applyLook();
 if (showcase) showAttract();
-else showMenu();
+else {
+  openLinked();
+  showMenu();
+}
+window.addEventListener('hashchange', () => {
+  if (!showcase && screen === 'menu' && linkedGame() && openLinked()) showMenu(1);
+});
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {
