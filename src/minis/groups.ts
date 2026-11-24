@@ -50,6 +50,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
+      { name: 'Read rhythm', desc: 'Sight-read written rhythms and play them in time', ids: ['sight'] },
     ],
     routine: ['tempo', 'cross', 'gap'],
     benchmark: 'tempo',
