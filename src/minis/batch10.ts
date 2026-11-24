@@ -455,9 +455,13 @@ class Corridor {
     }
   }
 
+  /** The corridor at a distance, interpolated between its points so walls and collisions are smooth. */
   sample(at: number): [number, number] {
-    const i = clamp(Math.floor(at / 0.02), 0, this.cy.length - 1);
-    return [this.cy[i]!, this.hw[i]!];
+    const f = clamp(at / 0.02, 0, this.cy.length - 1);
+    const i = Math.floor(f);
+    const j = Math.min(i + 1, this.cy.length - 1);
+    const t = f - i;
+    return [this.cy[i]! + (this.cy[j]! - this.cy[i]!) * t, this.hw[i]! + (this.hw[j]! - this.hw[i]!) * t];
   }
 }
 
@@ -544,7 +548,8 @@ class Twin implements Mini {
       for (const side of [-1, 1]) {
         ctx.beginPath();
         let first = true;
-        for (let d = this.x - 0.3; d < this.x + W / scale; d += 0.02) {
+        // Drawn through the corridor's own points, so the walls glide rather than shimmer.
+        for (let d = Math.floor((this.x - 0.3) / 0.02) * 0.02; d < this.x + W / scale + 0.02; d += 0.02) {
           const [c, w] = l.sample(d);
           const px = toX(d);
           const py = toY(c + side * w);

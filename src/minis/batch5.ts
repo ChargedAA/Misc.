@@ -752,7 +752,8 @@ class Zigzag implements Mini {
     for (const side of [-1, 1]) {
       ctx.beginPath();
       let first = true;
-      for (let d = this.x - 0.3; d < this.x + W / scale; d += 0.01) {
+      // Through the corridor's own points, so the walls glide rather than shimmer.
+      for (let d = Math.floor((this.x - 0.3) / 0.02) * 0.02; d < this.x + W / scale + 0.02; d += 0.02) {
         const [c, w] = this.sample(d);
         const px = toX(d);
         const py = toY(c + side * w);

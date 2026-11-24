@@ -59,6 +59,7 @@ import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { SHOWCASE, attractHtml, boardHtml, cleanInitials, doneHtml, saveEntry, setShowcaseOn, showcaseLength, showcaseOn, stepHtml, today, type ShowcaseEntry } from './showcase.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
@@ -76,7 +77,10 @@ type Screen =
   /** A drill has ended: its last frame fades to black while the result is worked out. */
   | 'ending'
   | 'ready'
-  | 'keys';
+  | 'keys'
+  /** Showcase mode: the start screen, a drill's points, and the score with initials. */
+  | 'attract'
+  | 'showcase';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const view = new View(canvas);
@@ -98,6 +102,14 @@ sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
 
 let screen: Screen = 'menu';
+
+/** Showcase mode (an event stand): no menus, three drills, a board for today. */
+let showcase = showcaseOn();
+/** Points for each drill of the current showcase go. */
+let scParts: number[] = [];
+let scTotal = 0;
+/** Last input of any kind, for sending an idle stand back to its start screen. */
+let lastInputAt = performance.now();
 /** Game whose key-count pop-out is open on the title screen. */
 /** The menu stack: the last entry is on screen. Kinds: start, group, skill, game, stats, gamestats, settings. */
 interface NavEntry {
@@ -493,6 +505,10 @@ function buildMenu(n: NavEntry): Menu {
 
 /** Draw the menu on top of the stack. `dir` picks the slide: 1 forward, -1 back, 0 none. */
 function showMenu(dir = 0): void {
+  if (showcase) {
+    showAttract();
+    return;
+  }
   stopLoop();
   screen = 'menu';
   listening = '';
@@ -574,6 +590,56 @@ function truncate(level: number): void {
   nav[nav.length - 1]!.sel = undefined;
 }
 
+// --- Showcase ------------------------------------------------------------------------
+
+function showAttract(): void {
+  document.body.classList.add('showcase');
+  stopLoop();
+  mini = null;
+  dailyQueue = null;
+  endlessScope = null;
+  practicing = false;
+  screen = 'attract';
+  inputLockUntil = performance.now() + 400;
+  ui.show(attractHtml());
+}
+
+function startShowcase(): void {
+  endlessScope = null;
+  dailyQueue = SHOWCASE.map((d) => d.id);
+  queueLabel = 'Showcase';
+  dailyIdx = 0;
+  dailyRows = [];
+  scParts = [];
+  scTotal = 0;
+  showReady();
+}
+
+function showcaseDone(): void {
+  dailyQueue = null;
+  screen = 'showcase';
+  scTotal = SHOWCASE.reduce((s, _, i) => s + (scParts[i] ?? 0), 0);
+  inputLockUntil = performance.now() + 600;
+  ui.show(doneHtml(scTotal, scParts));
+  const box = uiRoot.querySelector<HTMLInputElement>('#initials');
+  if (box) {
+    box.addEventListener('input', () => {
+      box.value = cleanInitials(box.value);
+    });
+    setTimeout(() => box.focus(), 650);
+  }
+}
+
+function saveShowcase(): void {
+  const box = uiRoot.querySelector<HTMLInputElement>('#initials');
+  const e: ShowcaseEntry = { day: today(), name: cleanInitials(box?.value ?? ''), total: scTotal, parts: SHOWCASE.map((_, i) => scParts[i] ?? 0), at: Date.now() };
+  saveEntry(e);
+  uiClick();
+  screen = 'showcase';
+  inputLockUntil = performance.now() + 500;
+  ui.show(boardHtml(e));
+}
+
 function startDaily(): void {
   endlessScope = null;
   dailyQueue = dailySet();
@@ -588,6 +654,10 @@ function nextDaily(): void {
   dailyIdx++;
   if (dailyIdx < dailyQueue.length) {
     showReady();
+    return;
+  }
+  if (showcase && queueLabel === 'Showcase') {
+    showcaseDone();
     return;
   }
   const total = dailyRows.reduce((s, r) => s + (r.saved ? r.score : 0), 0);
@@ -791,7 +861,7 @@ function startGame(game: GameId): void {
     miniInputs = 0;
     setClockShift(0);
     // Sets always play the standard length, so a day's set stays comparable with the last.
-    lengthValue = dailyQueue ? 1 : lengthOf(settings, game);
+    lengthValue = showcase && dailyQueue ? showcaseLength(game) : dailyQueue ? 1 : lengthOf(settings, game);
     const plan = lengthPlan(game, lengthValue);
     setLengthScale(plan.scale);
     miniLimit = plan.limitMs;
@@ -1026,6 +1096,18 @@ function finishMini(): void {
   const verdict = integrity.verdict(r.rts ?? []);
   integrityFlags = verdict.flags;
   if (!verdict.ok) r.saved = false;
+  if (showcase && dailyQueue) {
+    // Showcase: points for the drill, nothing kept in this machine's history.
+    const d = SHOWCASE.find((x) => x.id === miniDef!.id);
+    const pts = d && r.saved && Number.isFinite(r.primary.value) ? d.points(r) : 0;
+    scParts[dailyIdx] = pts;
+    const sofar = SHOWCASE.reduce((s, _, i) => s + (scParts[i] ?? 0), 0);
+    screen = 'showcase';
+    inputLockUntil = performance.now() + 700;
+    const nextId = dailyQueue[dailyIdx + 1];
+    ui.show(stepHtml(dailyIdx + 1, d ?? SHOWCASE[0]!, r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : 'nothing measured', pts, sofar, SHOWCASE.find((x) => x.id === nextId) ?? null));
+    return;
+  }
   if (practicing) {
     // Practice: show how it went, keep nothing.
     stopLoop();
@@ -1303,6 +1385,26 @@ function onAction(action: string, arg: string): void {
     case 'dailynext':
       nextDaily();
       break;
+    case 'scstart':
+      uiClick();
+      startShowcase();
+      break;
+    case 'scnext':
+      uiClick();
+      nextDaily();
+      break;
+    case 'scsave':
+      saveShowcase();
+      break;
+    case 'scattract':
+      showAttract();
+      break;
+    case 'showcase':
+      // From Settings: turn the stand on. Shift+Esc on its start screen turns it off again.
+      showcase = true;
+      setShowcaseOn(true);
+      showAttract();
+      break;
     case 'endrun':
       // From a pause screen too: the drill in progress is dropped, the set's recap shows.
       if (screen === 'miniPause') mini = null;
@@ -1546,6 +1648,17 @@ function release(slot: number, ts: number): void {
 
 function onKeyDown(e: KeyboardEvent): void {
   const code = e.code;
+  lastInputAt = performance.now();
+  if (showcase && screen === 'attract' && code === 'Escape' && e.shiftKey) {
+    // Staff only: leave showcase mode.
+    e.preventDefault();
+    showcase = false;
+    setShowcaseOn(false);
+    document.body.classList.remove('showcase');
+    if (location.search.includes('showcase')) window.history.replaceState(null, '', location.pathname + location.hash);
+    showMenu();
+    return;
+  }
   // Typing in a text field (the leaderboard name) is typing, not shortcuts.
   if (e.target instanceof HTMLInputElement) {
     if (e.target.id === 'q') {
@@ -1565,7 +1678,7 @@ function onKeyDown(e: KeyboardEvent): void {
     }
     if (code === 'Enter') {
       e.preventDefault();
-      onAction(e.target.id === 'devname' ? 'devsignin' : 'lbname', '');
+      onAction(e.target.id === 'initials' ? 'scsave' : e.target.id === 'devname' ? 'devsignin' : 'lbname', '');
     } else if (code === 'Escape') e.target.blur();
     return;
   }
@@ -1753,6 +1866,19 @@ function swallow(e: Event): void {
 }
 
 window.addEventListener('keydown', onKeyDown, { passive: false });
+window.addEventListener(
+  'pointerdown',
+  () => {
+    lastInputAt = performance.now();
+  },
+  true,
+);
+// An idle stand goes back to its start screen: 25 s on a between-drills screen, 40 s mid-drill.
+setInterval(() => {
+  if (!showcase || screen === 'attract') return;
+  const idle = performance.now() - lastInputAt;
+  if (idle > (screen === 'mini' || screen === 'miniPause' ? 40000 : 25000)) showAttract();
+}, 1000);
 window.addEventListener('keyup', onKeyUp);
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
 canvas.addEventListener('pointermove', (e) => {
@@ -1777,7 +1903,8 @@ document.addEventListener('visibilitychange', () => {
 
 applyKeys(activeKeys);
 applyLook();
-showMenu();
+if (showcase) showAttract();
+else showMenu();
 
 // Dev-only handle for automated playtesting.
 if (import.meta.env.DEV) {

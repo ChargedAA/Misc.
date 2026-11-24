@@ -713,6 +713,7 @@ export function settingsMenu(c: MenuCtx, note = ''): Menu {
       { slot: 4, label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
       { slot: 5, label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
       { slot: 6, label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },
+      { label: 'Showcase mode', desc: 'For an event stand: one key to play three short drills, a board for today with initials, and back to the start on its own. Shift+Esc on its start screen leaves it. Or open the site with ?showcase', act: 'showcase', code: 'KeyW', keyName: 'W' },
     ],
   };
 }
