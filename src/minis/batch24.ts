@@ -391,6 +391,8 @@ class TypeWords implements Mini {
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.done && now - this.doneAt > 900) return true;
+    // A test never runs forever: five minutes at the standard length.
+    if (!this.done && this.startAt && now - this.startAt > scaled(300000)) this.finish(now);
     // Sample correct characters each second for the consistency line.
     if (this.startAt && !this.done) {
       const sec = Math.floor((now - this.startAt) / 1000);
