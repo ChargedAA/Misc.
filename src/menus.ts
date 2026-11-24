@@ -185,7 +185,7 @@ export function columnsHtml(cols: Col[], dir: number): string {
 // --- Content ----------------------------------------------------------------------
 
 export const GROUPS: { id: string; name: string; desc: string; skills: Skill[] }[] = [
-  { id: 'body', name: 'Reflexes', desc: 'Reaction, speed, timing, coordination, dexterity', skills: ['reaction', 'speed', 'timing', 'coordination', 'dexterity'] },
+  { id: 'body', name: 'Reflexes', desc: 'Reaction, speed, timing, coordination, dexterity, aim', skills: ['reaction', 'speed', 'timing', 'coordination', 'dexterity', 'aim'] },
   { id: 'mind', name: 'Mind', desc: 'Memory, attention, judgement, reasoning, ear', skills: ['memory', 'attention', 'judgement', 'reasoning', 'ear'] },
 ];
 
@@ -235,12 +235,13 @@ const SKILL_KEYS: Record<string, [string, string]> = {
   judgement: ['KeyM', 'M'],
   reasoning: ['Comma', ','],
   ear: ['Period', '.'],
+  aim: ['KeyG', 'G'],
 };
 
 export function startMenu(c: MenuCtx): Menu {
   return {
     title: 'TENSION',
-    sub: `Train ten skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
+    sub: `Train eleven skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
       { label: 'Find', act: 'go', arg: 'search', code: 'KeyF', keyName: 'F' },
       { label: 'Random', act: 'go', arg: 'random', code: 'KeyR', keyName: 'R' },

@@ -5,7 +5,7 @@ import { COL_DIM, COL_LINE, COL_MID, SLOT_REFLEX, type ModeDef } from '../config
 import { ICON_PAUSE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 
-export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity' | 'ear';
+export type Skill = 'coordination' | 'reaction' | 'speed' | 'timing' | 'memory' | 'attention' | 'judgement' | 'reasoning' | 'dexterity' | 'ear' | 'aim';
 
 export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'reaction', name: 'Reaction', blurb: 'See it, press it.' },
@@ -18,6 +18,7 @@ export const SKILLS: readonly { id: Skill; name: string; blurb: string }[] = [
   { id: 'reasoning', name: 'Reasoning', blurb: 'Think fast and stay right.' },
   { id: 'dexterity', name: 'Dexterity', blurb: 'Fingers that find and press any key.' },
   { id: 'ear', name: 'Ear', blurb: 'Hear pitch: higher, in tune, which note, which chord.' },
+  { id: 'aim', name: 'Aim', blurb: 'The mouse: flick, track and click exactly, in 2D and 3D.' },
 ];
 
 /** 'keys' games use the chosen key count; 'pointer' games are click or tap; 'both' accept either; 'type' needs a full keyboard. */
@@ -107,6 +108,8 @@ export interface Mini {
   pointer?(x: number, y: number, ts: number): void;
   /** The pointer moved (mouse, or a finger dragging), in canvas pixels. */
   pointerMove?(x: number, y: number, ts: number): void;
+  /** Mouse-look: how far the mouse moved (CSS pixels) while the pointer is locked to the board. */
+  look?(dx: number, dy: number, ts: number): void;
   /** Advance and draw. Returns true once the session is over. */
   frame(now: number, v: View, touch: TouchLayout): boolean;
   result(): MiniResult;
@@ -125,6 +128,8 @@ export interface MiniDef {
   minKeys?: number;
   /** Fixed difficulty levels offered before the key count; value 0 means progressing. Space then offers a custom one. */
   levels?: { label: string; desc: string; value: number }[];
+  /** Mouse-look games: the first click locks the pointer to the board (Esc frees it and pauses). */
+  lock?: boolean;
   /** Unit and range of a custom level. */
   custom?: { unit: string; min: number; max: number; def: number };
   make(): Mini;

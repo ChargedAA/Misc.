@@ -1112,8 +1112,8 @@ function progress2(v: View, cx: number, y: number, half: number, p: number): voi
 export const EXTRA: MiniDef[] = [
   {
     id: 'aim',
-    name: 'Aim',
-    skill: 'reaction',
+    name: 'Shrink',
+    skill: 'aim',
     blurb: 'Tap each target the moment it appears. They shrink.',
     how: 'Tap the circle to start, then tap each orange target as fast as you can. Hits make them smaller; misses make them bigger. Thirty targets.',
     input: 'pointer',

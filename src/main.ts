@@ -345,6 +345,7 @@ let endingAt = 0;
 /** A drill is over: freeze it and fade out, then show the result (input is ignored meanwhile). */
 function endMini(): void {
   if (screen !== 'mini') return;
+  if (document.pointerLockElement) document.exitPointerLock();
   screen = 'ending';
   endingAt = performance.now();
 }
@@ -978,6 +979,7 @@ let miniStartAt = 0;
 /** Escape in a drill: stop the game clock and the audio, and offer the ways out. */
 function pauseMini(): void {
   if (screen !== 'mini' || !mini || !miniDef) return;
+  if (document.pointerLockElement) document.exitPointerLock();
   pausedAt = performance.now();
   // Let go of anything held, so nothing is stuck down on return.
   for (let slot = 0; slot <= SLOT_REFLEX; slot++) mini.release?.(slot, pausedAt - clockShift());
@@ -1869,7 +1871,19 @@ function onPointerDown(e: PointerEvent): void {
     if (touch.active || screen === 'mini') leave();
     return;
   }
+  if (screen === 'mini' && mini && miniDef && miniDef.lock && e.pointerType === 'mouse' && document.pointerLockElement !== canvas && canvas.requestPointerLock) {
+    // The first click takes the mouse for looking around; it does not count as a shot.
+    void Promise.resolve(canvas.requestPointerLock()).catch(() => undefined);
+    return;
+  }
   if (screen === 'mini' && mini && miniDef && miniDef.input !== 'keys') {
+    if (document.pointerLockElement === canvas && mini.pointer) {
+      // Locked: a click fires at the crosshair, the middle of the board.
+      miniInputs++;
+      integrity.note(e, stamp(e));
+      mini.pointer(view.w / 2, view.h / 2, stamp(e) - clockShift());
+      return;
+    }
     if (!mini.pointer) {
       // A game that takes taps but has no tap handler of its own (Ruler, Bat, Morse...): a tap is
       // a key press on that side of the screen, held until the finger lifts.
@@ -1927,10 +1941,26 @@ setInterval(() => {
 }, 1000);
 window.addEventListener('keyup', onKeyUp);
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+/** Moving the mouse is play in aim drills: counted as input, at most four times a second. */
+let lastMoveInput = 0;
 canvas.addEventListener('pointermove', (e) => {
-  if (screen !== 'mini' || !mini?.pointerMove) return;
+  if (screen !== 'mini' || !mini) return;
+  const now = performance.now();
+  if ((mini.look || mini.pointerMove) && now - lastMoveInput > 250) {
+    lastMoveInput = now;
+    miniInputs++;
+  }
+  if (mini.look && document.pointerLockElement === canvas) {
+    mini.look(e.movementX, e.movementY, stamp(e) - clockShift());
+    return;
+  }
+  if (!mini.pointerMove) return;
   const rect = canvas.getBoundingClientRect();
   mini.pointerMove((e.clientX - rect.left) * view.dpr, (e.clientY - rect.top) * view.dpr, stamp(e) - clockShift());
+});
+// Mouse-look drills: losing the lock (Esc, switching windows) pauses, so the clock never runs blind.
+document.addEventListener('pointerlockchange', () => {
+  if (!document.pointerLockElement && screen === 'mini' && miniDef?.lock) pauseMini();
 });
 canvas.addEventListener('pointerup', onPointerUp);
 canvas.addEventListener('pointercancel', onPointerUp);
