@@ -73,6 +73,8 @@ type Screen =
   | 'mini'
   | 'miniResults'
   | 'miniPause'
+  /** A drill has ended: its last frame fades to black while the result is worked out. */
+  | 'ending'
   | 'ready'
   | 'keys';
 
@@ -291,7 +293,7 @@ function frame(now: number): void {
         view.ctx.fillRect(view.ox + (i - 1) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
       }
       if (livesEndAt && performance.now() >= livesEndAt) {
-        finishMini();
+        endMini();
         return;
       }
     }
@@ -301,13 +303,37 @@ function frame(now: number): void {
       view.ctx.fillStyle = COL_MID;
       view.text(miniLimit ? `${Math.floor(Math.max(0, left) / 60000)}:${String(Math.ceil(Math.max(0, left) / 1000) % 60).padStart(2, '0')} left` : 'endless · esc to finish', view.ox, 22 * view.dpr, view.fontTiny, 'center');
       if (miniLimit && left <= 0) {
-        finishMini();
+        endMini();
         return;
       }
     }
     view.drawPerf(perf);
-    if (done) finishMini();
+    if (done) endMini();
+  } else if (screen === 'ending') {
+    // The last frame stays and darkens; then the result.
+    const k = (performance.now() - endingAt) / ENDING_MS;
+    const ctx = view.ctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg') || '#0a0a0b';
+    ctx.fillRect(0, 0, view.w, view.h);
+    ctx.globalAlpha = 1;
+    if (k >= 1) {
+      screen = 'mini';
+      finishMini();
+    }
   }
+}
+
+/** How long a finished drill takes to fade out. */
+const ENDING_MS = 420;
+let endingAt = 0;
+
+/** A drill is over: freeze it and fade out, then show the result (input is ignored meanwhile). */
+function endMini(): void {
+  if (screen !== 'mini') return;
+  screen = 'ending';
+  endingAt = performance.now();
 }
 
 function playFx(fx: number): void {
@@ -769,6 +795,10 @@ function startGame(game: GameId): void {
     setLengthScale(plan.scale);
     miniLimit = plan.limitMs;
     mini = e.def.make();
+    // The board zooms in as the menu goes.
+    canvas.classList.remove('zoom');
+    void canvas.offsetWidth;
+    canvas.classList.add('zoom');
     miniStartAt = performance.now();
     livesLeft = 3;
     livesEndAt = 0;
