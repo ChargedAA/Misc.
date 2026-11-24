@@ -14,7 +14,7 @@
 //   Combo   - a combo string against a clock: letters, arrows and space.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { ENGLISH_5K } from './words.ts';
@@ -291,34 +291,210 @@ class Hunt extends KeySeq {
 
 // --- Type ---------------------------------------------------------------------------
 
-class TypeWords extends KeySeq {
-  protected readonly total = scaled(25);
-  private startT = 0;
+/**
+ * A real typing test, like Monkeytype: lines of words to read ahead, Space moves on, Backspace
+ * fixes, mistakes are shown but never block you. The clock starts at your first key. WPM is the
+ * standard measure: correct characters (spaces after correct words included) / 5 per minute.
+ */
+class TypeWords implements Mini {
+  private env!: MiniEnv;
+  private readonly total = scaled(50);
+  private words: string[] = [];
+  private typed: string[] = [''];
+  private w = 0;
+  private startAt = 0;
+  private endAt = 0;
+  private keys = 0;
+  private wrongKeys = 0;
+  private done = false;
+  private doneAt = 0;
+  /** Correct characters at each whole second, for consistency and the WPM-over-time line. */
+  private perSecond: number[] = [];
+  private lastKeyAt = 0;
 
-  protected make(i: number): Prompt {
-    if (i === 0) this.startT = 0;
-    const w = pick(WORDS).toUpperCase();
-    return { codes: [...w].map(codeOf), show: w };
+  start(env: MiniEnv, now: number): void {
+    this.env = env;
+    this.lastKeyAt = now;
+    const pool = WORDS.filter((x) => x.length <= 9);
+    for (let i = 0; i < this.total; i++) {
+      let next = pick(pool);
+      while (next === this.words[this.words.length - 1]) next = pick(pool);
+      this.words.push(next);
+    }
   }
 
-  protected override done(ok: boolean, ts: number): void {
-    if (!this.startT) this.startT = this.shownAt;
-    super.done(ok, ts);
-    this.at = ts + 60;
+  press(): void {}
+
+  /** Characters typed correctly so far: whole correct words plus their spaces, and the right prefix of the current word. */
+  private correctChars(): number {
+    let n = 0;
+    for (let i = 0; i < this.w; i++) if (this.typed[i] === this.words[i]) n += this.words[i]!.length + 1;
+    const cur = this.typed[this.w] ?? '';
+    const word = this.words[this.w] ?? '';
+    for (let i = 0; i < cur.length && cur[i] === word[i]; i++) n++;
+    return n;
+  }
+
+  typeKey(code: string, ts: number): boolean {
+    if (code === 'Escape') return false;
+    if (this.done) return true;
+    const letter = /^Key([A-Z])$/.exec(code)?.[1]?.toLowerCase() ?? (code === 'Quote' ? "'" : null);
+    if (!letter && code !== 'Space' && code !== 'Backspace') return /^(Shift|Control|Alt|Meta)/.test(code) ? true : false;
+    if (!this.startAt) this.startAt = ts;
+    this.lastKeyAt = ts;
+    const word = this.words[this.w]!;
+    const cur = this.typed[this.w]!;
+    if (code === 'Backspace') {
+      if (cur.length) this.typed[this.w] = cur.slice(0, -1);
+      else if (this.w > 0 && this.typed[this.w - 1] !== this.words[this.w - 1]) {
+        // Step back into a wrong word to fix it.
+        this.w--;
+        this.typed.pop();
+      }
+      return true;
+    }
+    if (code === 'Space') {
+      if (!cur.length) return true;
+      this.keys++;
+      if (cur !== word) this.wrongKeys++;
+      this.w++;
+      this.typed.push('');
+      this.env.sound(SND_TAP_R);
+      if (this.w >= this.words.length) this.finish(ts);
+      return true;
+    }
+    this.keys++;
+    const ok = cur.length < word.length && word[cur.length] === letter;
+    if (!ok) this.wrongKeys++;
+    if (cur.length < word.length + 8) this.typed[this.w] = cur + letter;
+    this.env.sound(ok ? SND_TAP_L : SND_TAP_WEAK);
+    // The last word needs no Space: it ends the test as soon as it is right.
+    if (this.w === this.words.length - 1 && this.typed[this.w] === word) {
+      this.w++;
+      this.typed.push('');
+      this.finish(ts);
+    }
+    return true;
+  }
+
+  private finish(ts: number): void {
+    this.done = true;
+    this.endAt = ts;
+    this.doneAt = ts;
+    this.env.sound(SND_CATCH);
+  }
+
+  private elapsed(now: number): number {
+    if (!this.startAt) return 0;
+    return ((this.done ? this.endAt : now) - this.startAt) / 1000;
+  }
+
+  frame(now: number, v: View, touch: TouchLayout): boolean {
+    if (this.done && now - this.doneAt > 900) return true;
+    // Sample correct characters each second for the consistency line.
+    if (this.startAt && !this.done) {
+      const sec = Math.floor((now - this.startAt) / 1000);
+      while (this.perSecond.length <= sec) this.perSecond.push(this.correctChars());
+    }
+    v.clear();
+    const a = arena(v, touch);
+    const ctx = v.ctx;
+    const t = this.elapsed(now);
+    const wpm = t > 1 ? this.correctChars() / 5 / (t / 60) : 0;
+    header(v, touch, 'wpm', this.startAt ? String(Math.round(wpm)) : '–', 'words', `${Math.min(this.w, this.words.length)} / ${this.words.length}`);
+    // Lay the words out in lines, monospace, three lines on show with the current one first.
+    const size = Math.max(16 * v.dpr, Math.min(30 * a.u, 34 * v.dpr));
+    const font = `400 ${Math.round(size)}px ui-monospace, SFMono-Regular, Menlo, Consolas, "Roboto Mono", monospace`;
+    ctx.font = font;
+    const cw = ctx.measureText('m').width;
+    const width = Math.min(a.right - a.left, 900 * a.u);
+    const perLine = Math.max(12, Math.floor(width / cw));
+    const lines: number[][] = [[]];
+    let len = 0;
+    this.words.forEach((word, i) => {
+      const shown = Math.max(word.length, (this.typed[i] ?? '').length);
+      if (len && len + shown > perLine) {
+        lines.push([]);
+        len = 0;
+      }
+      lines[lines.length - 1]!.push(i);
+      len += shown + 1;
+    });
+    const curLine = Math.max(0, lines.findIndex((l) => l.includes(Math.min(this.w, this.words.length - 1))));
+    const first = Math.max(0, curLine - 1);
+    const lh = size * 1.6;
+    const x0 = a.cx - (perLine * cw) / 2;
+    const y0 = a.cy - lh;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    for (let li = first; li < Math.min(lines.length, first + 3); li++) {
+      let x = x0;
+      const y = y0 + (li - first) * lh;
+      for (const i of lines[li]!) {
+        const word = this.words[i]!;
+        const typed = this.typed[i] ?? '';
+        const past = i < this.w;
+        for (let c = 0; c < Math.max(word.length, typed.length); c++) {
+          const want = word[c];
+          const got = typed[c];
+          let col = COL_DIM;
+          let ch = want ?? got ?? '';
+          if (got !== undefined) {
+            if (want === undefined) {
+              col = '#b8402a'; // extra letters
+              ch = got;
+            } else col = got === want ? COL_LINE : COL_ACCENT;
+          } else if (past) col = COL_ACCENT; // skipped letters of a finished word
+          ctx.fillStyle = col;
+          ctx.fillText(ch, x, y);
+          // A word finished wrong gets an underline.
+          if (past && typed !== word && c === 0) {
+            ctx.fillRect(x, y + size * 0.18, Math.max(word.length, typed.length) * cw, Math.max(1, v.dpr));
+            ctx.fillStyle = col;
+          }
+          x += cw;
+        }
+        // The caret.
+        if (i === this.w && !this.done) {
+          const cx = x0 + (x - x0) - (Math.max(word.length, typed.length) - typed.length) * cw;
+          const blink = !this.startAt || Math.floor((now - this.lastKeyAt) / 530) % 2 === 0;
+          if (blink) {
+            ctx.fillStyle = COL_ACCENT;
+            ctx.fillRect(cx - v.dpr, y - size * 0.85, 2 * v.dpr, size * 1.05);
+          }
+        }
+        x += cw;
+      }
+    }
+    ctx.fillStyle = COL_MID;
+    v.text(this.startAt ? `${t.toFixed(0)} s` : 'start typing: Space moves to the next word, Backspace fixes', a.cx, a.bottom - 14 * a.u, v.fontTiny, 'center');
+    footer(v, touch, 0);
+    return false;
   }
 
   result(): MiniResult {
-    const secs = this.keyTimes.length > 1 ? (this.keyTimes[this.keyTimes.length - 1]! - this.keyTimes[0]!) / 1000 : 0;
-    const wpm = secs > 0 ? this.keys / 5 / (secs / 60) : 0;
+    const t = this.startAt ? ((this.done ? this.endAt : this.lastKeyAt) - this.startAt) / 1000 : 0;
+    const correct = this.correctChars();
+    const wpm = t > 0 ? correct / 5 / (t / 60) : 0;
+    const raw = t > 0 ? this.keys / 5 / (t / 60) : 0;
+    const acc = this.keys ? (this.keys - this.wrongKeys) / this.keys : 0;
+    const perSec = this.perSecond.slice(1).map((n, i) => (n - this.perSecond[i]!) * 12);
+    const m = mean(perSec);
+    const sd = perSec.length > 2 ? Math.sqrt(mean(perSec.map((x) => (x - m) ** 2))) : 0;
+    const consistency = m > 0 ? Math.max(0, 1 - sd / m) : 0;
+    const wordsRight = this.words.slice(0, this.w).filter((w, i) => this.typed[i] === w).length;
     return {
-      score: Math.max(0, Math.round(wpm * 8 - this.errors * 5)),
+      score: Math.max(0, Math.round(wpm * 8 * acc)),
       primary: { label: 'words per minute', value: Math.round(wpm), unit: 'wpm' },
       lines: [
-        { label: 'words typed', value: String(this.times.length) },
-        { label: 'wrong keys', value: `${this.errors}${this.keys ? `  ·  ${pct(this.errors / (this.keys + this.errors))}` : ''}` },
-        { label: 'median time per word', value: ms(median(this.times)) },
+        { label: 'raw (every key)', value: `${Math.round(raw)} wpm` },
+        { label: 'accuracy', value: this.keys ? pct(acc) : '–' },
+        { label: 'words right', value: `${wordsRight} of ${this.w}` },
+        { label: 'consistency', value: perSec.length > 2 ? pct(consistency) : '–' },
+        { label: 'time', value: `${t.toFixed(1)} s` },
       ],
-      ...this.base(true),
+      series: perSec.length >= 3 ? { label: 'speed each second', names: perSec.map((_, i) => String(i + 1)), values: perSec.map((x) => Math.round(x)), unit: 'wpm' } : undefined,
+      saved: this.w >= 5 && t > 3,
     };
   }
 }
@@ -762,7 +938,7 @@ class Chords implements Mini {
 export const BATCH24: MiniDef[] = [
   { id: 'hunt', name: 'Hunt', skill: 'dexterity', blurb: 'A letter appears: press it. The whole keyboard, as fast as you can find it.', how: 'A letter appears in the middle. Press that key on your keyboard as fast as you can. The first few show where it is; after that you find it yourself. A wrong key counts as an error; keep going until you hit the right one. Needs a keyboard.', input: 'type', make: () => new Hunt() },
   { id: 'chords', name: 'Chords', skill: 'dexterity', blurb: 'Press two or three keys at exactly the same instant.', how: 'A chord of two keys (later three) appears, lit on a keyboard. Press them all at the same instant: within 120 ms of each other. A key outside the chord, or keys too far apart, loses it. Scored on how close together your keys land. Needs a keyboard.', input: 'type', make: () => new Chords() },
-  { id: 'type', name: 'Type', skill: 'dexterity', blurb: 'Common words, one after another. Words per minute.', how: 'Type each word as it appears. The next one comes the moment you finish; no Enter or Space needed. A wrong key counts as an error: fix it by typing the right one. Scored in words per minute. Needs a keyboard.', input: 'type', make: () => new TypeWords() },
+  { id: 'type', name: 'Type', skill: 'dexterity', blurb: 'A typing test: lines of common words. Words per minute.', how: 'Lines of common words, as in a typing test. Type them with Space between words; Backspace fixes, and you can step back into a word you got wrong. Mistakes show in colour but never stop you. The clock starts at your first key. Scored in words per minute: correct characters, spaces included, divided by five, per minute. Needs a keyboard.', input: 'type', make: () => new TypeWords() },
   { id: 'dial', name: 'Dial', skill: 'dexterity', blurb: 'Type numbers on the number row.', how: 'A number appears: type it on the number row above the letters. They grow from four digits to eight. Scored on time per digit. Needs a keyboard.', input: 'type', make: () => new Dial() },
   { id: 'fingers', name: 'Fingers', skill: 'dexterity', blurb: 'A home-row pattern, typed three times. Watch it get faster.', how: 'A pattern of six home-row keys (A S D F J K L ;) appears. Type it, then type the same pattern twice more. Your fingers learn it as you go; the results show how much faster the third run is than the first. Needs a keyboard.', input: 'type', make: () => new Fingers() },
   { id: 'flip', name: 'Flip', skill: 'dexterity', blurb: 'Press the key mirrored across the keyboard from the one shown.', how: 'A letter appears. Press the key in the mirror position on the other hand: F gives J, Q gives P, A gives ;, V gives M. The first few show both on a keyboard. Needs a keyboard.', input: 'type', make: () => new Flip() },

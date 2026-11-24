@@ -10,6 +10,7 @@ import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE } fr
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { ENGLISH_5K } from './words.ts';
+import { VALID_WORDS } from './words-valid.ts';
 import { Stair, arena, clamp, footer, handLabel, header, mean, median, message, pct, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, scaled } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -580,8 +581,8 @@ class Mirror implements Mini {
 
 /** Words to unscramble: the more common half of the 5,000 most common English words, 4 to 7 letters. */
 const WORDS = ENGLISH_5K.slice(0, 2500).filter((w) => w.length >= 4 && w.length <= 7);
-/** Any of the 5,000 counts as an answer if it uses the same letters. */
-const VALID = new Set(ENGLISH_5K);
+/** Any real word (a 30,000-word list) counts as an answer if it uses the same letters. */
+const VALID = VALID_WORDS;
 const LETTERS_MS = 90000;
 
 class Letters implements Mini {
