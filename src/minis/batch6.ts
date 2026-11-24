@@ -32,6 +32,7 @@ import {
   type MiniResult,
   gameNow,
   scaled,
+  shown,
 } from './kit.ts';
 
 const TAU = Math.PI * 2;
@@ -866,7 +867,6 @@ class Drum implements Mini {
     ctx.fillStyle = COL_MID;
     v.text(`left ${handLabel(this.env, -1)}`, x0 - 10 * dpr, yL + 4 * dpr, v.fontTiny, 'right');
     v.text(`right ${handLabel(this.env, 1)}`, x0 - 10 * dpr, yR + 4 * dpr, v.fontTiny, 'right');
-    const playing = Math.floor((now - this.t0 - st * 8) / st);
     this.steps.forEach((s, i) => {
       const x = x0 + (i + 0.5) * cw;
       const m = this.hitMask[i] ?? 0;
@@ -889,11 +889,17 @@ class Drum implements Mini {
         ctx.fillStyle = Math.abs(o) < 45 ? COL_LINE : COL_MID;
         ctx.fillRect(x + clamp(o / (st * 0.35), -1, 1) * cw * 0.4 - dpr, a.cy - 3 * a.u, 2 * dpr, 6 * a.u);
       }
-      if (i === playing && this.state === 1) {
-        ctx.fillStyle = COL_LINE;
-        ctx.fillRect(x - cw / 2, a.cy + 52 * a.u, cw, 2 * dpr);
-      }
     });
+    // The playhead glides across the bar, reaching each note as its beat is heard.
+    if (this.state <= 1) {
+      const heard = shown(now) - (this.exact ? (this.env.latency ?? 0) : 0);
+      const pos = (heard - (this.t0 + st * 8)) / st;
+      if (pos > -2 && pos < this.steps.length + 0.5) {
+        const px = x0 + (pos + 0.5) * cw;
+        ctx.fillStyle = pos < -0.5 ? COL_DIM : COL_LINE;
+        ctx.fillRect(px - dpr, yL - 22 * a.u, 2 * dpr, yR - yL + 44 * a.u);
+      }
+    }
     ctx.fillStyle = COL_MID;
     const status = this.state === 0 && now < this.t0 + st * 8 ? `${4 - Math.floor(Math.max(0, now - this.t0) / (st * 2))}` : this.state === 2 ? `${pct(this.acc)} ${this.acc >= 0.75 ? '· next' : '· again'}` : 'play';
     v.text(status, a.cx, a.cy - 70 * a.u, v.fontHud, 'center');

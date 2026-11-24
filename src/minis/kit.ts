@@ -394,3 +394,21 @@ export function bigNumber(v: View, x: number, y: number, value: string, unit = '
     v.text(unit, x + w / 2 + 8 * v.dpr, y, v.fontTiny, 'left');
   }
 }
+
+// --- Display timing -------------------------------------------------------------------
+
+/**
+ * How long after a frame's timestamp it reaches the screen: about one frame. Anything that
+ * moves toward a moment (a dot crossing a line, a playhead reaching a note) is drawn where it
+ * will be when the frame is seen, so what you see lines up with when you are judged.
+ */
+let frameLead = 16.7;
+
+export function setFrameLead(ms: number): void {
+  if (Number.isFinite(ms)) frameLead = Math.max(6, Math.min(34, ms));
+}
+
+/** The time a frame drawn at `now` will be on screen. */
+export function shown(now: number): number {
+  return now + frameLead;
+}

@@ -26,6 +26,7 @@ import {
   type MiniEnv,
   type MiniResult,
   scaled,
+  shown,
 } from './kit.ts';
 
 const GREY = '#6c6c74';
@@ -587,7 +588,7 @@ class Sync implements Mini {
       ctx.stroke();
       // The ball falls at a steady speed; its moment is when it settles in the cup, and there it
       // stays. Pressing stops it where it is, so an early press leaves it hanging above the cup.
-      const t = press || now;
+      const t = press || shown(now);
       const y = Math.min(line - r - (cross - t) * speed, line - r);
       if (t >= this.t0 && y > top - 20 * a.u) {
         ctx.fillStyle = press ? (Math.abs(press - cross) < 25 ? COL_LINE : COL_MID) : COL_ACCENT;

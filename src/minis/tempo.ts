@@ -28,6 +28,7 @@ import {
   type MiniEnv,
   type MiniResult,
   scaled,
+  shown,
 } from './kit.ts';
 
 function tapSound(env: MiniEnv, slot: number): void {
@@ -565,13 +566,26 @@ class Cross implements Mini {
       ctx.fillStyle = '#141417';
       ctx.fillRect(Math.min(hx, xLine), y - 14 * a.u, Math.abs(xLine - hx), 28 * a.u);
     }
-    if (this.state === 0 && now >= this.t0) {
-      const p = (now - this.t0) / this.dur;
+    // Drawn where the dot will be when this frame is seen, so the crossing you see is the one judged.
+    const tv = shown(now);
+    if (this.state === 0 && tv >= this.t0) {
+      const p = (tv - this.t0) / this.dur;
       if (p <= 1 && (p < hideFrom || p > 0.8 + 0.02 || this.hide.level === 0)) {
         if (!this.drawn) this.drawn = now;
+        const x = xStart + (xEnd - xStart) * p;
+        // Faint ghosts of the last frame's travel, so fast motion reads as a glide, not steps.
+        const step = ((xEnd - xStart) * 8) / this.dur;
+        ctx.fillStyle = COL_ACCENT;
+        for (const [k, al] of [[2, 0.12], [1, 0.25]] as const) {
+          ctx.globalAlpha = al;
+          ctx.beginPath();
+          ctx.arc(x - step * k, y, 9 * a.u, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
         ctx.fillStyle = COL_ACCENT;
         ctx.beginPath();
-        ctx.arc(xStart + (xEnd - xStart) * p, y, 9 * a.u, 0, Math.PI * 2);
+        ctx.arc(x, y, 9 * a.u, 0, Math.PI * 2);
         ctx.fill();
       }
     } else if (this.state === 1) {

@@ -57,7 +57,7 @@ import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, qui
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
-import { clamp, clockShift, keysFor, picksKeys, setClockShift, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -253,6 +253,7 @@ function frame(now: number): void {
     if (d > clock[MAX]!) clock[MAX] = d;
     if (now - clock[SAMPLED_AT]! >= 250) {
       perf.frameMs = clock[SUM]! / clock[COUNT]!;
+      setFrameLead(perf.frameMs);
       perf.fps = 1000 / perf.frameMs;
       perf.maxMs = clock[MAX]!;
       clock[SUM] = 0;

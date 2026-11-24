@@ -71,7 +71,7 @@ export const CONTROLS: Record<string, Control[]> = {
   lander: [['BOTH', 'thrust up'], ['L', 'up and to the right'], ['R', 'up and to the left']],
   mirror: [['L', 'hold to steer'], ['R', 'hold to steer'], ['', 'which way swaps']],
   sync: [['L', 'as the left ball lands'], ['R', 'as the right ball lands']],
-  poly: [['L', 'left beats'], ['R', 'right beats']],
+  poly: [['L', 'left lane'], ['R', 'right lane'], ['MID', 'middle lane, in three-way rounds (the outer keys take the side lanes)']],
   drum: [['L', 'top row'], ['R', 'bottom row'], ['BOTH', 'both']],
   strings: [['ANY', 'the key under each note']],
   zigzag: [['ANY', 'hold to rise, let go to fall']],

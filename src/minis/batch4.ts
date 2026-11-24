@@ -7,7 +7,7 @@
 //   Stream - letters fly past; press for the X.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI } from '../audio.ts';
+import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE, SND_UI } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import {
@@ -23,7 +23,9 @@ import {
   pct,
   progress,
   shuffle,
+  shown,
   sideOf,
+  slotsOf,
   type Mini,
   type MiniDef,
   type MiniEnv,
@@ -36,83 +38,136 @@ const GREY = '#6c6c74';
 
 // --- Poly -------------------------------------------------------------------------
 
-const RATIOS: [number, number][] = [
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [3, 2],
-  [2, 5],
+/** Two-hand ratios, easiest first. */
+const POLY2: number[][] = [
+  [1, 2], [1, 3], [2, 3], [3, 2], [3, 4], [4, 3], [2, 5], [5, 2], [3, 5], [5, 3],
+  [4, 5], [5, 4], [5, 6], [3, 7], [6, 5], [4, 7], [7, 4], [5, 7], [7, 5], [7, 8],
 ];
-/** Loops with both hands' clicks to join, then loops on your own with only a soft tick at each loop start. */
-const GUIDE = 4;
-const PLAY = 4;
+/** Three-lane ratios (outer left, middle, outer right), for three keys or more. */
+const POLY3: number[][] = [
+  [1, 2, 4], [2, 3, 4], [2, 4, 3], [3, 2, 4], [2, 3, 5], [3, 4, 5], [3, 5, 4], [4, 5, 6], [3, 4, 7], [4, 5, 7],
+];
+/** The pass mark for a round: share of beats on time on your own. */
+const POLY_PASS = 0.7;
+/** Failed rounds allowed when the level is 0 (standard). */
+const POLY_TRIES = 3;
+/** Play-through: every stage once, no failing. */
+const POLY_THROUGH = 1000;
+const LANE_SOUND = [SND_BEAT, SND_BEAT_UP, SND_TONE + 4];
+
+/** The stages for a player with this many lanes: three-way rhythms join after the basics. */
+function polyStages(lanes: number): number[][] {
+  if (lanes < 3) return POLY2;
+  const out = POLY2.slice(0, 6);
+  for (let i = 0; i < Math.max(POLY2.length - 6, POLY3.length); i++) {
+    if (POLY3[i]) out.push(POLY3[i]!);
+    if (POLY2[6 + i]) out.push(POLY2[6 + i]!);
+  }
+  return out;
+}
 
 class Poly implements Mini {
   private env!: MiniEnv;
-  private round = 0;
-  private ratio: [number, number] = [1, 2];
+  private slots: number[] = [];
+  private stages: number[][] = POLY2;
+  private stage = 0;
+  private tries = POLY_TRIES;
+  private failed = 0;
+  private through = false;
+  private ratio: number[] = [1, 2];
   private cycle = 2000;
+  private guideLoops = 4;
+  private ownLoops = 4;
   private t0 = 0;
   private state = 0; // 0 playing, 1 round summary
   private at = 0;
   private exact = false;
-  private taps: [number[], number[]] = [[], []];
-  /** Every expected beat of this round: hand, time from t0, and how it went (null until judged). */
-  private beats: { h: number; t: number; hit: boolean | null; off: number }[] = [];
+  /** Every expected beat of this round: lane, time from t0, and how it went. */
+  private beats: { h: number; t: number; hit: boolean; off: number }[] = [];
   private fired = 0;
   private onTime = 0;
   private judged = 0;
   private offs: number[] = [];
-  private roundScores: number[] = [];
+  private cleared = 0;
+  private rounds = 0;
+  private played: { name: string; score: number }[] = [];
   private summary = '';
+  private sub = '';
+  private lastPass = false;
+  private over = false;
   private held = 0;
-  private flash: [number, number] = [0, 0];
+  private flash: number[] = [0, 0, 0];
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
     this.exact = !!env.soundAt && !env.muted;
+    this.slots = slotsOf(env.mode);
+    this.stages = polyStages(this.slots.length >= 3 ? 3 : 2);
+    const lv = env.level ?? 0;
+    this.through = lv >= POLY_THROUGH;
+    this.tries = lv > 0 && !this.through ? lv : POLY_TRIES;
     this.newRound(now + 1200, now);
   }
 
+  /** Which lane a key plays: by hand with two lanes; outer left, middle, outer right with three. */
+  private laneOf(slot: number): number {
+    if (this.ratio.length === 2) return sideOf(slot) === 0 ? -1 : sideOf(slot) < 0 ? 0 : 1;
+    const i = this.slots.indexOf(slot);
+    return i <= 0 ? 0 : i >= this.slots.length - 1 ? 2 : 1;
+  }
+
+  private laneKeys(h: number): string {
+    if (this.ratio.length === 2) return handLabel(this.env, h ? 1 : -1);
+    const idx = h === 0 ? [0] : h === 2 ? [this.slots.length - 1] : this.slots.map((_, i) => i).slice(1, -1);
+    return idx.map((i) => this.env.labels[this.slots[i]!] ?? '').join(' / ');
+  }
+
   private win(h: number): number {
-    return Math.max(70, (this.cycle / this.ratio[h]!) * 0.22);
+    return Math.max(60, Math.min(120, (this.cycle / this.ratio[h]!) * 0.22));
+  }
+
+  private name(r = this.ratio): string {
+    return r.join(':');
   }
 
   private newRound(at: number, now: number): void {
-    this.ratio = RATIOS[Math.min(this.round, RATIOS.length - 1)]!;
-    // A loop long enough that the busier hand has at least ~300 ms between taps.
-    this.cycle = Math.max(1800, Math.max(...this.ratio) * 330);
+    this.ratio = this.stages[Math.min(this.stage, this.stages.length - 1)]!;
+    // A loop long enough that the busiest lane has at least ~300 ms between taps.
+    this.cycle = Math.max(1800, Math.max(...this.ratio) * 320);
+    this.guideLoops = this.stage < 6 ? 4 : 3;
+    this.ownLoops = 4;
     this.t0 = at;
     this.state = 0;
-    this.taps = [[], []];
     this.beats = [];
     this.fired = 0;
-    for (let c = 0; c < GUIDE + PLAY; c++)
-      for (let h = 0; h < 2; h++)
-        for (let k = 0; k < this.ratio[h]!; k++) this.beats.push({ h, t: c * this.cycle + (k * this.cycle) / this.ratio[h]!, hit: null, off: 0 });
+    const loops = this.guideLoops + this.ownLoops;
+    for (let c = 0; c < loops; c++)
+      for (let h = 0; h < this.ratio.length; h++)
+        for (let k = 0; k < this.ratio[h]!; k++) this.beats.push({ h, t: c * this.cycle + (k * this.cycle) / this.ratio[h]!, hit: false, off: 0 });
     this.beats.sort((x, y) => x.t - y.t);
     if (this.exact) {
-      for (let c = 0; c < GUIDE + PLAY; c++) {
-        if (c < GUIDE) for (let h = 0; h < 2; h++) for (let k = 0; k < this.ratio[h]!; k++) this.env.soundAt!(h ? SND_BEAT_UP : SND_BEAT, at - now + c * this.cycle + (k * this.cycle) / this.ratio[h]!);
-        else this.env.soundAt!(SND_UI, at - now + c * this.cycle);
+      for (let c = 0; c < loops; c++) {
+        if (c < this.guideLoops) {
+          for (let h = 0; h < this.ratio.length; h++)
+            for (let k = 0; k < this.ratio[h]!; k++) this.env.soundAt!(LANE_SOUND[h]!, at - now + c * this.cycle + (k * this.cycle) / this.ratio[h]!);
+        } else this.env.soundAt!(SND_UI, at - now + c * this.cycle);
       }
     }
   }
 
   press(slot: number, ts: number): void {
     this.held |= 1 << slot;
-    if (this.state !== 0) return;
-    const side = sideOf(slot);
-    if (side === 0) return;
-    const h = side < 0 ? 0 : 1;
+    if (this.state !== 0 || this.over) return;
+    if (!this.slots.includes(slot)) return;
+    const h = this.laneOf(slot);
+    if (h < 0) return;
     // Judged against when the click was heard.
     const t = ts - this.t0 - (this.exact ? (this.env.latency ?? 0) : 0);
-    this.taps[h].push(t);
     this.flash[h] = ts + 90;
-    this.env.sound(h ? SND_TAP_R : SND_TAP_L);
-    // The nearest unjudged beat of this hand within the window takes the tap.
+    this.env.sound(h === 0 ? SND_TAP_L : SND_TAP_R);
+    // The nearest unjudged beat of this lane within the window takes the tap.
     let best: (typeof this.beats)[number] | null = null;
-    for (const b of this.beats) if (b.h === h && b.hit === null && Math.abs(b.t - t) <= this.win(h) && (!best || Math.abs(b.t - t) < Math.abs(best.t - t))) best = b;
+    for (const b of this.beats) if (b.h === h && !b.hit && Math.abs(b.t - t) <= this.win(h) && (!best || Math.abs(b.t - t) < Math.abs(best.t - t))) best = b;
     if (best) {
       best.hit = true;
       best.off = t - best.t;
@@ -125,22 +180,34 @@ class Poly implements Mini {
 
   private finishRound(now: number): void {
     // Only the loops on your own count.
-    const own = this.beats.filter((b) => b.t >= GUIDE * this.cycle);
+    const own = this.beats.filter((b) => b.t >= this.guideLoops * this.cycle);
     const hits = own.filter((b) => b.hit);
     const score = own.length ? hits.length / own.length : 0;
     this.onTime += hits.length;
     this.judged += own.length;
     this.offs.push(...hits.map((b) => b.off));
-    this.roundScores.push(score);
-    const side = (h: number) => {
+    this.played.push({ name: this.name(), score });
+    this.rounds++;
+    const lane = (h: number) => {
       const mine = own.filter((b) => b.h === h);
       return mine.length ? Math.round((100 * mine.filter((b) => b.hit).length) / mine.length) : 0;
     };
-    this.summary = `${this.ratio[0]} against ${this.ratio[1]}: ${Math.round(score * 100)}% of beats on time  (left ${side(0)}%, right ${side(1)}%)`;
-    this.round++;
+    const names = this.ratio.length === 2 ? ['left', 'right'] : ['left', 'middle', 'right'];
+    this.lastPass = score >= POLY_PASS;
+    this.summary = `${this.name()}: ${Math.round(score * 100)}% on time`;
+    this.sub = this.ratio.map((_, h) => `${names[h]} ${lane(h)}%`).join('   ');
+    if (this.lastPass) {
+      this.cleared++;
+      this.env.sound(SND_CATCH);
+    } else {
+      this.failed++;
+      this.env.sound(SND_FALSE);
+    }
+    // Passing moves you on; failing repeats the ratio, unless playing through.
+    if (this.lastPass || this.through) this.stage++;
+    if (this.stage >= this.stages.length || (!this.through && this.failed >= this.tries)) this.over = true;
     this.state = 1;
     this.at = now + 2600;
-    this.env.sound(score >= 0.7 ? SND_CATCH : SND_TAP_WEAK);
   }
 
   frame(now: number, v: View, touch: TouchLayout): boolean {
@@ -150,55 +217,65 @@ class Poly implements Mini {
       if (!this.exact)
         while (this.fired < this.beats.length && this.beats[this.fired]!.t <= t) {
           const b = this.beats[this.fired]!;
-          if (b.t < GUIDE * this.cycle) this.env.sound(b.h ? SND_BEAT_UP : SND_BEAT);
+          if (b.t < this.guideLoops * this.cycle) this.env.sound(LANE_SOUND[b.h]!);
           this.fired++;
         }
-      if (t >= (GUIDE + PLAY) * this.cycle + 400) this.finishRound(now);
+      if (t >= (this.guideLoops + this.ownLoops) * this.cycle + 400) this.finishRound(now);
     } else if (now >= this.at) {
-      if (this.round >= RATIOS.length) return true;
+      if (this.over) return true;
       this.newRound(now + 900, now);
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'round', `${Math.min(this.state === 1 ? this.round : this.round + 1, RATIOS.length)} / ${RATIOS.length}`, 'ratio', `${this.ratio[0]} : ${this.ratio[1]}`);
+    header(v, touch, 'stage', `${Math.min(this.stage + (this.state === 1 ? 0 : 1), this.stages.length)} / ${this.stages.length}`, 'ratio', this.name(), this.through || this.tries > 6 ? -1 : this.tries - this.failed, this.tries);
     if (this.state === 1) {
-      message(v, a, this.summary, this.round < RATIOS.length ? `next: ${RATIOS[this.round]![0]} against ${RATIOS[this.round]![1]}` : '');
+      const next = this.over ? '' : this.lastPass || this.through ? `next: ${this.name(this.stages[this.stage]!)}` : `again: ${this.name()}  ·  ${this.tries - this.failed} ${this.tries - this.failed === 1 ? 'try' : 'tries'} left`;
+      message(v, a, this.summary, this.sub);
+      if (next) {
+        ctx.fillStyle = COL_LINE;
+        v.text(next, a.cx, a.cy + 64 * a.u, v.fontTiny, 'center');
+      }
       footer(v, touch, this.held);
       return false;
     }
+    // Draw for when the frame is seen and the click heard, so a beat meets the line as you hear it.
+    const td = shown(now) - this.t0 - (this.exact ? (this.env.latency ?? 0) : 0);
     const cyc = Math.floor(Math.max(0, t) / this.cycle);
-    const guide = cyc < GUIDE;
-    // Two lanes; beats slide right to left onto the hit line. Each lane shows one loop ahead.
+    const guide = cyc < this.guideLoops;
+    // Lanes; beats slide right to left onto the hit line. Each lane shows about one loop ahead.
+    const n = this.ratio.length;
+    const gap = n === 2 ? 96 : 76;
     const span = Math.min(a.right - a.left, 620 * a.u);
     const x0 = a.cx - span / 2;
     const hitX = x0 + span * 0.12;
     const pxPerMs = (span * 0.85) / this.cycle;
-    for (let h = 0; h < 2; h++) {
-      const y = a.cy + (h ? 48 : -48) * a.u;
+    const loops = this.guideLoops + this.ownLoops;
+    for (let h = 0; h < n; h++) {
+      const y = a.cy + (h - (n - 1) / 2) * gap * a.u;
       ctx.fillStyle = COL_FAINT;
       ctx.fillRect(x0, y, span, dpr);
       // Loop starts: thin bars, always shown, so you can keep your place on your own.
-      for (let c = 0; c <= GUIDE + PLAY; c++) {
-        const x = hitX + (c * this.cycle - t) * pxPerMs;
+      for (let c = 0; c <= loops; c++) {
+        const x = hitX + (c * this.cycle - td) * pxPerMs;
         if (x < x0 || x > x0 + span) continue;
         ctx.fillStyle = COL_DIM;
         ctx.fillRect(x - dpr / 2, y - 20 * a.u, dpr, 40 * a.u);
       }
       for (const b of this.beats) {
         if (b.h !== h) continue;
-        const x = hitX + (b.t - t) * pxPerMs;
+        const x = hitX + (b.t - td) * pxPerMs;
         if (x < x0 - 10 || x > x0 + span) continue;
-        const ownBeat = b.t >= GUIDE * this.cycle;
+        const ownBeat = b.t >= this.guideLoops * this.cycle;
         // On your own, beats ahead are hidden; you see only how the ones behind went.
-        if (ownBeat && b.t > t - 50 && b.hit !== true) continue;
+        if (ownBeat && b.t > td - 50 && !b.hit) continue;
         ctx.beginPath();
         ctx.arc(x, y, 7 * a.u, 0, TAU);
         if (b.hit) {
           ctx.fillStyle = COL_LINE;
           ctx.fill();
-        } else if (b.t < t - this.win(h)) {
+        } else if (b.t < td - this.win(h)) {
           ctx.strokeStyle = COL_ACCENT;
           ctx.lineWidth = 1.5 * dpr;
           ctx.stroke();
@@ -208,20 +285,28 @@ class Poly implements Mini {
           ctx.stroke();
         }
       }
-      // The hit line, lit when that hand taps.
-      ctx.fillStyle = now < this.flash[h] ? COL_ACCENT : COL_LINE;
+      // The hit line, lit when that lane taps.
+      ctx.fillStyle = now < this.flash[h]! ? COL_ACCENT : COL_LINE;
       ctx.fillRect(hitX - dpr, y - 16 * a.u, 2 * dpr, 32 * a.u);
       ctx.fillStyle = COL_MID;
-      v.text(`${h ? 'right' : 'left'} ${handLabel(this.env, h ? 1 : -1)}  ·  ${this.ratio[h]} per loop`, x0, y - 26 * a.u, v.fontTiny, 'left');
+      v.text(`${this.laneKeys(h)}  ·  ${this.ratio[h]} per loop`, x0, y - 26 * a.u, v.fontTiny, 'left');
     }
     ctx.fillStyle = guide ? COL_MID : COL_LINE;
     v.text(
-      t < 0 ? `${this.ratio[0]} against ${this.ratio[1]}: get ready` : guide ? `join in: tap each hand as its beats reach the line  ·  loop ${cyc + 1} of ${GUIDE}` : `on your own: keep both going  ·  ${cyc - GUIDE + 1} of ${PLAY}`,
+      t < 0
+        ? `${this.name()}: get ready`
+        : guide
+          ? `join in: tap each lane as its beats reach the line  ·  loop ${cyc + 1} of ${this.guideLoops}`
+          : `on your own: keep ${n === 2 ? 'both' : 'all three'} going  ·  ${cyc - this.guideLoops + 1} of ${this.ownLoops}`,
       a.cx,
-      a.cy + 110 * a.u,
+      a.cy + ((n - 1) / 2) * gap * a.u + 60 * a.u,
       v.fontTiny,
       'center',
     );
+    if (this.stage === 0 && this.slots.length < 3 && t < 0) {
+      ctx.fillStyle = COL_DIM;
+      v.text('play with three keys or more for three-way rhythms', a.cx, a.bottom - 14 * dpr, v.fontTiny, 'center');
+    }
     footer(v, touch, this.held);
     return false;
   }
@@ -229,15 +314,16 @@ class Poly implements Mini {
   result(): MiniResult {
     const share = this.judged ? this.onTime / this.judged : 0;
     return {
-      score: this.round ? Math.round(share * 600 + this.round * 40) : 0,
-      primary: { label: 'beats on time, on your own', value: Math.round(share * 100), unit: '%' },
-      series: { label: 'on time by ratio', names: RATIOS.slice(0, this.round).map((r) => `${r[0]}:${r[1]}`), values: this.roundScores.map((x) => Math.round(x * 100)), unit: '%' },
+      score: Math.round(this.cleared * 100 + share * 200),
+      primary: { label: 'ratios cleared', value: this.cleared, unit: '' },
+      series: { label: 'on time by round', names: this.played.map((r) => r.name), values: this.played.map((r) => Math.round(r.score * 100)), unit: '%' },
       lines: [
-        { label: 'beats on time', value: `${this.onTime} of ${this.judged}` },
+        { label: 'ratios cleared (70% on time on your own)', value: String(this.cleared) },
+        { label: 'beats on time, on your own', value: `${this.onTime} of ${this.judged}  (${pct(share)})` },
         { label: 'typical timing of hits', value: this.offs.length ? `${Math.round(Math.abs(mean(this.offs)))} ms ${mean(this.offs) >= 0 ? 'late' : 'early'}` : '–' },
-        { label: 'ratios played', value: RATIOS.slice(0, this.round).map((r) => `${r[0]}:${r[1]}`).join('  ') || '–' },
+        { label: 'hardest cleared', value: this.played.filter((r) => r.score >= POLY_PASS).map((r) => r.name).pop() ?? '–' },
       ],
-      saved: this.round >= 1,
+      saved: this.rounds >= 1,
     };
   }
 }
@@ -950,10 +1036,17 @@ export const BATCH4: MiniDef[] = [
     id: 'poly',
     name: 'Poly',
     skill: 'coordination',
-    blurb: 'Two hands, two tempos at once. Two against three, and up.',
-    how: 'Each hand has its own beat inside the same loop: the left plays one count (say 2 per loop), the right another (say 3). Beats slide along two lanes onto a line; tap each hand as its beats arrive. For four loops you hear both, each hand with its own click; then four loops on your own, with only a soft tick at the start of each loop. Scored on how many beats you land on time on your own.',
+    blurb: 'Two tempos at once, 2 against 3 and up to 7 against 8. Three-way with three keys.',
+    how: 'Each lane has its own beat inside the same loop: the left plays one count (say 2 per loop), the right another (say 3). Beats slide onto a line; tap each lane as its beats arrive. First you hear every lane, each with its own click; then you keep it going on your own, with only a soft tick at each loop start. Land 70% on time to move to the next ratio; a miss repeats it and costs a try. With three keys or more, three-way rhythms like 2:4:3 join in: outer left key, middle keys, outer right key. Choose how many tries you get, or play through every ratio.',
     input: 'keys',
     minKeys: 2,
+    levels: [
+      { label: 'Standard', desc: 'Three failed rounds end it', value: 0 },
+      { label: 'Strict', desc: 'One failed round ends it', value: 1 },
+      { label: 'Relaxed', desc: 'Six failed rounds end it', value: 6 },
+      { label: 'Play through', desc: 'Every ratio once, no failing', value: 1000 },
+    ],
+    custom: { unit: 'tries', min: 1, max: 20, def: 3 },
     make: () => new Poly(),
   },
   {

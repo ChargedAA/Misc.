@@ -821,6 +821,11 @@ class Juggle implements Mini {
   private over = false;
   private overAt = 0;
   private flash: number[] = [];
+  /** Balls swatted too early: they fall out of reach. */
+  private fumbled: boolean[] = [];
+  /** Keys resting after a slightly early press. */
+  private lock: number[] = [];
+  private fumbles = 0;
   private held = 0;
 
   start(env: MiniEnv, now: number): void {
@@ -834,6 +839,8 @@ class Juggle implements Mini {
       this.grav.push(JUGGLE_G * (0.85 + 0.3 * ((i * 7) % n) / Math.max(1, n - 1)));
       this.respawn.push(0);
       this.flash.push(0);
+      this.fumbled.push(false);
+      this.lock.push(0);
     }
     this.last = now;
     this.nextBall = 0.8;
@@ -842,6 +849,7 @@ class Juggle implements Mini {
 
   private add(i: number): void {
     this.live[i] = true;
+    this.fumbled[i] = false;
     this.y[i] = 1;
     this.vy[i] = 0;
   }
@@ -850,7 +858,7 @@ class Juggle implements Mini {
     this.held |= 1 << slot;
     if (this.over) return;
     const i = this.slots.indexOf(slot);
-    if (i < 0 || !this.live[i]) return;
+    if (i < 0 || !this.live[i] || this.fumbled[i] || ts < this.lock[i]!) return;
     if (this.y[i]! < 0.18 && this.vy[i]! < 0) {
       // A good hit sends it back up; the lower it was, the better.
       const perfect = this.y[i]! < 0.08;
@@ -862,11 +870,18 @@ class Juggle implements Mini {
       if (perfect) this.perfect++;
       this.flash[i] = ts + 120;
       this.env.sound(SND_TONE + (i % 7));
-    } else {
-      // Swatting at a ball that is still high: it loses height.
+    } else if (this.y[i]! < 0.35 && this.vy[i]! < 0) {
+      // Just early: nothing happens, but the key rests a moment, so mashing cannot find the zone.
       this.combo = 0;
-      this.vy[i] = Math.min(this.vy[i]!, -0.6);
+      this.lock[i] = ts + 300;
       this.env.sound(SND_TAP_WEAK);
+    } else {
+      // Swatting at a ball that is high or still rising fumbles it: it drops out of reach.
+      this.combo = 0;
+      this.fumbled[i] = true;
+      this.fumbles++;
+      this.vy[i] = Math.min(this.vy[i]!, 0);
+      this.env.sound(SND_FALSE);
     }
   }
 
@@ -937,12 +952,19 @@ class Juggle implements Mini {
       v.text(this.env.labels[this.slots[i]!] ?? '', x, floor + 22 * dpr, v.fontTiny, 'center');
       if (!this.live[i]) continue;
       const y = floor - clamp(this.y[i]!, 0, 1.1) * H;
-      ctx.fillStyle = now < this.flash[i]! ? COL_LINE : COL_ACCENT;
       ctx.beginPath();
       ctx.arc(x, y - 10 * a.u, 10 * a.u, 0, TAU);
-      ctx.fill();
+      if (this.fumbled[i]) {
+        // Fumbled: out of reach until it lands.
+        ctx.strokeStyle = COL_MID;
+        ctx.lineWidth = 2 * dpr;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = now < this.flash[i]! ? COL_LINE : now < this.lock[i]! ? COL_MID : COL_ACCENT;
+        ctx.fill();
+      }
     }
-    if (this.time < 3 && !this.over) message(v, { ...a, cy: top + 40 * a.u }, 'hit a ball’s key as it drops into the shaded zone', 'lower is better', COL_MID);
+    if (this.time < 4 && !this.over) message(v, { ...a, cy: top + 40 * a.u }, 'hit a ball’s key as it drops into the shaded zone', 'too soon and you fumble it', COL_MID);
     if (this.over) message(v, a, `${this.bounces} bounces`, `best combo ${this.best}`);
     footer(v, touch, this.held);
     return false;
@@ -956,6 +978,7 @@ class Juggle implements Mini {
         { label: 'bounces', value: String(this.bounces) },
         { label: 'low (perfect) hits', value: pct(this.perfect / (this.bounces || 1)) },
         { label: 'best combo', value: String(this.best) },
+        { label: 'fumbled (pressed too soon)', value: String(this.fumbles) },
         { label: 'time', value: `${this.time.toFixed(0)} s` },
       ],
       saved: this.bounces >= 3,
@@ -1138,7 +1161,7 @@ export const EXTRA: MiniDef[] = [
     name: 'Juggle',
     skill: 'coordination',
     blurb: 'Every key keeps its own ball in the air.',
-    how: 'Each of your keys has a ball, bouncing above a line labelled with the key. Press a ball\'s key while it falls through the shaded zone near the bottom to bounce it back up; the lower you catch it, the better. Pressing too early knocks it down faster. A new ball joins every twelve seconds. Three drops end it.',
+    how: 'Each of your keys has a ball, bouncing above a line labelled with the key. Press a ball\'s key while it falls through the shaded zone near the bottom to bounce it back up; the lower you catch it, the better. Press too early and you fumble it: it drops out of reach. Mashing does not help. A new ball joins every twelve seconds. Three drops end it.',
     input: 'keys',
     make: () => new Juggle(),
   },
