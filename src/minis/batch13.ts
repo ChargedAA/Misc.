@@ -573,22 +573,32 @@ class Sync implements Mini {
       const x = a.cx + s * off;
       const cross = s < 0 ? this.crossL : this.crossR;
       const press = s < 0 ? this.tL : this.tR;
-      // The lane.
+      const r = 11 * a.u;
+      // The lane, and a cup on the line that each ball lands in.
       ctx.fillStyle = COL_FAINT;
-      ctx.fillRect(x - dpr / 2, top, dpr, line - top);
-      // The ball: falls at a steady speed and crosses the line at its moment.
-      const t = press && this.state === 1 ? press : now;
-      const y = line - (cross - t) * speed;
+      ctx.fillRect(x - dpr / 2, top, dpr, line - top - 2.6 * r);
+      ctx.strokeStyle = COL_LINE;
+      ctx.lineWidth = 2 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(x - r * 1.9, line - r * 2.3);
+      ctx.lineTo(x - r * 1.3, line);
+      ctx.lineTo(x + r * 1.3, line);
+      ctx.lineTo(x + r * 1.9, line - r * 2.3);
+      ctx.stroke();
+      // The ball falls at a steady speed; its moment is when it settles in the cup, and there it
+      // stays. Pressing stops it where it is, so an early press leaves it hanging above the cup.
+      const t = press || now;
+      const y = Math.min(line - r - (cross - t) * speed, line - r);
       if (t >= this.t0 && y > top - 20 * a.u) {
-        ctx.fillStyle = this.state === 1 ? COL_MID : COL_ACCENT;
+        ctx.fillStyle = press ? (Math.abs(press - cross) < 25 ? COL_LINE : COL_MID) : COL_ACCENT;
         ctx.beginPath();
-        ctx.arc(x, Math.min(y, line + 60 * a.u), 11 * a.u, 0, TAU);
+        ctx.arc(x, y, r, 0, TAU);
         ctx.fill();
       }
       // After the drop: where the ball was when you pressed, against the line.
       if (this.state === 1 && press) {
         // Very early or late presses: keep the marker and its label inside the play area.
-        const py = Math.max(top + 30 * a.u, Math.min(line + 50 * a.u, line - (cross - press) * speed));
+        const py = Math.max(top + 30 * a.u, Math.min(line + 50 * a.u, line - r - (cross - press) * speed));
         ctx.fillStyle = COL_LINE;
         ctx.fillRect(x - 18 * a.u, py - dpr, 36 * a.u, 2 * dpr);
         ctx.fillStyle = COL_MID;
