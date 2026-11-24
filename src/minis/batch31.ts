@@ -327,15 +327,57 @@ class Sphere implements Mini {
   private lastHit = 0;
   private flash = 0;
   private sens = SENS[0]!;
-  /** Angular radius of a ball (radians): about 2 degrees. */
-  private readonly ang = 0.036;
+  /** Angular radius of a ball (radians): about 2 degrees, bigger when tracking. */
+  private ang = 0.036;
   private w = 0;
   private h = 0;
+  /** Tracking variant (Strafe): one ball strafes about; keep the crosshair on it. */
+  private readonly track: boolean;
+  private vel = 0.5;
+  private turnAt = 0;
+  private last = 0;
+  private onMs = 0;
+  private allMs = 0;
+  private secs: number[] = [];
+  private secOn = 0;
+  private secAll = 0;
+  /** Where a finger or unlocked mouse aims, when there is no mouse-look. */
+  private aimX = -1;
+  private aimY = -1;
+  private looked = false;
+
+  constructor(track = false) {
+    this.track = track;
+  }
 
   start(env: MiniEnv): void {
     this.env = env;
     this.sens = SENS[env.level ?? 0] ?? SENS[0]!;
-    for (let i = 0; i < 3; i++) this.spawn(0);
+    if (this.track) {
+      this.ang = 0.055;
+      this.balls.push({ yaw: 0.25, pitch: 0.05, born: 0 });
+    } else for (let i = 0; i < 3; i++) this.spawn(0);
+  }
+
+  pointerMove(px: number, py: number): void {
+    this.aimX = px;
+    this.aimY = py;
+  }
+
+  private len(): number {
+    return scaled(this.track ? 30000 : SPHERE_MS);
+  }
+
+  /** The angle between the aim (crosshair, or the finger) and a ball. */
+  private angleTo(b: Ball): number {
+    const f = this.h / 2 / Math.tan(FOV / 2);
+    const px = this.looked || this.aimX < 0 ? this.w / 2 : this.aimX;
+    const py = this.looked || this.aimY < 0 ? this.h / 2 : this.aimY;
+    const rx = px - this.w / 2;
+    const ry = -(py - this.h / 2);
+    const rl = Math.hypot(rx, ry, f);
+    const c = this.view(dir(b.yaw, b.pitch));
+    return Math.acos(Math.max(-1, Math.min(1, (c[0] * rx + c[1] * ry + c[2] * f) / rl)));
   }
 
   private spawn(now: number): void {
@@ -354,6 +396,7 @@ class Sphere implements Mini {
   press(): void {}
 
   look(dx: number, dy: number): void {
+    this.looked = true;
     this.yaw += dx * this.sens;
     this.pitch = Math.max(-1.2, Math.min(1.2, this.pitch - dy * this.sens));
   }
@@ -376,9 +419,12 @@ class Sphere implements Mini {
       this.t0 = ts;
       this.lastHit = ts;
       for (const b of this.balls) b.born = ts;
+      this.last = ts;
+      this.turnAt = ts + 600;
       this.env.sound(SND_TAP_L);
       return;
     }
+    if (this.track) return;
     this.shots++;
     const f = this.h / 2 / Math.tan(FOV / 2);
     // Ray in camera space through the pixel, compared with each ball's direction.
@@ -410,8 +456,38 @@ class Sphere implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     this.w = v.w;
     this.h = v.h;
-    const len = scaled(SPHERE_MS);
+    const len = this.len();
     if (this.started && now - this.t0 >= len) return true;
+    if (this.track && this.started) {
+      // The ball strafes: steady speed, sudden changes of direction, faster as it goes.
+      const dt = Math.min(50, now - this.last);
+      this.last = now;
+      const b = this.balls[0]!;
+      const p = (now - this.t0) / len;
+      if (now >= this.turnAt) {
+        this.vel = (this.vel > 0 ? -1 : 1) * rnd(0.35, 0.55) * (1 + p * 1.2);
+        this.turnAt = now + rnd(350, 1100) * (1 - p * 0.4);
+      }
+      b.yaw += (this.vel * dt) / 1000;
+      if (Math.abs(b.yaw) > 0.8) {
+        b.yaw = Math.sign(b.yaw) * 0.8;
+        this.vel = -this.vel;
+      }
+      b.pitch = 0.06 + 0.12 * Math.sin((now - this.t0) / 900);
+      const on = this.angleTo(b) <= this.ang;
+      this.allMs += dt;
+      this.secAll += dt;
+      if (on) {
+        this.onMs += dt;
+        this.secOn += dt;
+        this.flash = now + 30;
+      }
+      if (this.secAll >= 1000) {
+        this.secs.push(this.secOn / this.secAll);
+        this.secOn = 0;
+        this.secAll = 0;
+      }
+    }
     v.clear();
     const ctx = v.ctx;
     const dpr = v.dpr;
@@ -468,7 +544,7 @@ class Sphere implements Mini {
       const [x, y] = proj(c);
       const r = (f * Math.tan(this.ang)) / c[2];
       // Shaded in flat steps, low-poly fashion: base, a darker lower half, a highlight.
-      ctx.fillStyle = COL_ACCENT;
+      ctx.fillStyle = this.track && now < this.flash ? COL_LINE : COL_ACCENT;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, TAU);
       ctx.fill();
@@ -490,18 +566,31 @@ class Sphere implements Mini {
     ctx.fillRect(cx - dpr / 2, cy - s - gap, dpr, s);
     ctx.fillRect(cx - dpr / 2, cy + gap, dpr, s);
     const left = this.started ? Math.max(0, Math.ceil((len - (now - this.t0)) / 1000)) : Math.round(len / 1000);
-    header(v, touch, 'hits', String(this.hits), 'time', `${left} s`);
+    header(v, touch, this.track ? 'on target' : 'hits', this.track ? (this.allMs ? pct(this.onMs / this.allMs) : '–') : String(this.hits), 'time', `${left} s`);
     if (!this.started) {
       const a = arena(v, touch);
-      message(v, { ...a, cy: cy + 90 * dpr }, 'click to take the mouse, click again to start', 'look with the mouse, shoot the balls with the crosshair. esc frees the mouse', COL_MID);
+      message(v, { ...a, cy: cy + 90 * dpr }, 'click to take the mouse, click again to start', this.track ? 'keep the crosshair on the ball as it strafes. esc frees the mouse' : 'look with the mouse, shoot the balls with the crosshair. esc frees the mouse', COL_MID);
     }
     footer(v, touch, 0, 'esc frees the mouse and pauses');
     return false;
   }
 
   result(): MiniResult {
+    if (this.track) {
+      const share = this.allMs ? this.onMs / this.allMs : 0;
+      return {
+        score: Math.round(share * 1000),
+        primary: { label: 'time on target', value: Math.round(share * 100), unit: '%' },
+        series: { label: 'on target, second by second', names: this.secs.map((_, i) => String(i + 1)), values: this.secs.map((x) => Math.round(x * 100)), unit: '%' },
+        lines: [
+          { label: 'time on target', value: pct(share) },
+          { label: 'first half · second half', value: this.secs.length >= 4 ? `${pct(mean(this.secs.slice(0, this.secs.length >> 1)))}  ·  ${pct(mean(this.secs.slice(this.secs.length >> 1)))}` : '–' },
+        ],
+        saved: this.allMs > 5000,
+      };
+    }
     const acc = this.hits / Math.max(1, this.shots);
-    const secs = scaled(SPHERE_MS) / 1000;
+    const secs = this.len() / 1000;
     return {
       score: Math.round(this.hits * 10 * (0.5 + acc / 2)),
       primary: { label: 'hits', value: this.hits, unit: '' },
@@ -545,13 +634,62 @@ class Ship implements Mini {
   private nextAt = 1.2;
   private gapY = 0.5;
   private trail: [number, number][] = [];
+  /** Straight-fly variant: a tight tunnel to hold your line in, by feathering the thrust. */
+  private readonly straight: boolean;
+  /** The tunnel: centre and height at every STEP of distance. */
+  private cy: number[] = [];
+  private ch: number[] = [];
+  private thrusts = 0;
+  private flown = 0;
+
+  constructor(straight = false) {
+    this.straight = straight;
+  }
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
     this.last = now;
+    if (this.straight) this.extendTunnel();
+  }
+
+  private extendTunnel(): void {
+    const STEP = 0.1;
+    while (this.cy.length * STEP < this.x + 4) {
+      const i = this.cy.length;
+      const d = i * STEP;
+      const h = Math.max(0.072, 0.2 - d * 0.0045);
+      // Long flat runs, then a slope up or down, never out of the field.
+      if (i < 12) {
+        this.cy.push(0.5);
+        this.ch.push(h);
+        continue;
+      }
+      const flat = Math.round(rnd(4, 12));
+      for (let k = 0; k < flat; k++) {
+        this.cy.push(this.cy[this.cy.length - 1]!);
+        this.ch.push(h);
+      }
+      const last = this.cy[this.cy.length - 1]!;
+      const dirn = last > 0.7 ? -1 : last < 0.3 ? 1 : Math.random() < 0.5 ? -1 : 1;
+      const len = Math.round(rnd(2, 5));
+      const slope = rnd(0.025, 0.045) * Math.min(1.6, 1 + d * 0.01);
+      for (let k = 1; k <= len; k++) {
+        this.cy.push(Math.max(h / 2 + 0.04, Math.min(1 - h / 2 - 0.04, last + dirn * slope * k)));
+        this.ch.push(h);
+      }
+    }
+  }
+
+  private tunnel(at: number): [number, number] {
+    const f = Math.max(0, Math.min(this.cy.length - 1, at / 0.1));
+    const i = Math.floor(f);
+    const j = Math.min(i + 1, this.cy.length - 1);
+    const t = f - i;
+    return [this.cy[i]! + (this.cy[j]! - this.cy[i]!) * t, this.ch[i]! + (this.ch[j]! - this.ch[i]!) * t];
   }
 
   press(slot: number): void {
+    if (!this.held) this.thrusts++;
     this.held |= 1 << slot;
     this.started = true;
   }
@@ -580,17 +718,24 @@ class Ship implements Mini {
     this.last = now;
     if (this.over && now >= this.overAt) return true;
     if (this.started && !this.over) {
-      this.addGates();
-      // Momentum: thrust pushes up, gravity pulls down, both firm, so it is a ship and not a lift.
-      this.vy += (this.thrust() ? 3.1 : -2.7) * dt;
-      this.vy = Math.max(-1.15, Math.min(1.15, this.vy));
+      if (this.straight) this.extendTunnel();
+      else this.addGates();
+      // Momentum: thrust pushes up, gravity pulls down, both strong and quick to answer, so short
+      // taps hold a line and a long hold climbs steeply.
+      this.vy += (this.thrust() ? 4.8 : -4.2) * dt;
+      this.vy = Math.max(-1.3, Math.min(1.3, this.vy));
       this.y += this.vy * dt;
-      this.speed = 0.42 + this.x * 0.006;
+      this.speed = this.straight ? 0.5 + this.x * 0.004 : 0.42 + this.x * 0.006;
       this.x += this.speed * dt;
+      this.flown += dt;
       this.trail.push([this.x, this.y]);
       if (this.trail.length > 40) this.trail.shift();
       const r = 0.022;
       let crash = this.y - r < 0 || this.y + r > 1;
+      if (this.straight) {
+        const [c, h] = this.tunnel(this.x);
+        if (this.y - r < c - h / 2 || this.y + r > c + h / 2) crash = true;
+      }
       for (const g of this.gates) {
         const halfW = 0.045;
         if (Math.abs(g.x - this.x) < halfW + r && (this.y - r < g.gap - g.h / 2 || this.y + r > g.gap + g.h / 2)) crash = true;
@@ -611,7 +756,8 @@ class Ship implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'gates', String(this.passed), 'speed', `${(this.speed / 0.42).toFixed(2)}×`);
+    if (this.straight) header(v, touch, 'distance', (this.x * 10).toFixed(0), 'tunnel', `${Math.round(this.tunnel(this.x)[1] * 100)}`);
+    else header(v, touch, 'gates', String(this.passed), 'speed', `${(this.speed / 0.42).toFixed(2)}×`);
     const H = a.bottom - a.top;
     const scale = H;
     const W = a.right - a.left;
@@ -628,6 +774,20 @@ class Ship implements Mini {
     // Distance marks scrolling past, so speed reads.
     ctx.fillStyle = COL_FAINT;
     for (let d = Math.floor((this.x - 0.4) * 5) / 5; d < this.x + W / scale; d += 0.2) ctx.fillRect(toX(d), a.top, dpr, H);
+    // The tunnel: solid above and below, drawn through its own points so it glides.
+    if (this.straight && this.cy.length) {
+      const from = Math.max(0, Math.floor((this.x - 0.5) / 0.1));
+      const to = Math.min(this.cy.length - 1, Math.ceil((this.x + W / scale) / 0.1) + 1);
+      for (const side of [1, -1]) {
+        ctx.fillStyle = COL_LINE;
+        ctx.beginPath();
+        ctx.moveTo(toX(from * 0.1), side > 0 ? a.top : a.bottom);
+        for (let i = from; i <= to; i++) ctx.lineTo(toX(i * 0.1), toY(this.cy[i]! + (side * this.ch[i]!) / 2));
+        ctx.lineTo(toX(to * 0.1), side > 0 ? a.top : a.bottom);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
     // Walls with a gap; their edges are saw-toothed, the low-poly way.
     for (const g of this.gates) {
       const x0 = toX(g.x - 0.045);
@@ -689,13 +849,26 @@ class Ship implements Mini {
     ctx.fill();
     ctx.restore();
     ctx.restore();
-    if (!this.started) message(v, { ...a, cy: a.top + H * 0.3 }, 'hold to fly up, let go to sink', 'through the gaps in the walls. press to start', COL_MID);
-    if (this.over) message(v, a, `${this.passed} gates`, 'crashed');
+    if (!this.started) message(v, { ...a, cy: a.top + H * (this.straight ? 0.15 : 0.3) }, this.straight ? 'tap, tap, tap: hold a straight line' : 'hold to fly up, let go to sink', this.straight ? 'quick taps keep you level in the tunnel. press to start' : 'through the gaps in the walls. press to start', COL_MID);
+    if (this.over) message(v, { ...a, cy: a.top + H * 0.15 }, this.straight ? `${(this.x * 10).toFixed(0)}` : `${this.passed} gates`, 'crashed');
     footer(v, touch, this.held);
     return false;
   }
 
   result(): MiniResult {
+    if (this.straight) {
+      const d = Math.round(this.x * 10);
+      return {
+        score: d * 10,
+        primary: { label: 'distance', value: d, unit: '' },
+        lines: [
+          { label: 'distance', value: String(d) },
+          { label: 'tunnel height at the end', value: `${Math.round(this.tunnel(this.x)[1] * 100)}% of the screen` },
+          { label: 'taps a second', value: this.flown > 1 ? (this.thrusts / this.flown).toFixed(1) : '–' },
+        ],
+        saved: d >= 3,
+      };
+    }
     return {
       score: this.passed * 20,
       primary: { label: 'gates', value: this.passed, unit: '' },
@@ -760,5 +933,29 @@ export const BATCH31: MiniDef[] = [
     how: 'A little ship flies forward on its own. Hold any key (or touch the screen) to thrust up; let go and it sinks. It has momentum, so feather it: short presses for small corrections. Fly through the gap in each wall; touching a wall, the floor or the ceiling ends it. The gaps narrow and it speeds up.',
     input: 'both',
     make: () => new Ship(),
+  },
+  {
+    id: 'straight',
+    name: 'Straight',
+    skill: 'coordination',
+    blurb: 'Straight-fly: hold a level line through a tight tunnel with quick taps.',
+    how: 'The same ship, in a tunnel only a little taller than it is. Holding climbs and letting go sinks, both quickly, so a straight line takes fast, even taps. The tunnel runs flat, then slopes up or down, and it narrows and speeds up the further you get. Touching the tunnel ends it. Scored on distance.',
+    input: 'both',
+    make: () => new Ship(true),
+  },
+  {
+    id: 'strafe',
+    name: 'Strafe',
+    skill: 'aim',
+    blurb: '3D tracking: keep the crosshair on a ball that strafes and changes direction.',
+    how: 'The Sphere room, with one ball that strafes left and right, reversing without warning and faster as it goes. Click once to take the mouse and again to start, then keep the crosshair on the ball; it turns white while you are on it. No clicking needed. Thirty seconds, scored on time on target. Pick a sensitivity that suits your mouse.',
+    input: 'pointer',
+    lock: true,
+    levels: [
+      { label: 'Medium sensitivity', desc: 'About 0.13° per pixel', value: 0 },
+      { label: 'Low sensitivity', desc: 'For big arm sweeps', value: 1 },
+      { label: 'High sensitivity', desc: 'For small wrist flicks', value: 2 },
+    ],
+    make: () => new Sphere(true),
   },
 ];
