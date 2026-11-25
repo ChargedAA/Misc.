@@ -1,5 +1,10 @@
 // Application shell: screens, keyboard and touch input, the rAF loop and persistence.
 
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
 import './style.css';
 import {
   SND_BURST_OK,
@@ -110,6 +115,8 @@ let scParts: number[] = [];
 let scTotal = 0;
 /** Last input of any kind, for sending an idle stand back to its start screen. */
 let lastInputAt = performance.now();
+/** When Clear history was pressed once (0 if not). */
+let clearArmed = 0;
 /** Game whose key-count pop-out is open on the title screen. */
 /** The menu stack: the last entry is on screen. Kinds: start, group, skill, game, stats, gamestats, settings. */
 interface NavEntry {
@@ -305,6 +312,8 @@ function frame(now: number): void {
         view.ctx.fillStyle = i < livesLeft ? COL_ACCENT : COL_DIM;
         view.ctx.fillRect(view.ox + (i - 1) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
       }
+      view.ctx.fillStyle = COL_MID;
+      view.text(livesLeft === 1 ? 'last life' : 'lives', view.ox + 30 * d, 96 * d, view.fontTiny, 'left');
       if (livesEndAt && performance.now() >= livesEndAt) {
         endMini();
         return;
@@ -404,7 +413,7 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote } };
+  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote } };
 }
 
 /** Name Google suggested at sign-in, and a message for the account block. */
@@ -427,7 +436,8 @@ function applyLook(): void {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
   root.classList.toggle('still', L.motion === false);
   uiRoot.style.setProperty('zoom', String(L.menu ?? 1));
-  setTextScale(L.text ?? 1);
+  // On a stand, game text reads from a step back.
+  setTextScale(Math.max(L.text ?? 1, showcase ? 1.3 : 0));
   onResize();
 }
 
@@ -637,7 +647,10 @@ async function shareGame(id: string): Promise<void> {
 // --- Showcase ------------------------------------------------------------------------
 
 function showAttract(): void {
-  document.body.classList.add('showcase');
+  if (!document.body.classList.contains('showcase')) {
+    document.body.classList.add('showcase');
+    applyLook();
+  }
   stopLoop();
   mini = null;
   dailyQueue = null;
@@ -670,7 +683,7 @@ function showcaseDone(): void {
     box.addEventListener('input', () => {
       box.value = cleanInitials(box.value);
     });
-    setTimeout(() => box.focus(), 650);
+    box.focus();
   }
 }
 
@@ -1144,7 +1157,8 @@ function finishMini(): void {
   if (showcase && dailyQueue) {
     // Showcase: points for the drill, nothing kept in this machine's history.
     const d = SHOWCASE.find((x) => x.id === miniDef!.id);
-    const pts = d && r.saved && Number.isFinite(r.primary.value) ? d.points(r) : 0;
+    // Finishing a drill is worth something: a poor go still scores, so nobody sees a flat zero.
+    const pts = d && r.saved && Number.isFinite(r.primary.value) ? Math.max(50, d.points(r)) : 0;
     scParts[dailyIdx] = pts;
     const sofar = SHOWCASE.reduce((s, _, i) => s + (scParts[i] ?? 0), 0);
     screen = 'showcase';
@@ -1630,11 +1644,13 @@ function onAction(action: string, arg: string): void {
       exportHistory();
       break;
     case 'clear':
-      if (window.confirm('Clear all saved runs and training sessions?')) {
+      // Asked in the page itself: the first press arms it, a second within a few seconds deletes.
+      if (clearArmed && performance.now() - clearArmed < 5000) {
+        clearArmed = 0;
         clearHistory();
         history = [];
-        showMenu();
-      }
+      } else clearArmed = performance.now();
+      showMenu();
       break;
     case 'bind':
       listening = listening === arg ? '' : arg;
@@ -1697,12 +1713,23 @@ function release(slot: number, ts: number): void {
 function onKeyDown(e: KeyboardEvent): void {
   const code = e.code;
   lastInputAt = performance.now();
+  // Initials typed before the box had focus still land in it.
+  if (screen === 'showcase' && !(e.target instanceof HTMLInputElement) && /^Key[A-Z]$/.test(code)) {
+    const box = uiRoot.querySelector<HTMLInputElement>('#initials');
+    if (box) {
+      e.preventDefault();
+      box.value = cleanInitials(box.value + code.slice(3));
+      box.focus();
+      return;
+    }
+  }
   if (showcase && screen === 'attract' && code === 'Escape' && e.shiftKey) {
     // Staff only: leave showcase mode.
     e.preventDefault();
     showcase = false;
     setShowcaseOn(false);
     document.body.classList.remove('showcase');
+    applyLook();
     if (location.search.includes('showcase')) window.history.replaceState(null, '', location.pathname + location.hash);
     showMenu();
     return;
@@ -1925,6 +1952,8 @@ function swallow(e: Event): void {
   e.preventDefault();
 }
 
+// The embedded fonts arrive after the first layout: measure again once they have.
+void document.fonts?.load('500 16px Inter').then(() => onResize()).catch(() => undefined);
 window.addEventListener('keydown', onKeyDown, { passive: false });
 window.addEventListener(
   'pointerdown',
@@ -1934,11 +1963,26 @@ window.addEventListener(
   true,
 );
 // An idle stand goes back to its start screen: 25 s on a between-drills screen, 40 s mid-drill.
+// The last ten seconds show, so the next visitor knows the stand is about to be free.
+const idleNote = document.createElement('div');
+idleNote.className = 'sc-idle';
+idleNote.hidden = true;
+document.body.append(idleNote);
 setInterval(() => {
-  if (!showcase || screen === 'attract') return;
+  if (!showcase || screen === 'attract') {
+    idleNote.hidden = true;
+    return;
+  }
   const idle = performance.now() - lastInputAt;
-  if (idle > (screen === 'mini' || screen === 'miniPause' ? 40000 : 25000)) showAttract();
-}, 1000);
+  const limit = screen === 'mini' || screen === 'miniPause' ? 40000 : 25000;
+  const left = Math.ceil((limit - idle) / 1000);
+  idleNote.hidden = left > 10;
+  if (left <= 10) idleNote.textContent = `Back to the start in ${Math.max(0, left)}…  press any key to stay`;
+  if (idle > limit) {
+    idleNote.hidden = true;
+    showAttract();
+  }
+}, 250);
 window.addEventListener('keyup', onKeyUp);
 canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
 /** Moving the mouse is play in aim drills: counted as input, at most four times a second. */
@@ -1961,6 +2005,8 @@ canvas.addEventListener('pointermove', (e) => {
 // Mouse-look drills: losing the lock (Esc, switching windows) pauses, so the clock never runs blind.
 document.addEventListener('pointerlockchange', () => {
   if (!document.pointerLockElement && screen === 'mini' && miniDef?.lock) pauseMini();
+  // Taking the mouse is the start: the drill begins its countdown on the same click.
+  else if (document.pointerLockElement === canvas && screen === 'mini' && mini?.look) mini.look(0, 0, performance.now() - clockShift());
 });
 canvas.addEventListener('pointerup', onPointerUp);
 canvas.addEventListener('pointercancel', onPointerUp);

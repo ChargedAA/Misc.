@@ -146,9 +146,9 @@ export const RIGHT_MASK = 0b111000;
 // --- Palette (one accent, used only for the ball and the active cue) -------
 export let COL_BG = '#0a0a0b';
 export const COL_HOLE = '#000000';
-export const COL_FAINT = '#1b1b1e';
-export const COL_TICK = '#2b2b30';
-export const COL_DIM = '#4a4a52';
+export const COL_FAINT = '#26262b';
+export const COL_TICK = '#3a3a41';
+export const COL_DIM = '#6c6c74';
 export const COL_MID = '#8b8b92';
 export const COL_LINE = '#ececee';
 export let COL_ACCENT = '#ff5a36';

@@ -50,6 +50,10 @@ class Snap implements Mini {
   private until = 0;
   private rts: number[] = [];
   private early = 0;
+  private guess = false;
+  private lapses = 0;
+  /** Trials answered or missed (early presses repeat the trial). */
+  private trials = 0;
   private last = 0;
   private lastEarly = false;
   private held = 0;
@@ -85,6 +89,8 @@ class Snap implements Mini {
     if (this.state === 0 || this.drawnAt === 0 || ts - this.drawnAt < ANTICIPATION_MS) {
       this.early++;
       this.lastEarly = true;
+      // Before the disc, or so soon after it that it must have been a guess.
+      this.guess = this.state === 1 && this.drawnAt > 0;
       this.env.sound(SND_FALSE);
       this.state = 2;
       this.until = ts + 800;
@@ -93,6 +99,7 @@ class Snap implements Mini {
     this.last = ts - this.drawnAt;
     this.lastEarly = false;
     this.rts.push(this.last);
+    this.trials++;
     this.env.sound(SND_CATCH);
     this.state = 2;
     this.until = ts + 650;
@@ -101,12 +108,13 @@ class Snap implements Mini {
   frame(now: number, v: View, touch: TouchLayout): boolean {
     if (this.state === 0 && now >= this.goAt) this.state = 1;
     if (this.state === 2 && now >= this.until) {
-      if (this.rts.length >= scaled(SNAP_TRIALS) || this.early >= 25) return true;
+      if (this.trials >= scaled(SNAP_TRIALS) || this.early >= 25) return true;
       this.arm(now);
     }
     if (this.state === 1 && this.drawnAt > 0 && now - this.drawnAt > 2000) {
-      // Missed entirely: count it as a slow one and move on.
-      this.rts.push(2000);
+      // Missed entirely: a lapse, counted on its own and kept out of the times.
+      this.lapses++;
+      this.trials++;
       this.last = 2000;
       this.lastEarly = false;
       this.state = 2;
@@ -117,7 +125,7 @@ class Snap implements Mini {
     const a = arena(v, touch);
     const dpr = v.dpr;
     const ctx = v.ctx;
-    header(v, touch, 'trial', `${Math.min(this.rts.length + 1, scaled(SNAP_TRIALS))} / ${scaled(SNAP_TRIALS)}`, 'median', this.rts.length ? ms(median(this.rts)) : '–');
+    header(v, touch, 'trial', `${Math.min(this.trials + 1, scaled(SNAP_TRIALS))} / ${scaled(SNAP_TRIALS)}`, 'median', this.rts.length ? ms(median(this.rts)) : '–');
 
     // The signal: a solid accent disc at one of three spots. Nothing moves before it.
     const r = 46 * a.u;
@@ -132,7 +140,7 @@ class Snap implements Mini {
     } else {
       // Resting: three faint outlines so the eyes have somewhere to wait.
       ctx.strokeStyle = COL_DIM;
-      ctx.lineWidth = dpr;
+      ctx.lineWidth = 2 * dpr;
       for (let i = -1; i <= 1; i++) {
         ctx.beginPath();
         ctx.arc(a.cx + i * 150 * a.u, y, r, 0, TAU);
@@ -140,7 +148,8 @@ class Snap implements Mini {
       }
     }
     if (this.state === 2) {
-      if (this.lastEarly) message(v, { ...a, cy: y + r + 50 * a.u }, 'too early', 'wait for the disc', COL_MID);
+      if (this.lastEarly) message(v, { ...a, cy: y + r + 50 * a.u }, 'too early', this.guess ? `under ${ANTICIPATION_MS} ms: a guess, not a reaction` : 'wait for the disc', COL_MID);
+      else if (this.last >= 2000) message(v, { ...a, cy: y + r + 50 * a.u }, 'missed', 'press the moment it fills', COL_MID);
       else bigNumber(v, a.cx, y + r + 70 * a.u, String(Math.round(this.last)), 'ms');
     } else if (this.rts.length === 0 && this.early === 0) {
       message(v, { ...a, cy: y + r + 50 * a.u }, 'press any key the moment a disc fills', '', COL_MID);
@@ -174,6 +183,7 @@ class Snap implements Mini {
         { label: 'best', value: rts.length ? ms(Math.min(...rts)) : '–' },
         { label: 'spread (sd)', value: ms(sd(rts)) },
         { label: 'too early', value: String(this.early) },
+        { label: 'missed (no press within 2 s)', value: String(this.lapses) },
       ],
       rts,
       saved: rts.length >= 5,

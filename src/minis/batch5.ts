@@ -809,7 +809,7 @@ class Zigzag implements Mini {
         { label: 'direction changes', value: String(this.flips) },
         { label: 'top speed', value: `${(this.speed / ZZ_BASE).toFixed(2)}×` },
       ],
-      saved: this.started && this.x > 0.5,
+      saved: this.started && this.x > 0.1,
     };
   }
 }

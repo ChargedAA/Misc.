@@ -2,7 +2,7 @@
   --bg: #0a0a0b;
   --line: #ececee;
   --mid: #8b8b92;
-  --dim: #55555d;
+  --dim: #7a7a82;
   --faint: #1b1b1e;
   --accent: #ff5a36;
   color-scheme: dark;
@@ -1852,4 +1852,35 @@ body.showcase .screen.ready {
   text-transform: none;
   letter-spacing: 0;
   font-size: 16px;
+}
+.sc-idle {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 10px 18px;
+  border: 1px solid var(--dim);
+  border-radius: 8px;
+  background: rgba(10, 10, 11, 0.92);
+  color: var(--line);
+  font-size: 18px;
+  pointer-events: none;
+}
+.sc-idle[hidden] {
+  display: none;
+}
+/* The board on the start screen: as big as the title side, so the stand reads as a contest. */
+.sc-attract .sc-side h2 {
+  font-size: 22px;
+  color: var(--line);
+}
+.sc-attract .sc-board li {
+  font-size: 26px;
+  padding: 12px 0;
+}
+.sc-attract .sc-empty {
+  font-size: 34px;
+  line-height: 1.2;
+  color: var(--line);
 }

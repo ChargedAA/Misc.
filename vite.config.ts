@@ -34,6 +34,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     outDir: 'dist',
-    assetsInlineLimit: 0,
+    // The fonts travel inside the CSS, so the look is the same on every machine and the test copy is one file.
+    assetsInlineLimit: (file: string) => (file.endsWith('.woff2') ? true : false),
   },
 });

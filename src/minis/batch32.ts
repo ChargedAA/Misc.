@@ -21,11 +21,12 @@ const inside = (r: Rect, x: number, y: number) => x >= r[0] && x <= r[0] + r[2] 
 
 // --- Ink (Stroop) --------------------------------------------------------------------
 
+/** Four inks that stay apart for red-green colour blindness too: brightness and blue-yellow carry them. */
 const INKS = [
-  { name: 'RED', col: '#ff4d4d', key: 'KeyR', n: 'R' },
-  { name: 'GREEN', col: '#3fd46e', key: 'KeyG', n: 'G' },
-  { name: 'BLUE', col: '#4d8dff', key: 'KeyB', n: 'B' },
-  { name: 'YELLOW', col: '#ffd43b', key: 'KeyY', n: 'Y' },
+  { name: 'WHITE', col: '#f2f2f2', key: 'KeyW', n: 'W' },
+  { name: 'YELLOW', col: '#f0e442', key: 'KeyY', n: 'Y' },
+  { name: 'BLUE', col: '#3d8bff', key: 'KeyB', n: 'B' },
+  { name: 'PINK', col: '#e07fc0', key: 'KeyP', n: 'P' },
 ];
 const INK_TRIALS = 40;
 
@@ -763,9 +764,9 @@ class Hue implements Mini {
 }
 
 export const BATCH32: MiniDef[] = [
-  { id: 'ink', name: 'Ink', skill: 'attention', blurb: 'A colour word in another colour of ink. Name the ink, not the word.', how: 'A colour word appears, written in a coloured ink: RED in blue ink, say. Answer the ink, not the word: R red, G green, B blue, Y yellow (or 1 to 4, or tap the colour). Reading is automatic, so the word gets in the way. Forty words; the results show how much the clash slows you.', input: 'pointer', make: () => new Ink() },
+  { id: 'ink', name: 'Ink', skill: 'attention', blurb: 'A colour word in another colour of ink. Name the ink, not the word.', how: 'A colour word appears, written in a coloured ink: BLUE in yellow ink, say. Answer the ink, not the word: W white, Y yellow, B blue, P pink (or 1 to 4, or tap the colour). The four inks stay distinct with red-green colour blindness. Reading is automatic, so the word gets in the way. Forty words; the results show how much the clash slows you.', input: 'pointer', make: () => new Ink() },
   { id: 'notes', name: 'Notes', skill: 'timing', blurb: 'Notes fall down your lanes to a beat. Hit each as it lands.', how: 'One lane per key. Notes fall to a line in time with the beat; press the lane’s key as each one reaches it. Perfect within 40 ms, good within 80. The tempo climbs from 96 to 160 beats a minute and the patterns fill in: eighths, then sixteenths, and chords with three keys or more. A minute long.', input: 'keys', minKeys: 2, make: () => new Notes() },
   { id: 'jumble', name: 'Jumble', skill: 'reasoning', blurb: 'An anagram. Type the word.', how: 'The letters of a common word, shuffled. Type the word; any real word that uses exactly those letters counts. Backspace fixes, Space skips (and shows the answer). Four letters at first, up to seven. Ninety seconds, starting with your first key. Needs a keyboard.', input: 'type', make: () => new Jumble() },
   { id: 'pop', name: 'Pop', skill: 'aim', blurb: 'Discs appear and shrink away. Click them before they vanish.', how: 'Discs appear anywhere and shrink to nothing. Click each before it is gone. They come faster, smaller and shorter-lived as you go; three that vanish end it. Clicks that miss count against your accuracy.', input: 'pointer', make: () => new Pop() },
-  { id: 'hue', name: 'Hue', skill: 'judgement', blurb: 'A colour shows, then hides. Find it on the colour wheel.', how: 'A colour shows for a moment. Then a colour wheel appears: click where that colour was. Scored in degrees round the wheel between your pick and the colour. Twelve colours; the results show whether you lean one way.', input: 'pointer', make: () => new Hue() },
+  { id: 'hue', name: 'Hue', skill: 'judgement', blurb: 'A colour shows, then hides. Find it on the colour wheel. Needs full colour vision.', how: 'A colour shows for a moment. Then a colour wheel appears: click where that colour was. Scored in degrees round the wheel between your pick and the colour. Twelve colours; the results show whether you lean one way.', input: 'pointer', make: () => new Hue() },
 ];

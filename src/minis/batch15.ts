@@ -274,10 +274,10 @@ class Clock implements Mini {
     }
     if (now - this.flash < 300) {
       ctx.fillStyle = COL_MID;
-      v.text('no skip there', a.cx, a.cy, v.fontTiny, 'center');
+      v.text('no skip there', a.cx, a.bottom - 6 * a.u, v.fontTiny, 'center');
     } else if (this.k < 10) {
       ctx.fillStyle = COL_MID;
-      v.text('the dot steps once a tick. press when it skips a step', a.cx, a.cy, v.fontTiny, 'center');
+      v.text('the dot steps once a tick. press when it skips a step', a.cx, a.bottom - 6 * a.u, v.fontTiny, 'center');
     }
     footer(v, touch, this.held);
     return false;

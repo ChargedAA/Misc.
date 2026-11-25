@@ -222,6 +222,15 @@ export function durationOf(id: string): string {
 
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
+  sphere: [45, 's'],
+  strafe: [30, 's'],
+  follow: [30, 's'],
+  flick: [30, 'targets'],
+  micro: [30, 'targets'],
+  ink: [40, 'words'],
+  hue: [12, 'colours'],
+  jumble: [90, 's'],
+  notes: [60, 's'],
   again: [40, 'items'],
   aim: [30, 'targets'],
   alert: [120, 's'],

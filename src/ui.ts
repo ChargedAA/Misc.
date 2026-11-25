@@ -92,7 +92,7 @@ function seriesSvg(s: NonNullable<MiniResult['series']>): string {
   const max = Math.max(...s.values.filter((v) => Number.isFinite(v)), 1e-9);
   const bw = Math.min(26, (W / n) * 0.3);
   const step = W / n;
-  const fmt = (v: number) => (Number.isFinite(v) && v > 0 ? (s.decimals ? v.toFixed(s.decimals) : String(Math.round(v))) : '\u2013');
+  const fmt = (v: number) => (Number.isFinite(v) && (v > 0 || s.unit === '%') ? (s.decimals ? v.toFixed(s.decimals) : String(Math.round(v))) : '\u2013');
   const bars = s.values
     .map((v, i) => {
       const h = Number.isFinite(v) ? Math.max(1, (v / max) * (H - 30)) : 0;
@@ -507,7 +507,7 @@ export function miniResultsHtml(
   // Lower-is-better numbers are never really zero: zero means it was not measured.
   const measured = Number.isFinite(p.value) && (p.zeroOk || !(p.lower && p.value <= 0));
   const practice = !!daily?.practice;
-  const value = (r.saved || practice) && measured ? fmtPrimary(p.value, p) : '\u2013';
+  const value = (r.saved || practice) && measured ? fmtPrimary(p.value, p) : 'no score';
   // Split the unit off so the number can be large and the unit small.
   const m = /^(.*?)(\s?[^\d\s\u2013.,-][^\d]*)?$/.exec(value);
   const num = m?.[1] && m[2] ? m[1] : value;

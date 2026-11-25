@@ -22,7 +22,8 @@ export class TouchLayout {
   /** Pause (in a run) or finish (in a trainer). */
   readonly corner = { x: 0, y: 0, w: 0, h: 0 };
   /** True once a touch has been seen; the pads are only drawn then. */
-  active = false;
+  /** True on touch screens from the start (no hover, coarse pointer), and once anything is touched. */
+  active = typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
   private width = 0;
   private oneKey = false;
 

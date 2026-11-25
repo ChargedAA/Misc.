@@ -290,8 +290,14 @@ class Sight implements Mini {
         : cnt < 0
           ? `${Math.max(1, Math.min(4, Math.floor(cnt + 5)))}`
           : 'play';
-    ctx.fillStyle = this.state === 1 ? COL_LINE : COL_MID;
-    v.text(status, a.cx, y - 110 * su, v.fontHud, 'center');
+    ctx.fillStyle = this.state === 1 ? COL_LINE : cnt < 0 ? COL_LINE : COL_MID;
+    if (this.state === 0 && cnt < 0) {
+      // The count-in, big: 1 2 3 4, each on its beat.
+      ctx.font = `600 ${Math.round(64 * su)}px Inter, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(status, a.cx, y - 96 * su);
+    } else v.text(status, a.cx, y - 110 * su, v.fontHud, 'center');
     if (this.level === 1 && this.state === 0 && this.accs.length === 0) {
       ctx.fillStyle = COL_MID;
       v.text('read the rhythm; after the count of four, tap each note on any key', a.cx, y + 90 * u, v.fontTiny, 'center');

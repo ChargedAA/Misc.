@@ -104,7 +104,8 @@ class Tower implements Mini {
     // Keep the top of the stack in view.
     const shown = Math.floor((a.bottom - a.top) / bh) - 4;
     const offset = Math.max(0, this.stack.length - shown);
-    const yOf = (i: number) => a.bottom - (i - offset + 1) * bh;
+    // The base sits clear of the hint line at the bottom.
+    const yOf = (i: number) => a.bottom - 16 * a.u - (i - offset + 1) * bh;
     this.stack.forEach((b, i) => {
       if (i < offset) return;
       ctx.fillStyle = i === 0 ? COL_MID : COL_LINE;

@@ -142,7 +142,8 @@ class Rain implements Mini {
     const x0 = a.cx - W / 2;
     ctx.fillStyle = now - this.flash < 200 ? COL_ACCENT : COL_DIM;
     ctx.fillRect(x0, top + H, W, dpr);
-    ctx.font = v.fontHud;
+    // The letters are the game: big, and they follow the text-size setting through fontHud.
+    ctx.font = v.fontHud.replace(/(\d+)px/, (_m, n) => `${Math.round(Number(n) * 1.9)}px`);
     ctx.textAlign = 'center';
     const lowest = this.drops.reduce((m, d) => Math.max(m, d.y), 0);
     for (const d of this.drops) {

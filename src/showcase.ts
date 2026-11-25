@@ -16,12 +16,12 @@ export interface ShowcaseDrill {
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 export const SHOWCASE: ShowcaseDrill[] = [
-  { id: 'snap', name: 'Snap', what: 'reflexes', points: (r) => Math.round(1000 * clamp01((450 - r.primary.value) / (450 - 160))) },
+  { id: 'snap', name: 'Snap', what: 'reaction', points: (r) => Math.round(1000 * clamp01((450 - r.primary.value) / (450 - 160))) },
   { id: 'grid', name: 'Grid', what: 'memory', points: (r) => Math.round(1000 * clamp01(r.primary.value / 12)) },
   { id: 'cross', name: 'Cross', what: 'timing', points: (r) => Math.round(1000 * clamp01((150 - r.primary.value) / (150 - 10))) },
 ];
 
-/** Length setting for each drill: short, so a whole go is about a minute and a half. */
+/** Length setting for each drill: short, so a whole go is about two minutes. */
 export function showcaseLength(id: string): number {
   return id === 'grid' ? 1 : 0.5;
 }
@@ -110,7 +110,7 @@ export function markSvg(size: number, live = false): string {
 }
 
 function boardRows(list: ShowcaseEntry[], mine?: ShowcaseEntry, n = 8): string {
-  if (!list.length) return '<p class="sc-empty">Nobody yet today. Be the first.</p>';
+  if (!list.length) return '<p class="sc-empty">Be first today.</p>';
   const rows = list.slice(0, n);
   const mineIdx = mine ? list.indexOf(mine) : -1;
   const out = rows.map((e, i) => `<li class="${e === mine ? 'me' : ''}"><span class="sc-rank">${i + 1}</span><span class="sc-name">${esc(e.name || '···')}</span><span class="sc-pts">${e.total}</span></li>`);
@@ -124,7 +124,7 @@ export function attractHtml(): string {
     <div class="sc-hero">
       ${markSvg(132, true)}
       <h1 class="sc-title">TENSION</h1>
-      <p class="sc-lede">Three drills. About a minute. Beat today's best.</p>
+      <p class="sc-lede">Three drills. About two minutes. Beat today's best.</p>
       <ol class="sc-drills">${SHOWCASE.map((d, i) => `<li><span class="sc-n">${i + 1}</span><b>${d.name}</b><span>${d.what}</span></li>`).join('')}</ol>
       <button class="sc-go" data-act="scstart" data-key="Space Enter"><span class="sc-key">SPACE</span>to play</button>
       <p class="sc-hint">or tap the screen</p>

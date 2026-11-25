@@ -190,6 +190,8 @@ export const GROUPS: { id: string; name: string; desc: string; skills: Skill[] }
 ];
 
 export interface MenuCtx {
+  /** Clear history was pressed once: the next press deletes. */
+  armedClear?: boolean;
   settings: Settings;
   history: RunRecord[];
   bests: Record<string, number>;
@@ -672,7 +674,7 @@ export function customizeMenu(c: MenuCtx): Menu {
       row('Menu size', '', 'menu', [['Compact', 0.9], ['Standard', 1], ['Large', 1.12], ['Extra large', 1.25]], L.menu ?? 1),
       row('Menu sounds', 'clicks when moving through menus; game sounds are separate', 'uiSound', [['On', true], ['Off', false]], L.uiSound ?? true),
       row('Motion', 'menu slide animations', 'motion', [['On', true], ['Off', false]], L.motion ?? true),
-      row('Default length', 'for drills you have not chosen a length for (3 lives: until three mistakes, where a drill has it)', 'defLen', [['3 lives', -1], ['Short', 0.5], ['Standard', 1], ['Long', 2], ['1 min', -60], ['3 min', -180]], L.defLen ?? -1),
+      row('Default length', 'for drills you have not chosen a length for (3 lives: until three mistakes, where a drill has it)', 'defLen', [['Standard', 1], ['Short', 0.5], ['Long', 2], ['3 lives', -1], ['1 min', -60], ['3 min', -180]], L.defLen ?? 1),
       row('Pause when you switch away', 'switching tabs or apps mid-drill pauses it', 'autoPause', [['On', true], ['Off', false]], L.autoPause ?? true),
       '<p><button class="pill" data-act="look" data-arg="reset:1">Back to defaults</button></p>',
     ].join(''),
@@ -685,8 +687,8 @@ export function customizeMenu(c: MenuCtx): Menu {
 export function lengthOf(s: Settings, id: string): number {
   const own = s.lengths?.[id];
   if (own !== undefined) return own;
-  // Three lives by default where a drill has it; otherwise standard.
-  const d = s.look?.defLen ?? -1;
+  // Standard by default, so a first result compares with everyone's; 3 lives and the rest are a choice.
+  const d = s.look?.defLen ?? 1;
   return lengthsFor(id).some((l) => l.value === d) ? d : 1;
 }
 
@@ -714,7 +716,7 @@ export function settingsMenu(c: MenuCtx, note = ''): Menu {
       { slot: 3, label: 'Sound check', desc: 'Tap along to clicks for 12 seconds, so the rhythm games allow for how late sound reaches you', meta: `${(c.settings.audioOffset ?? 0) >= 0 ? '+' : ''}${c.settings.audioOffset ?? 0} ms`, act: 'soundcheck' },
       { slot: 4, label: `FPS overlay ${c.perf ? 'on' : 'off'}`, desc: 'Frame rate in a corner during play', act: 'perf' },
       { slot: 5, label: 'Export history', desc: 'Download every session as JSON', act: 'export' },
-      { slot: 6, label: 'Clear history', desc: 'Delete every saved session', act: 'clear' },
+      { label: c.armedClear ? 'Press D again to delete everything' : 'Clear history', desc: 'Delete every saved session. Asks once more first', act: 'clear', code: 'KeyD', keyName: 'D' },
       { label: 'Showcase mode', desc: 'For an event stand: one key to play three short drills, a board for today with initials, and back to the start on its own. Shift+Esc on its start screen leaves it. Or open the site with ?showcase', act: 'showcase', code: 'KeyW', keyName: 'W' },
     ],
   };

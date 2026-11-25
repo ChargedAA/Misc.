@@ -326,6 +326,8 @@ export function header(
   if (strikesLeft >= 0) {
     const q = 4 * dpr;
     ctx.lineWidth = dpr;
+    ctx.fillStyle = COL_MID;
+    v.text(strikesLeft === 1 ? 'last life' : 'lives', v.ox, ty, v.fontTiny, 'center');
     for (let i = 0; i < strikesMax; i++) {
       const sx = v.ox + (i - (strikesMax - 1) / 2) * 16 * dpr;
       if (i < strikesLeft) {

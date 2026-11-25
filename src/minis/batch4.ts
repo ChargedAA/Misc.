@@ -6,7 +6,7 @@
 //   Swing  - press as the pendulum passes the bottom. It speeds up, then hides.
 //   Stream - letters fly past; press for the X.
 
-import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
+import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_TONE, SND_UI } from '../audio.ts';
 import { SHAPE_CIRCLE, SHAPE_CROSS, SHAPE_DIAMOND, SHAPE_SQUARE, SHAPE_TRIANGLE, type View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
@@ -254,7 +254,7 @@ class Poly implements Mini {
     const loops = this.guideLoops + this.ownLoops;
     for (let h = 0; h < n; h++) {
       const y = a.cy + (h - (n - 1) / 2) * gap * a.u;
-      ctx.fillStyle = COL_FAINT;
+      ctx.fillStyle = COL_DIM;
       ctx.fillRect(x0, y, span, dpr);
       // Loop starts: thin bars, always shown, so you can keep your place on your own.
       for (let c = 0; c <= loops; c++) {
@@ -1036,7 +1036,7 @@ export const BATCH4: MiniDef[] = [
     id: 'poly',
     name: 'Poly',
     skill: 'coordination',
-    blurb: 'Two tempos at once, 2 against 3 and up to 7 against 8. Three-way with three keys.',
+    blurb: 'Two tempos at once: 1 against 2, then 2 against 3, up to 7 against 8. Three-way with three keys.',
     how: 'Each lane has its own beat inside the same loop: the left plays one count (say 2 per loop), the right another (say 3). Beats slide onto a line; tap each lane as its beats arrive. First you hear every lane, each with its own click; then you keep it going on your own, with only a soft tick at each loop start. Land 70% on time to move to the next ratio; a miss repeats it and costs a try. With three keys or more, three-way rhythms like 2:4:3 join in: outer left key, middle keys, outer right key. Choose how many tries you get, or play through every ratio.',
     input: 'keys',
     minKeys: 2,

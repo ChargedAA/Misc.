@@ -530,7 +530,7 @@ class Twin implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'distance', `${(this.x * 10).toFixed(0)}`, 'speed', `${(this.speed / 0.22).toFixed(2)}×`);
+    header(v, touch, 'distance', `${(this.x * 10).toFixed(0)} m`, 'speed', `${(this.speed / 0.22).toFixed(2)}×`);
     const W = a.right - a.left;
     const H = (a.bottom - a.top - 16 * a.u) / 2;
     const scale = Math.min(W, H * 2.2);
@@ -581,9 +581,10 @@ class Twin implements Mini {
       primary: { label: 'distance', value: d, unit: '' },
       lines: [
         { label: 'distance', value: String(d) },
-        { label: 'lost in', value: this.crashed < 0 ? '–' : this.crashed ? 'the right-hand lane' : 'the left-hand lane' },
+        { label: 'lost in', value: this.crashed < 0 ? '–' : this.crashed ? `the bottom lane (${handLabel(this.env, 1)})` : `the top lane (${handLabel(this.env, -1)})` },
       ],
-      saved: d >= 3,
+      // A run always counts once it has gone anywhere: distance is the score.
+      saved: d >= 1,
     };
   }
 }

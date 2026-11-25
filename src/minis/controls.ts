@@ -77,7 +77,7 @@ export const CONTROLS: Record<string, Control[]> = {
   flick: [['TAP', 'click each target']],
   straight: [['ANY', 'hold to climb, let go to sink: tap to fly level'], ['TAP', 'or touch']],
   strafe: [['TAP', 'click to take the mouse; keep the crosshair on the ball'], ['Escape', 'frees the mouse and pauses']],
-  ink: [['R G B Y', 'the ink colour'], ['1-4', 'or by number'], ['TAP', 'or tap the colour']],
+  ink: [['W Y B P', 'the ink colour'], ['1-4', 'or by number'], ['TAP', 'or tap the colour']],
   notes: [['ANY', 'the key under each lane, as its note lands']],
   jumble: [['A-Z', 'type the word'], ['Backspace', 'fix'], ['Space', 'skip']],
   pop: [['TAP', 'click each disc before it shrinks away']],
