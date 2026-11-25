@@ -111,7 +111,7 @@ export class Sfx {
   }
 
   /** A pure tone at any pitch, with a soft attack and release: for listening drills. */
-  tone(hz: number, ms: number, pan = 0): void {
+  tone(hz: number, ms: number, pan = 0, gain = 0.18): void {
     const ctx = this.ctx;
     if (!ctx || this.muted || !this.master) return;
     const osc = ctx.createOscillator();
@@ -121,8 +121,8 @@ export class Sfx {
     const t = ctx.currentTime;
     const d = ms / 1000;
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.18, t + 0.015);
-    g.gain.setValueAtTime(0.18, t + Math.max(0.02, d - 0.03));
+    g.gain.linearRampToValueAtTime(gain, t + 0.015);
+    g.gain.setValueAtTime(gain, t + Math.max(0.02, d - 0.03));
     g.gain.linearRampToValueAtTime(0, t + d);
     osc.connect(g);
     g.connect(this.pans[Math.max(0, Math.min(2, Math.round(pan) + 1))]!);

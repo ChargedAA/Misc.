@@ -91,7 +91,7 @@ export interface MiniEnv {
   /** A plucked note at any pitch, optionally scheduled ahead on the audio clock (ear training). */
   note?(hz: number, ms: number, delayMs?: number): void;
   /** Play a pure tone (listening drills). */
-  tone?(hz: number, ms: number, pan?: number): void;
+  tone?(hz: number, ms: number, pan?: number, gain?: number): void;
 }
 
 export interface Mini {
@@ -108,6 +108,8 @@ export interface Mini {
   pointer?(x: number, y: number, ts: number): void;
   /** The pointer moved (mouse, or a finger dragging), in canvas pixels. */
   pointerMove?(x: number, y: number, ts: number): void;
+  /** The click or touch was let go (drawing games), in canvas pixels. */
+  pointerUp?(x: number, y: number, ts: number): void;
   /** Mouse-look: how far the mouse moved (CSS pixels) while the pointer is locked to the board. */
   look?(dx: number, dy: number, ts: number): void;
   /** Advance and draw. Returns true once the session is over. */
