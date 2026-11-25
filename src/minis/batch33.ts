@@ -1105,3 +1105,303 @@ export const BATCH33: MiniDef[] = [
   { id: 'vernier', name: 'Vernier', skill: 'judgement', blurb: 'Two lines, one a hair to the side. Which side?', how: 'Two short vertical lines flash, one above the other. The lower one is shifted a little left or right: press that side. The shift shrinks until it is below a pixel; eyes can see offsets far finer than they can read letters. Sit as you normally do and compare like with like.', input: 'keys', minKeys: 2, make: () => new Vernier() },
 ];
 
+
+// --- Hitch -----------------------------------------------------------------------------
+
+const HITCH_MS = 120000;
+const YARD_W = 44;
+const YARD_H = 26;
+const WHEELBASE = 2.8;
+const BAY_W = 3.6;
+const BAY_D = 8;
+
+const wrap = (x: number) => Math.atan2(Math.sin(x), Math.cos(x));
+
+class Hitch implements Mini {
+  private env!: MiniEnv;
+  private held = 0;
+  private t0 = 0;
+  private started = false;
+  private last = 0;
+  /** Car rear axle (the hitch), heading, steering; trailer heading. World units are metres. */
+  private x = 0;
+  private y = 0;
+  private th = 0;
+  private steer = 0;
+  private ps = 0;
+  private L = 6.5;
+  private speed = 2;
+  /** The bay: centre, and the angle its mouth faces. */
+  private bx = 0;
+  private by = 0;
+  private ba = 0;
+  private parked = 0;
+  private crashes = 0;
+  private jacks = 0;
+  private level = 0;
+  private freezeUntil = 0;
+  private note = '';
+  private noteUntil = 0;
+  private bayStart = 0;
+  private bayTimes: number[] = [];
+  private trail: [number, number][] = [];
+  private lastNow = 0;
+
+  start(env: MiniEnv, now: number): void {
+    this.env = env;
+    this.last = now;
+    this.t0 = now;
+    this.layout();
+  }
+
+  private layout(): void {
+    // Harder bays as you go: off to the side, at an angle, a shorter (twitchier) trailer.
+    const lv = this.level;
+    this.ba = (Math.random() < 0.5 ? -1 : 1) * Math.min(0.6, lv * 0.12) * Math.random();
+    this.bx = 7;
+    this.by = YARD_H / 2 + (Math.random() - 0.5) * Math.min(12, 3 + lv * 2);
+    this.L = Math.max(4.2, 6.5 - lv * 0.3);
+    this.speed = Math.min(3.4, 2 + lv * 0.15);
+    // The rig starts further out, roughly lined up, a little off.
+    this.th = (Math.random() - 0.5) * Math.min(0.6, 0.2 + lv * 0.08);
+    this.ps = this.th;
+    this.x = YARD_W - 8;
+    this.y = YARD_H / 2 + (Math.random() - 0.5) * 6;
+    this.steer = 0;
+    this.trail = [];
+  }
+
+  press(slot: number, ts: number): void {
+    this.held |= 1 << slot;
+    if (!this.started) {
+      this.started = true;
+      this.t0 = ts;
+      this.bayStart = ts;
+    }
+  }
+
+  release(slot: number): void {
+    this.held &= ~(1 << slot);
+  }
+
+  /** The trailer's four corners and the car's, in world units. */
+  private trailerBox(): [number, number][] {
+    const c = Math.cos(this.ps);
+    const s = Math.sin(this.ps);
+    const back = this.L + 0.9;
+    const front = 0.6;
+    const w = 1.1;
+    return [
+      [this.x - c * back - s * w, this.y - s * back + c * w],
+      [this.x - c * back + s * w, this.y - s * back - c * w],
+      [this.x - c * front + s * w, this.y - s * front - c * w],
+      [this.x - c * front - s * w, this.y - s * front + c * w],
+    ];
+  }
+
+  private carBox(): [number, number][] {
+    const c = Math.cos(this.th);
+    const s = Math.sin(this.th);
+    const w = 1;
+    return [
+      [this.x - c * 0.6 - s * w, this.y - s * 0.6 + c * w],
+      [this.x - c * 0.6 + s * w, this.y - s * 0.6 - c * w],
+      [this.x + c * 4 + s * w, this.y + s * 4 - c * w],
+      [this.x + c * 4 - s * w, this.y + s * 4 + c * w],
+    ];
+  }
+
+  /** A point in bay coordinates: along the axis from the back wall (0) to the mouth (BAY_D), and across. */
+  private bayLocal(px: number, py: number): [number, number] {
+    const c = Math.cos(this.ba);
+    const s = Math.sin(this.ba);
+    const dx = px - (this.bx - c * BAY_D / 2);
+    const dy = py - (this.by - s * BAY_D / 2);
+    return [dx * c + dy * s, -dx * s + dy * c];
+  }
+
+  private cones(): [number, number][] {
+    const out: [number, number][] = [];
+    const c = Math.cos(this.ba);
+    const s = Math.sin(this.ba);
+    const bx0 = this.bx - c * BAY_D / 2;
+    const by0 = this.by - s * BAY_D / 2;
+    for (let u = 0; u <= BAY_D; u += 2) for (const w of [-1, 1]) out.push([bx0 + c * u - s * w * (BAY_W / 2 + 0.3), by0 + s * u + c * w * (BAY_W / 2 + 0.3)]);
+    out.push([bx0 - c * 0.5, by0 - s * 0.5]);
+    return out;
+  }
+
+  private inside(poly: [number, number][], px: number, py: number): boolean {
+    let inn = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i]!;
+      const [xj, yj] = poly[j]!;
+      if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inn = !inn;
+    }
+    return inn;
+  }
+
+  private fail(now: number, why: string): void {
+    this.note = why;
+    this.noteUntil = now + 1100;
+    this.freezeUntil = now + 900;
+    this.env.sound(SND_FALSE);
+  }
+
+  frame(now: number, v: View, touch: TouchLayout): boolean {
+    const len = scaled(HITCH_MS);
+    if (this.started && now - this.t0 >= len) return true;
+    if (!this.started && now - this.t0 > 120000) return true;
+    const dtAll = Math.min(0.05, (now - this.last) / 1000);
+    this.last = now;
+    this.lastNow = now;
+    if (this.started && now >= this.freezeUntil) {
+      if (this.freezeUntil && now - this.freezeUntil < 40) this.layout();
+      this.freezeUntil = 0;
+      const left = (this.held & 0b111) !== 0;
+      const right = (this.held & 0b111000) !== 0;
+      // Screen y points down, so a negative angle turns the wheels to the car's left.
+      const want = left && !right ? -0.55 : right && !left ? 0.55 : 0;
+      // Substeps keep the trailer steady at any frame rate.
+      const n = 4;
+      for (let k = 0; k < n; k++) {
+        const dt = dtAll / n;
+        this.steer += Math.max(-1.6 * dt, Math.min(1.6 * dt, want - this.steer));
+        const vel = -this.speed;
+        this.x += vel * Math.cos(this.th) * dt;
+        this.y += vel * Math.sin(this.th) * dt;
+        this.th += ((vel / WHEELBASE) * Math.tan(this.steer)) * dt;
+        // The trailer follows the hitch: steady going forwards, unstable in reverse.
+        this.ps += ((vel / this.L) * Math.sin(this.th - this.ps)) * dt;
+      }
+      this.trail.push([this.x - Math.cos(this.ps) * this.L, this.y - Math.sin(this.ps) * this.L]);
+      if (this.trail.length > 120) this.trail.shift();
+      const tb = this.trailerBox();
+      const cb = this.carBox();
+      if (Math.abs(wrap(this.th - this.ps)) > 1.25) {
+        this.jacks++;
+        this.fail(now, 'jackknifed');
+      } else if ([...tb, ...cb].some(([px, py]) => px < 0.5 || py < 0.5 || px > YARD_W - 0.5 || py > YARD_H - 0.5)) {
+        this.crashes++;
+        this.fail(now, 'hit the fence');
+      } else if (this.cones().some(([cx, cy]) => this.inside(tb, cx, cy) || this.inside(cb, cx, cy))) {
+        this.crashes++;
+        this.fail(now, 'hit a cone');
+      } else {
+        // Parked: the whole trailer inside the bay, lined up with it.
+        const ok = tb.every(([px, py]) => {
+          const [u, w] = this.bayLocal(px, py);
+          return u >= 0 && u <= BAY_D + 0.6 && Math.abs(w) <= BAY_W / 2;
+        });
+        if (ok && Math.abs(wrap(this.ps - this.ba)) < 0.26) {
+          this.parked++;
+          this.level++;
+          this.bayTimes.push((now - this.bayStart) / 1000);
+          this.bayStart = now + 900;
+          this.note = 'parked';
+          this.noteUntil = now + 1100;
+          this.freezeUntil = now + 900;
+          this.env.sound(SND_CATCH);
+        }
+      }
+    }
+    v.clear();
+    const a = arena(v, touch);
+    const ctx = v.ctx;
+    const dpr = v.dpr;
+    const leftS = this.started ? Math.max(0, Math.ceil((len - (now - this.t0)) / 1000)) : Math.round(len / 1000);
+    header(v, touch, 'parked', String(this.parked), 'time', `${leftS} s`);
+    const sc = Math.min((a.right - a.left) / YARD_W, (a.bottom - a.top) / YARD_H);
+    const ox = a.cx - (YARD_W * sc) / 2;
+    const oy = a.cy - (YARD_H * sc) / 2;
+    const X = (wx: number) => ox + wx * sc;
+    const Y = (wy: number) => oy + wy * sc;
+    ctx.strokeStyle = COL_DIM;
+    ctx.lineWidth = dpr;
+    ctx.strokeRect(X(0), Y(0), YARD_W * sc, YARD_H * sc);
+    // The bay: lines on the ground, open at the mouth.
+    const c = Math.cos(this.ba);
+    const s = Math.sin(this.ba);
+    const bx0 = this.bx - c * BAY_D / 2;
+    const by0 = this.by - s * BAY_D / 2;
+    const corner = (u: number, w: number): [number, number] => [X(bx0 + c * u - s * w), Y(by0 + s * u + c * w)];
+    ctx.strokeStyle = COL_LINE;
+    ctx.lineWidth = 2 * dpr;
+    ctx.setLineDash?.([6 * dpr, 5 * dpr]);
+    ctx.beginPath();
+    const p1 = corner(BAY_D, -BAY_W / 2);
+    const p2 = corner(0, -BAY_W / 2);
+    const p3 = corner(0, BAY_W / 2);
+    const p4 = corner(BAY_D, BAY_W / 2);
+    ctx.moveTo(p1[0], p1[1]);
+    ctx.lineTo(p2[0], p2[1]);
+    ctx.lineTo(p3[0], p3[1]);
+    ctx.lineTo(p4[0], p4[1]);
+    ctx.stroke();
+    ctx.setLineDash?.([]);
+    for (const [cx, cy] of this.cones()) {
+      ctx.fillStyle = COL_ACCENT;
+      ctx.beginPath();
+      ctx.moveTo(X(cx), Y(cy) - 0.5 * sc);
+      ctx.lineTo(X(cx) + 0.4 * sc, Y(cy) + 0.35 * sc);
+      ctx.lineTo(X(cx) - 0.4 * sc, Y(cy) + 0.35 * sc);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Where the trailer's back has been.
+    ctx.fillStyle = COL_FAINT;
+    for (const [tx, ty] of this.trail) ctx.fillRect(X(tx) - dpr, Y(ty) - dpr, 2 * dpr, 2 * dpr);
+    const poly = (pts: [number, number][], fill: string, edge: string) => {
+      ctx.fillStyle = fill;
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.beginPath();
+      pts.forEach(([px, py], i) => (i ? ctx.lineTo(X(px), Y(py)) : ctx.moveTo(X(px), Y(py))));
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    };
+    const bad = now < this.noteUntil && this.note !== 'parked';
+    poly(this.trailerBox(), '#2a2a30', bad ? COL_ACCENT : COL_LINE);
+    poly(this.carBox(), bad ? COL_ACCENT : COL_LINE, COL_LINE);
+    // The front wheels, turned with the steering.
+    const fx = this.x + Math.cos(this.th) * WHEELBASE;
+    const fy = this.y + Math.sin(this.th) * WHEELBASE;
+    ctx.strokeStyle = '#0a0a0b';
+    ctx.lineWidth = 3 * dpr;
+    for (const side of [-1, 1]) {
+      const wx = fx - Math.sin(this.th) * side * 0.8;
+      const wy = fy + Math.cos(this.th) * side * 0.8;
+      const ang = this.th + this.steer;
+      ctx.beginPath();
+      ctx.moveTo(X(wx - Math.cos(ang) * 0.5), Y(wy - Math.sin(ang) * 0.5));
+      ctx.lineTo(X(wx + Math.cos(ang) * 0.5), Y(wy + Math.sin(ang) * 0.5));
+      ctx.stroke();
+    }
+    ctx.strokeStyle = COL_MID;
+    ctx.lineWidth = 2 * dpr;
+    ctx.beginPath();
+    ctx.arc(X(this.x), Y(this.y), 0.3 * sc, 0, TAU);
+    ctx.stroke();
+    if (now < this.noteUntil) message(v, { ...a, cy: a.top + 24 * a.u }, this.note, this.note === 'parked' ? 'next bay' : 'try that bay again', this.note === 'parked' ? COL_LINE : COL_MID);
+    if (!this.started) message(v, { ...a, cy: a.bottom - 40 * a.u }, 'back the trailer into the bay', 'it reverses on its own. left key and right key steer. press to start', COL_MID);
+    footer(v, touch, this.held);
+    return false;
+  }
+
+  result(): MiniResult {
+    return {
+      score: this.parked * 100 - this.crashes * 5 - this.jacks * 5 > 0 ? this.parked * 100 - this.crashes * 5 - this.jacks * 5 : this.parked * 10,
+      primary: { label: 'bays parked', value: this.parked, unit: '' },
+      lines: [
+        { label: 'bays parked', value: String(this.parked) },
+        { label: 'typical time a bay', value: this.bayTimes.length ? `${median(this.bayTimes).toFixed(1)} s` : '–' },
+        { label: 'jackknifed', value: String(this.jacks) },
+        { label: 'hit a cone or the fence', value: String(this.crashes) },
+      ],
+      saved: this.started && this.lastNow - this.t0 > 5000,
+    };
+  }
+}
+
+BATCH33.push({ id: 'hitch', name: 'Hitch', skill: 'coordination', blurb: 'Back a car and trailer into a bay. Steering works backwards, and late.', how: 'A car with a trailer reverses slowly on its own. The left key turns the wheel one way, the right key the other. Back the trailer into the dashed bay, lined up, without jackknifing or touching a cone or the fence. Reversing a trailer works backwards and with a delay: steer the car the opposite way to where you want the trailer to go, then follow it round. Each bay is harder. Two minutes; scored on bays parked.', input: 'keys', minKeys: 2, make: () => new Hitch() });

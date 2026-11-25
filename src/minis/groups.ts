@@ -59,6 +59,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole'] },
+      { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch'] },
       { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
@@ -224,6 +225,7 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  hitch: [120, 's'],
   wire: [3, 'wires'],
   bounce: [8, 'drops'],
   lead: [30, 'discs'],

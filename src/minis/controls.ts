@@ -76,6 +76,7 @@ export const CONTROLS: Record<string, Control[]> = {
   ship: [['ANY', 'hold to fly up, let go to sink'], ['TAP', 'or touch and hold']],
   flick: [['TAP', 'click each target']],
   round: [['TAP', 'hold and draw a circle, then let go']],
+  hitch: [['L', 'hold: wheel to the left'], ['R', 'hold: wheel to the right']],
   wire: [['TAP', 'click the ring, then move it along the wire']],
   bounce: [['ANY', 'on each dark bounce'], ['TAP', 'or tap']],
   lead: [['TAP', 'click where the disc will be']],
