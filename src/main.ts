@@ -690,7 +690,8 @@ function showcaseDone(): void {
 function saveShowcase(): void {
   const box = uiRoot.querySelector<HTMLInputElement>('#initials');
   const e: ShowcaseEntry = { day: today(), name: cleanInitials(box?.value ?? ''), total: scTotal, parts: SHOWCASE.map((_, i) => scParts[i] ?? 0), at: Date.now() };
-  saveEntry(e);
+  // A go with nothing played does not go on the board.
+  if (scTotal > 0) saveEntry(e);
   uiClick();
   screen = 'showcase';
   inputLockUntil = performance.now() + 500;
@@ -880,6 +881,11 @@ function skipDrill(): void {
 
 /** End an endless run (or any set) early and show what it came to. */
 function endRun(): void {
+  // On a stand, stopping a go takes you back to the start, never into the training menus.
+  if (showcase) {
+    showAttract();
+    return;
+  }
   if (!dailyQueue) return;
   const total = dailyRows.reduce((sum, r) => sum + (r.saved ? r.score : 0), 0);
   const label = queueLabel;
@@ -1362,6 +1368,9 @@ function playWith(game: GameId, n: number, level?: number): void {
 
 function onAction(action: string, arg: string): void {
   sfx.unlock();
+  // Showcase screens ignore clicks for a moment after they appear, so a burst of clicks at the
+  // end of a drill cannot skip its score.
+  if (showcase && (action === 'scnext' || action === 'scstart' || action === 'scsave' || action === 'endrun' || action === 'skip') && performance.now() < inputLockUntil) return;
   switch (action) {
     case 'go':
       uiClick();
