@@ -1884,3 +1884,12 @@ body.showcase .screen.ready {
   line-height: 1.2;
   color: var(--line);
 }
+
+/* A drill not yet opened since it was added. */
+.nw {
+  color: var(--line);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.82em;
+}

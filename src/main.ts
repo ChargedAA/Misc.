@@ -56,7 +56,7 @@ import {
 } from './storage.ts';
 import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
-import { MINIS, dailySet, entry } from './minis/index.ts';
+import { LATER, MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
 import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
@@ -398,6 +398,39 @@ const customLevels = loadMap('tension.custom');
 /** Difficulty for the game being started (0 = progressing). */
 let currentLevel = 0;
 
+/**
+ * Drills opened at least once in this browser; any other drill is marked new in the menus.
+ * On the first visit with this list, someone who has played before has seen everything but the
+ * later batches; someone brand new has seen everything, so nothing shouts at them.
+ */
+const seen: Set<string> = (() => {
+  try {
+    const s = localStorage.getItem('tension.seen');
+    if (s) return new Set(JSON.parse(s) as string[]);
+  } catch {
+    // Unreadable: start afresh below.
+  }
+  const later = new Set(LATER.map((d) => d.id));
+  const played = history.some((r) => r.kind === 'mini');
+  const ids = [...MINIS.map((d) => d.id).filter((id) => !played || !later.has(id)), 'climb', 'reflex', 'burst'];
+  for (const r of history) if (r.game) ids.push(r.game);
+  const set = new Set(ids);
+  saveSeen(set);
+  return set;
+})();
+function saveSeen(set: Set<string>): void {
+  try {
+    localStorage.setItem('tension.seen', JSON.stringify([...set]));
+  } catch {
+    // Private mode: not remembered.
+  }
+}
+function markSeen(id: string): void {
+  if (seen.has(id)) return;
+  seen.add(id);
+  saveSeen(seen);
+}
+
 function menuCtx(): MenuCtx {
   const bests: Record<string, number> = {};
   for (const r of history) {
@@ -413,7 +446,7 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote } };
+  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id) };
 }
 
 /** Name Google suggested at sign-in, and a message for the account block. */
@@ -476,6 +509,7 @@ function buildMenu(n: NavEntry): Menu {
     case 'skill':
       return skillMenu(c, n.arg);
     case 'game':
+      markSeen(n.arg);
       return gameMenu(c, n.arg);
     case 'stats':
       return statsMenu(c, n.page);
@@ -929,6 +963,7 @@ function startGame(game: GameId): void {
     setLengthScale(plan.scale);
     miniLimit = plan.limitMs;
     mini = e.def.make();
+    markSeen(game);
     // The board zooms in as the menu goes.
     canvas.classList.remove('zoom');
     void canvas.offsetWidth;

@@ -208,7 +208,12 @@ export interface MenuCtx {
   bestFor: (id: string, keys: number) => RunRecord | null;
   /** Leaderboard account: how sign-in works here, and who is signed in. */
   online: { mode: 'google' | 'dev' | 'local' | 'none'; session?: string; name: string | null; suggested?: string; note?: string };
+  /** A drill not yet opened in this browser, since it was added. */
+  isNew?: (id: string) => boolean;
 }
+
+const NEW_TAG = '<span class="nw">new</span>';
+const newCount = (c: MenuCtx, ids: string[]) => (c.isNew ? ids.filter((id) => c.isNew!(id)).length : 0);
 
 /** "best 222 ms": a game's best on its headline number, the one results lead with. Score for the built-in games. */
 function bestOf(c: MenuCtx, id: string): string {
@@ -267,11 +272,12 @@ export function startMenu(c: MenuCtx): Menu {
         g.skills.map((sk, i) => {
           const def = SKILLS.find((k) => k.id === sk)!;
           const n = gamesOf([sk]).length;
+          const fresh = newCount(c, gamesOf([sk]).map((e) => e.id));
           return {
             heading: i === 0 ? `${g.name}${DOT}${i === 0 && g.id === 'body' ? 'left hand' : 'right hand'}` : undefined,
             label: def.name,
             desc: GUIDES[sk].about,
-            meta: `${n} drills`,
+            meta: `${n} drills${fresh ? `${DOT}${fresh} new` : ''}`,
             act: 'go',
             arg: `skill:${sk}`,
             code: SKILL_KEYS[sk]![0],
@@ -348,7 +354,8 @@ export function groupMenu(c: MenuCtx, id: string): Menu {
         const def = SKILLS.find((k) => k.id === sk)!;
         const games = gamesOf([sk]);
         const tried = games.filter((e) => c.bests[e.id]).length;
-        return { label: def.name, desc: def.blurb, meta: `${games.length} games${tried ? `${DOT}${tried} played` : ''}`, act: 'go', arg: `skill:${sk}` };
+        const fresh = newCount(c, games.map((e) => e.id));
+        return { label: def.name, desc: def.blurb, meta: `${games.length} games${tried ? `${DOT}${tried} played` : ''}${fresh ? `${DOT}${fresh} new` : ''}`, act: 'go', arg: `skill:${sk}` };
       }),
       { label: 'Three at random', desc: `From all ${g.name.toLowerCase()} games`, act: 'quick', arg: `${g.id}:3`, slot: 6 },
     ],
@@ -376,7 +383,7 @@ export function skillMenu(c: MenuCtx, sk: string): Menu {
         headingNote: i === 0 ? grp.desc : undefined,
         label: e.name,
         desc: e.blurb,
-        meta: bestOf(c, e.id),
+        meta: bestOf(c, e.id) || (c.isNew?.(e.id) ? NEW_TAG : ''),
         act: 'go',
         arg: `game:${e.id}`,
         code: key?.[0] ?? 'Unidentified',
