@@ -405,6 +405,8 @@ class Circle implements Mini {
   private last = '';
   private lastPath: [number, number][] = [];
   private lastR = 0;
+  private lastC: [number, number] = [0, 0];
+  private centred: number[] = [];
   private field: Rect = [0, 0, 1, 1];
   private firstAt = 0;
 
@@ -461,12 +463,19 @@ class Circle implements Mini {
       this.path = [];
       return;
     }
-    const sd = Math.sqrt(mean(rs.map((r) => (r - m) ** 2)));
-    const roundness = Math.max(0, 1 - sd / m);
+    // Roundness is judged about the stroke's own centre, so a fine circle a little off the dot still counts as round.
+    const cx = mean(this.path.map((p) => p[0]));
+    const cy = mean(this.path.map((p) => p[1]));
+    const rc = this.path.map(([px, py]) => Math.hypot(px - cx, py - cy));
+    const mc = mean(rc);
+    const sd = Math.sqrt(mean(rc.map((r) => (r - mc) ** 2)));
+    const roundness = Math.max(0, 1 - sd / mc);
     this.scores.push(roundness);
+    this.centred.push(Math.hypot(cx - ox, cy - oy) / mc);
     this.last = `${(roundness * 100).toFixed(1)}% round`;
     this.lastPath = this.path;
-    this.lastR = m;
+    this.lastR = mc;
+    this.lastC = [cx, cy];
     this.env.sound(roundness > 0.95 ? SND_CATCH : SND_TAP_WEAK);
     this.round++;
     this.state = 1;
@@ -500,7 +509,7 @@ class Circle implements Mini {
       ctx.strokeStyle = COL_DIM;
       ctx.lineWidth = dpr;
       ctx.beginPath();
-      ctx.arc(ox, oy, this.lastR, 0, TAU);
+      ctx.arc(this.lastC[0], this.lastC[1], this.lastR, 0, TAU);
       ctx.stroke();
     }
     if (path.length > 1) {
@@ -525,6 +534,7 @@ class Circle implements Mini {
       lines: [
         { label: 'typical roundness', value: this.scores.length ? `${(m * 100).toFixed(1)}%` : '–' },
         { label: 'roundest', value: this.scores.length ? `${(Math.max(...this.scores) * 100).toFixed(1)}%` : '–' },
+        { label: 'typical distance off the dot', value: this.centred.length ? `${Math.round(median(this.centred) * 100)}% of the radius` : '–' },
       ],
       saved: this.scores.length >= 3,
     };
@@ -535,5 +545,5 @@ export const BATCH61: MiniDef[] = [
   { id: 'missing', name: 'Missing', skill: 'ear', blurb: 'A run of beats with one left out. Which beat was missing?', how: 'Eight beats at a steady tempo, but one of them is silent. Press its number, 1 to 8 (or click its box). Two right and the next run is faster; a miss and it slows. Sixteen runs. Best with sound; with it off the beats flash and the missing one stays dark.', input: 'pointer', make: () => new Missing() },
   { id: 'clicker', name: 'Clicker', skill: 'speed', blurb: 'Click as fast as you can for ten seconds.', how: 'Click the square as fast as you can; the clock starts on your first click and runs ten seconds. Clicks that land off the square do not count. Scored in clicks a second, with how well you held the pace in the second half.', input: 'pointer', make: () => new Clicker() },
   { id: 'newest', name: 'Newest', skill: 'memory', blurb: 'Things gather on the board one at a time. Which one is new?', how: 'Each turn one new thing joins the board and everything is shuffled to new places. Click the one that was not there before. You have three lives; the board keeps growing until they run out. Scored on the largest board you kept track of.', input: 'pointer', make: () => new Newest() },
-  { id: 'circle', name: 'Circle', skill: 'aim', blurb: 'Draw a circle freehand around the dot, as round as you can.', how: 'Hold the mouse button (or a finger) down and draw one circle around the dot, then let go. It is scored on how round it is: how evenly far every point of the stroke sits from the dot. Go all the way round. Ten circles.', input: 'pointer', make: () => new Circle() },
+  { id: 'circle', name: 'Circle', skill: 'aim', blurb: 'Draw a circle freehand around the dot, as round as you can.', how: 'Hold the mouse button (or a finger) down and draw one circle around the dot, then let go. It is scored on how round it is: how evenly far every point of the stroke sits from its own centre. How well it is centred on the dot is shown too. Go all the way round. Ten circles.', input: 'pointer', make: () => new Circle() },
 ];
