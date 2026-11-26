@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-312 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+316 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -121,6 +121,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Match | Two dot patterns: the same, or one dot different? As many as you can. | keys, 2+ keys |
 | Parity | Odd or even? Number after number, as fast as you can. | keys, 2+ keys |
 | Dots | A scatter of dots. How many? Answer at a glance, over and over. | mouse or tap |
+| Alpha | Two words. Which comes first in the dictionary? | keys, 2+ keys |
 
 ### Timing
 
@@ -222,6 +223,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Rotate | Same shape, turned, or its mirror image? | keys, 2+ keys |
 | Schulte | Tap 1 to 25, scattered on a grid, in order. | mouse or tap |
 | Blink | Letters flash past ten a second, with two digits hidden among them. Type both. | keyboard |
+| Blinks | A light flickers, too fast to count comfortably. How many flashes? | keyboard |
 | Gauges | Four needles drift up. Reset any that creep into the red. | mouse or tap |
 | Tally | Shapes pop up all over. Keep a running count of the squares. | mouse or tap |
 | Trail | Connect 1-A-2-B-3-C, switching between numbers and letters. | mouse or tap |
@@ -251,6 +253,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
 | Pat | Tap a beat with one hand; keep the pointer on a circling marker with the other. | keys or tap |
 | Rally | Two paddles, one per hand: hold to raise, let go to sink. Keep the ball in. | keys, 2+ keys |
+| Basins | Two basins fill at their own rates. Each hand stops its own at the line. | keys, 2+ keys |
 | Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
 | Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
 | Ferry | Steer a ferry across a river whose current changes band by band, into the dock. | keys, 2+ keys |
@@ -336,6 +339,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Units | Two amounts in different units. Which is bigger? | keys, 2+ keys |
 | Ten | A grid of digits. Click pairs that make ten, as fast as you can. | mouse or tap |
 | Percent | Quick percentages: 15% of 80, or what share 12 is of 48. | mouse or tap |
+| Product | Two products, like 23 × 4 and 19 × 5. Which is bigger? | keys, 2+ keys |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |
