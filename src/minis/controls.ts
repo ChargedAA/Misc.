@@ -165,6 +165,8 @@ export const CONTROLS: Record<string, Control[]> = {
   sustain: [['ANY', 'hold for the beats asked'], ['TAP', 'or hold the button']],
   operator: [['1-4', 'pick the sign'], ['TAP', 'or click']],
   accent: [['1-8', 'the louder beat'], ['TAP', 'or click its box']],
+  landing: [['TAP', 'click where it lands']],
+  pyramid: [['0-9', 'the top block'], ['Enter', 'answer']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

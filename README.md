@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-346 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+348 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -327,6 +327,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Velo | Watch a dot’s speed, then set your own to the same speed from memory. | keys, 2+ keys |
 | Race | One ball rolls steadily, one speeds up from rest. Both vanish: which wins? | keys, 2+ keys |
 | Lever | Weights on a beam. Click where the pivot must go to balance it. | mouse or tap |
+| Landing | A ball is thrown and vanishes at the top of its flight. Click where it lands. | mouse or tap |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
@@ -378,6 +379,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Pattern | A shape changes step by step. Which comes next? | mouse or tap |
 | Triad | Twelve cards. Find three where every feature is all the same or all different. | mouse or tap |
 | Oddword | Four words, three of a kind. Which one does not belong? | mouse or tap |
+| Pyramid | Each block is the sum of the two beneath it. What goes at the top? | keyboard |
 | Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap |
 | Balance | The scales balance. How many triangles weigh the same as a square? | mouse or tap |
 | Probe | A hidden rule says yes or no to shapes. Test it three times, then classify. | keys or tap |
