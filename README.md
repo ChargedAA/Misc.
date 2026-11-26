@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-348 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+350 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -221,6 +221,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Camo | A ring hides in a field of random strokes. Click inside it. | mouse or tap |
 | Kinds | Words flash: living thing or not? Sort them as fast as you can. | keys, 2+ keys |
 | Turned | A word shown mirrored or upside down. A real word, or not? | keys, 2+ keys |
+| Wanted | Shapes fall. Click every one that matches the wanted shape, nothing else. | mouse or tap |
 | Track | Follow a few dots among identical ones. | mouse or tap |
 | Shells | A ball under a cup, then the cups swap. Where is it? | mouse or tap |
 | Tangle | Follow one line through a tangle to its end. | mouse or tap |
@@ -371,6 +372,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Weekday | “Tuesday, plus 10 days.” What day is it? | mouse or tap |
 | Roman | Roman numerals: type the number. | keyboard |
 | Binary | A binary number. Type its value. | keyboard |
+| Coins | Make the amount with the fewest coins. How many does it take? | keyboard |
 | Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
 | Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
 | Series | Five numbers. What comes next? | mouse or tap |

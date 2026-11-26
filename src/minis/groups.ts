@@ -85,7 +85,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   attention: {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
-      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned'] },
+      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned', 'wanted'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly', 'bounces'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink', 'blinks', 'glimpse'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd', 'mover', 'step'] },
@@ -120,7 +120,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
-      { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till', 'weekday', 'roman', 'binary'] },
+      { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till', 'weekday', 'roman', 'binary', 'coins'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern', 'triad', 'oddword', 'pyramid'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
