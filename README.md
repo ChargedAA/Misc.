@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-368 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+369 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -189,6 +189,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Twist | Tiles flash on a grid, then the grid turns. Tap where they are now. | mouse or tap |
 | Rooms | Things appear around a floor plan, one at a time. Where was this one? | mouse or tap |
 | Hide | Digits fill a grid, then are covered. Where was the 7? | mouse or tap |
+| Switched | A row of symbols. After a blink, two have traded places. Click both. | mouse or tap |
 | Back | Does it match the one n steps ago? Two streams at once. | keys |
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |

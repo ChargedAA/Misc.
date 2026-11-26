@@ -73,7 +73,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Hold more in your head, keep it up to date, and remember where things were.',
     groups: [
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route', 'backward'] },
-      { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms', 'hide'] },
+      { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms', 'hide', 'switched'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold', 'recent', 'bus'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend', 'tray', 'newest', 'source'] },
       { name: 'Lists', desc: 'Remember what came and in what order', ids: ['recall', 'queue', 'tag', 'shop'] },
@@ -306,6 +306,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   parallel: [12, 'lines'],
   slice: [30, 'pairs'],
   wider: [24, 'pairs'],
+  switched: [14, 'rows'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
