@@ -59,7 +59,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   coordination: {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
-      { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat', 'rally', 'basins', 'runners'] },
+      { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat', 'rally', 'basins', 'runners', 'duo'] },
       { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble', 'ferry'] },
       { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone', 'kite'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch', 'seesaw'] },

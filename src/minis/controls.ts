@@ -180,6 +180,7 @@ export const CONTROLS: Record<string, Control[]> = {
   arrange: [['TAP', 'click shortest to longest']],
   kite: [['L', 'pull left'], ['R', 'pull right'], ['BOTH', 'drive']],
   shortest: [['1-4', 'the shortest total'], ['TAP', 'or click']],
+  duo: [['TAP', 'mouse: stay in the ring'], ['L', 'push the needle left'], ['R', 'push it right']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

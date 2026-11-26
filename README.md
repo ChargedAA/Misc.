@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-361 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+362 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -273,6 +273,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Rally | Two paddles, one per hand: hold to raise, let go to sink. Keep the ball in. | keys, 2+ keys |
 | Basins | Two basins fill at their own rates. Each hand stops its own at the line. | keys, 2+ keys |
 | Runners | Two runners, one per hand. Jump each over its own hurdles. | keys, 2+ keys |
+| Duo | The mouse follows a wandering target while the keys keep a drifting needle centred. | keys or tap |
 | Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
 | Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
 | Ferry | Steer a ferry across a river whose current changes band by band, into the dock. | keys, 2+ keys |
