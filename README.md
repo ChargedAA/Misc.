@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-248 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+263 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -128,6 +128,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
 | Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
+| Pins | A lock’s pins bob up and down. Press as each crosses the line to set it. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -258,6 +259,9 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Angle | How wide is this angle? Mark it on a 0 to 180 scale. | mouse or tap |
 | Centroid | Tap the balance point of a cloud of dots. | mouse or tap |
 | Closer | Which dot is nearer the cross? | keys, 2+ keys |
+| Share | A pie chart: what percentage is the orange slice? | keyboard |
+| Curves | Two zigzag paths. Which is longer? | keys, 2+ keys |
+| Map | Two places on a map and a scale bar. How far apart are they? | keyboard |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -270,6 +274,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Topple | Will this stack of blocks stand or fall? | keys, 2+ keys |
 | Hoop | Hold to charge, release to shoot. The basket moves each time. | keys or tap |
 | Carom | A ball sets off and vanishes. Where will it stop, after its bounces? | mouse or tap |
+| Cannon | Set the barrel’s angle to land a shot on the target. Wind joins later. | keys, 2+ keys |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
@@ -297,8 +302,13 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Sevens | Count back from a number in sevens, as fast as you can. | keyboard |
 | Prime | A number: prime or not? As fast as you can. | keys, 2+ keys |
 | Fraction | Two fractions. Which is bigger? | keys, 2+ keys |
+| Rank | Four numbers: press them from smallest to largest. | keyboard |
+| Units | Two amounts in different units. Which is bigger? | keys, 2+ keys |
+| Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
+| Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Script | A tiny program. Type what it prints. | keyboard |
 | Later | Clock arithmetic: what time will it be? | keyboard |
+| Till | A price and what was paid. Type the change. | keyboard |
 | Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
 | Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
 | Series | Five numbers. What comes next? | mouse or tap |
@@ -342,6 +352,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Ghost | A word flashes and hides. Type it. | keyboard |
 | Reverse | Type the word backwards. | keyboard |
 | Syntax | Type real lines of code, symbols and all. | keyboard |
+| Entry | Type numbers exactly, fast: amounts, codes and dates. | keyboard |
 | Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
 | Sweep | Run along a keyboard row and back. | keyboard |
 | Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
@@ -368,6 +379,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Dictate | Hear a bar of rhythm, then pick its notation from four. | mouse or tap |
 | Copy | Learn Morse by ear: two letters at full speed, one more each time you are sure. | keyboard |
 | Safe | Turn a dial and listen: a louder click marks each number of the combination. | keys, 2+ keys |
+| Clicks | A quick burst of clicks. How many were there? | keyboard |
 
 ### Aim
 
@@ -383,7 +395,10 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
 | Reflect | Trace a star while the pen moves as in a mirror. | mouse or tap |
+| Darts | The aim drifts like a real hand. Throw when it is over the bull. | mouse or tap |
 | Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
+| Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
+| Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |
 | Sphere | 3D: look around with the mouse and shoot the balls. | mouse or tap |
 | Strafe | 3D tracking: keep the crosshair on a ball that strafes and changes direction. | mouse or tap |
 
