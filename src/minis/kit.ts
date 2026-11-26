@@ -90,8 +90,8 @@ export interface MiniEnv {
   soundAt?(id: number, delayMs: number): void;
   /** A plucked note at any pitch, optionally scheduled ahead on the audio clock (ear training). */
   note?(hz: number, ms: number, delayMs?: number): void;
-  /** Play a pure tone (listening drills). */
-  tone?(hz: number, ms: number, pan?: number, gain?: number): void;
+  /** Play a pure tone (listening drills): pan from -1 to 1, and an optional glide to `toHz`. */
+  tone?(hz: number, ms: number, pan?: number, gain?: number, toHz?: number): void;
 }
 
 export interface Mini {

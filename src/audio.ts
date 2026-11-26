@@ -111,12 +111,20 @@ export class Sfx {
   }
 
   /** A pure tone at any pitch, with a soft attack and release: for listening drills. */
-  tone(hz: number, ms: number, pan = 0, gain = 0.18): void {
+  /**
+   * A pure tone. `pan` places it exactly, from -1 (left) to 1 (right); `toHz` glides the
+   * pitch smoothly to that frequency over the tone's length.
+   */
+  tone(hz: number, ms: number, pan = 0, gain = 0.18, toHz?: number): void {
     const ctx = this.ctx;
     if (!ctx || this.muted || !this.master) return;
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = hz;
+    if (toHz) {
+      osc.frequency.setValueAtTime(hz, ctx.currentTime + 0.01);
+      osc.frequency.exponentialRampToValueAtTime(toHz, ctx.currentTime + Math.max(0.02, ms / 1000 - 0.01));
+    }
     const g = ctx.createGain();
     const t = ctx.currentTime;
     const d = ms / 1000;
@@ -125,7 +133,13 @@ export class Sfx {
     g.gain.setValueAtTime(gain, t + Math.max(0.02, d - 0.03));
     g.gain.linearRampToValueAtTime(0, t + d);
     osc.connect(g);
-    g.connect(this.pans[Math.max(0, Math.min(2, Math.round(pan) + 1))]!);
+    // Placed exactly where asked, not on the three fixed positions the game sounds use.
+    if (pan && typeof ctx.createStereoPanner === 'function') {
+      const p = ctx.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      g.connect(p);
+      p.connect(this.master);
+    } else g.connect(this.master);
     osc.start(t);
     osc.stop(t + d + 0.02);
   }
