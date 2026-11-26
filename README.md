@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-279 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+283 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -114,6 +114,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Trill | Alternate in order, flat out, for ten seconds. Fast and even both count. | keys, 2+ keys |
 | Rain | Letters fall. Type them before they land. | keyboard |
 | Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
+| Match | Two dot patterns: the same, or one dot different? As many as you can. | keys, 2+ keys |
 
 ### Timing
 
@@ -167,6 +168,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Where | Shapes scatter and vanish. Tap where one of them was. | mouse or tap |
 | Pairs | Turn tiles two at a time. Remember where everything was. | mouse or tap |
 | Twist | Tiles flash on a grid, then the grid turns. Tap where they are now. | mouse or tap |
+| Rooms | Things appear around a floor plan, one at a time. Where was this one? | mouse or tap |
 | Back | Does it match the one n steps ago? Two streams at once. | keys |
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |
@@ -174,6 +176,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap |
 | Link | Shapes and numbers, paired. Which number went with this shape? | mouse or tap |
 | Sounds | Tiles hide tones. Find the matching pairs by ear. | mouse or tap |
+| Legend | Learn which symbol goes with which number, then answer from memory, fast. | mouse or tap |
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
@@ -408,6 +411,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Pop | Discs appear and shrink away. Click them before they vanish. | mouse or tap |
 | Lead | Discs fly in arcs. Your shot takes a moment to land: aim ahead. | mouse or tap |
 | Gallery | Targets ride across on belts. Hit the white ones, spare the hollow ones. | mouse or tap |
+| Shrink | A target shrinks away to nothing. Click it before it is gone. | mouse or tap |
 | Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
