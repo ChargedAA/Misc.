@@ -88,7 +88,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned', 'wanted'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly', 'bounces'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink', 'blinks', 'glimpse'] },
-      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd', 'mover', 'step'] },
+      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd', 'mover', 'step', 'plates'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
       { name: 'Keep count', desc: 'Tally what flashes past, then report it', ids: ['deal'] },
       { name: 'Search', desc: 'Find the target on a busy page, or in the dark', ids: ['cancel', 'lantern', 'proof', 'diff', 'pictures'] },

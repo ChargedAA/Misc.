@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-350 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+351 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -243,6 +243,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Herd | Sheep wander in and out of a pen. How many are inside now? | keyboard |
 | Mover | A field of still dots. One starts to creep. Click it. | mouse or tap |
 | Step | Lights blink together, except one a little out of step. Click it. | mouse or tap |
+| Plates | Plates spin on poles and slow down. Click each before it wobbles off. | mouse or tap |
 | Stream | Letters fly past. Press for the X. | keys or tap |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |

@@ -169,6 +169,7 @@ export const CONTROLS: Record<string, Control[]> = {
   pyramid: [['0-9', 'the top block'], ['Enter', 'answer']],
   coins: [['0-9', 'how many coins'], ['Enter', 'answer']],
   wanted: [['TAP', 'click the exact matches']],
+  plates: [['TAP', 'click a plate to spin it']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],
