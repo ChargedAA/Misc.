@@ -8,7 +8,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, footer, handLabel, header, median, ms, pct, scaled, sideOf, Stair, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, footer, handLabel, header, median, ms, pct, scaled, sideOf, Stair, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
 import { WORDS } from './batch24.ts';
 
 const TAU = Math.PI * 2;
@@ -209,7 +209,7 @@ class Trio implements Mini {
       }
     }
     ctx.fillStyle = COL_MID;
-    v.text(this.started ? `${this.misses} missed clicks` : 'click to start: hit the white targets; each jumps to an empty square. thirty seconds', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.started ? plural(this.misses, 'missed click') : 'click to start: hit the white targets; each jumps to an empty square. thirty seconds', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }

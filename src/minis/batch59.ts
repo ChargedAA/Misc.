@@ -8,7 +8,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, footer, handLabel, header, median, ms, pct, scaled, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, footer, handLabel, header, median, ms, pct, scaled, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
 
 const TAU = Math.PI * 2;
 const rnd = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
@@ -258,7 +258,7 @@ class Symbols implements Mini {
       if (i === this.pos) ctx.fillRect(x - cw * 0.35, a.cy - 10 * a.u + size * 0.55, cw * 0.7, 2 * v.dpr);
     });
     ctx.fillStyle = COL_MID;
-    v.text(this.started ? `${this.slips} slips` : 'type each line exactly, symbols and spaces included; the clock starts on the first key', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.started ? plural(this.slips, 'slip') : 'type each line exactly, symbols and spaces included; the clock starts on the first key', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }
@@ -388,7 +388,7 @@ class Still implements Mini {
       ctx.fill();
     }
     ctx.fillStyle = COL_MID;
-    v.text(this.started ? `${this.breaks} slips out` : 'click to start: move into each circle and hold the pointer inside until the ring fills', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.started ? `${plural(this.breaks, 'slip')} out` : 'click to start: move into each circle and hold the pointer inside until the ring fills', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }

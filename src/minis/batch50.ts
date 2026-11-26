@@ -8,7 +8,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, footer, header, median, ms, pct, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, footer, header, median, ms, pct, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
 
 const TAU = Math.PI * 2;
 const rnd = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
@@ -628,7 +628,7 @@ class Lantern implements Mini {
     ctx.arc(lx, ly, R, 0, TAU);
     ctx.stroke();
     ctx.fillStyle = COL_MID;
-    v.text(this.round === 0 && this.found < 0 ? 'move the light with the mouse; find the one T among the Ls and click it' : `${this.misses} wrong clicks`, a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.round === 0 && this.found < 0 ? 'move the light with the mouse; find the one T among the Ls and click it' : plural(this.misses, 'wrong click'), a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }

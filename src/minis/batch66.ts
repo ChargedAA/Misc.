@@ -8,7 +8,7 @@ import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts'
 import { SND_CATCH, SND_FALSE, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, footer, handLabel, header, mean, median, ms, pct, scaled, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, footer, handLabel, header, mean, median, ms, pct, scaled, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
 
 const TAU = Math.PI * 2;
 const rnd = (lo: number, hi: number) => lo + Math.random() * (hi - lo);
@@ -501,7 +501,7 @@ class Reset implements Mini {
       ctx.fill();
     }
     ctx.fillStyle = COL_MID;
-    v.text(this.n === 0 && this.state === 0 ? 'click the ring in the middle, then the target that appears; back to the middle each time' : `${this.misses} misses`, a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.n === 0 && this.state === 0 ? 'click the ring in the middle, then the target that appears; back to the middle each time' : plural(this.misses, 'miss', 'misses'), a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }

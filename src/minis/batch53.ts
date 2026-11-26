@@ -8,7 +8,7 @@ import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
-import { arena, footer, header, median, ms, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { arena, footer, header, median, ms, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
 
 const pick = <T,>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)]!;
 
@@ -464,7 +464,7 @@ class Anchor implements Mini {
       ctx.fillText(k, x, a.cy + 20 * a.u);
     });
     ctx.fillStyle = now < this.bad && this.note ? COL_ACCENT : COL_MID;
-    v.text(this.note && now < this.bad + 1500 ? this.note : this.round === 0 ? 'keep the boxed key held the whole time; tap the letters with the fingers beside it' : `${this.slips} wrong keys · ${this.lifts} lifts`, a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.note && now < this.bad + 1500 ? this.note : this.round === 0 ? 'keep the boxed key held the whole time; tap the letters with the fingers beside it' : `${plural(this.slips, 'wrong key')} · ${plural(this.lifts, 'lift')}`, a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }
