@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-271 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+275 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -317,6 +317,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Script | A tiny program. Type what it prints. | keyboard |
 | Later | Clock arithmetic: what time will it be? | keyboard |
 | Till | A price and what was paid. Type the change. | keyboard |
+| Weekday | “Tuesday, plus 10 days.” What day is it? | mouse or tap |
 | Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
 | Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
 | Series | Five numbers. What comes next? | mouse or tap |
@@ -376,6 +377,8 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | In tune | One note, no reference: is it in tune? | mouse or tap |
 | Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
 | Louder | Two tones. Was the second louder or softer? | keys, 2+ keys |
+| Pan | One tone, placed a little left or right. Which side? Best with headphones. | keys, 2+ keys |
+| Held | Two tones. Which one lasted longer? | keys, 2+ keys |
 | Octave | A note: which octave is it in? | mouse or tap |
 | Note | A note in any octave: name it. | mouse or tap |
 | Interval | Two notes, up, down or together: how far apart? | mouse or tap |
@@ -400,6 +403,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Shrink | Tap each target the moment it appears. They shrink. | mouse or tap |
 | Pop | Discs appear and shrink away. Click them before they vanish. | mouse or tap |
 | Lead | Discs fly in arcs. Your shot takes a moment to land: aim ahead. | mouse or tap |
+| Gallery | Targets ride across on belts. Hit the white ones, spare the hollow ones. | mouse or tap |
 | Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
