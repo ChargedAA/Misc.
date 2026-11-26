@@ -161,6 +161,8 @@ export const CONTROLS: Record<string, Control[]> = {
   dice: [['1-4', 'pick the sum'], ['TAP', 'or click']],
   lever: [['TAP', 'click where the pivot goes']],
   pictures: [['TAP', 'click the cell that differs']],
+  source: [['1-4', 'pick the colour'], ['TAP', 'or click']],
+  sustain: [['ANY', 'hold for the beats asked'], ['TAP', 'or hold the button']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

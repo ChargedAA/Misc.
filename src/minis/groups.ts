@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   timing: {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
-      { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace', 'carry'] },
+      { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace', 'carry', 'sustain'] },
       { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'golf', 'doors', 'ripple', 'cyclone', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late', 'same'] },
@@ -75,7 +75,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route', 'backward'] },
       { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold', 'recent'] },
-      { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend', 'tray', 'newest'] },
+      { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend', 'tray', 'newest', 'source'] },
       { name: 'Lists', desc: 'Remember what came and in what order', ids: ['recall', 'queue', 'tag', 'shop'] },
       { name: 'Remember to act', desc: 'Keep an intention in mind while busy with something else', ids: ['remind', 'oven'] },
     ],
@@ -293,6 +293,8 @@ export const ROUNDS: Record<string, [number, string]> = {
   cyclone: [20, 'tries'],
   lever: [12, 'beams'],
   pictures: [15, 'pairs'],
+  source: [10, 'lists'],
+  sustain: [16, 'holds'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],

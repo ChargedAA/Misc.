@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-342 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+344 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -138,6 +138,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Shuffle | Tap the swung offbeat, then keep the swing when the hi-hat drops out. | keys or tap |
 | Pace | Hear a beat, then set its tempo. | keys, 2+ keys |
 | Carry | A few clicks set a beat, then silence. Press on the beat called for. | keys or tap |
+| Sustain | Over a steady beat, hold a key for exactly the number of beats asked. | keys or tap |
 | Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
 | Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
@@ -195,6 +196,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Legend | Learn which symbol goes with which number, then answer from memory, fast. | mouse or tap |
 | Tray | A tray of things, then the same tray with one gone. Which one is missing? | mouse or tap |
 | Newest | Things gather on the board one at a time. Which one is new? | mouse or tap |
+| Source | Words appear in different colours. Later: what colour was this one? | mouse or tap |
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Tag | A few things and their prices. Then: what did this one cost? | keyboard |
