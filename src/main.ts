@@ -223,6 +223,13 @@ function applyKeys(count: number, game = ''): void {
     keymap.set(b.reflex, SLOT_REFLEX);
     slotLabels[SLOT_REFLEX] = keyLabel(b.reflex);
   }
+  // Extra keys for the same actions, where any were added.
+  for (const [id, codes] of Object.entries(b.alt ?? {})) {
+    const [side, i] = id.split(':');
+    const slot = id === 'reflex' ? (b.reflex ? SLOT_REFLEX : -1) : side === 'left' ? Number(i) : 3 + Number(i);
+    if (slot < 0 || (id !== 'reflex' && Number(i) >= (side === 'left' ? b.left.length : b.right.length))) continue;
+    for (const c of codes) if (!keymap.has(c)) keymap.set(c, slot);
+  }
   touch.build(mode, slotLabels, view.w, view.h, view.dpr);
   refreshHints();
 }
@@ -1544,6 +1551,21 @@ function exportHistory(): void {
 
 function assignKey(code: string): void {
   const b = settings.bindings[bindKeys]!;
+  if (listening.startsWith('alt:')) {
+    // One more key for an action: never one that is already a main key; taken from any other action's extras.
+    const id = listening.slice(4);
+    const primaries = [...b.left, ...b.right, ...(b.reflex ? [b.reflex] : [])];
+    if (!primaries.includes(code)) {
+      const alt = { ...(b.alt ?? {}) };
+      for (const k of Object.keys(alt)) alt[k] = alt[k]!.filter((c) => c !== code);
+      alt[id] = [...(alt[id] ?? []), code].slice(-3);
+      b.alt = alt;
+    }
+    listening = '';
+    saveSettings(settings);
+    showKeys();
+    return;
+  }
   const get = (id: string): string | null => {
     if (id === 'reflex') return b.reflex;
     const [side, i] = id.split(':');
@@ -1726,7 +1748,7 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     case 'keys':
-      bindKeys = settings.keys[lastGame] ?? 2;
+      bindKeys = settings.keyCount ?? 2;
       showKeys();
       break;
     case 'bindmode':
@@ -1979,6 +2001,15 @@ function onAction(action: string, arg: string): void {
       listening = listening === arg ? '' : arg;
       showKeys();
       break;
+    case 'unbindalt': {
+      const [side, i, code] = arg.split(':');
+      const id = side === 'reflex' ? 'reflex' : `${side}:${i}`;
+      const b = settings.bindings[bindKeys]!;
+      if (b.alt?.[id]) b.alt[id] = b.alt[id]!.filter((c) => c !== (side === 'reflex' ? i : code));
+      saveSettings(settings);
+      showKeys();
+      break;
+    }
     case 'resetkeys':
       settings.bindings[bindKeys] = defaultBindings(bindKeys);
       listening = '';

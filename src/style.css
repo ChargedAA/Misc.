@@ -2366,3 +2366,41 @@ body.showcase .screen.ready {
   margin-right: 8px;
   color: var(--mid);
 }
+
+.linkbtn {
+  padding: 8px 12px;
+  border: 1px solid var(--faint);
+  border-radius: 6px;
+  color: var(--mid);
+  font-size: 13px;
+}
+
+.linkbtn:hover,
+.linkbtn:focus-visible {
+  border-color: var(--line);
+  color: var(--line);
+}
+
+/* Keys screen: a main key, extra keys, and + for another. */
+.slotset {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 14px 6px 0;
+}
+
+.slot.alt {
+  border-style: dashed;
+  color: var(--mid);
+}
+
+.slot.alt span {
+  margin-left: 6px;
+  color: var(--dim);
+}
+
+.slot.add {
+  min-width: 34px;
+  color: var(--mid);
+  border-style: dashed;
+}

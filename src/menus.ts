@@ -272,6 +272,7 @@ function playSettings(c: MenuCtx): string {
     ${sel('gkeys', 'Keys', 'Keys per game, where a game lets you choose. More keys is harder.', MODES.map((m) => [String(m.id), `${m.id} key${m.id === 1 ? '' : 's'}`, m.id === n]))}
     ${sel('glayout', 'Layout', 'Which pair of keys two-key games use', [['', 'Usual keys', set === ''], ...Object.entries(KEYSETS).map(([k, v]) => [k, v.label, k === set] as [string, string, boolean])], n !== 2)}
     ${sel('lives', 'Lives', 'For games played until you run out of lives', [['3', '3 lives', lives === 3], ['5', '5 lives', lives === 5], ['10', '10 lives', lives === 10], ['custom', 'Custom…', !preset]])}${preset ? '' : `<input class="num" type="number" min="1" max="99" value="${lives}" data-act="lives" aria-label="Number of lives">`}
+    <button class="linkbtn" data-act="keys">Rebind keys</button>
   </div>`;
 }
 

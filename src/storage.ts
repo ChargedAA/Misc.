@@ -6,6 +6,17 @@ export interface Bindings {
   left: string[];
   right: string[];
   reflex: string | null;
+  /** More keys for the same action, by slot ('left:0', 'right:1', 'reflex'). */
+  alt?: Record<string, string[]>;
+}
+
+function altOf(v: unknown): Record<string, string[]> | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const out: Record<string, string[]> = {};
+  for (const [k, codes] of Object.entries(v)) {
+    if (/^(left|right):\d$|^reflex$/.test(k) && Array.isArray(codes)) out[k] = codes.filter((c): c is string => typeof c === 'string' && c.length > 0).slice(0, 3);
+  }
+  return out;
 }
 
 /** Defaults: KeyboardEvent.code values, so they follow physical key position. */
@@ -192,7 +203,7 @@ export function loadSettings(): Settings {
   const bindings: Record<number, Bindings> = {};
   for (const m of MODES) {
     const b = saved?.bindings?.[m.id];
-    bindings[m.id] = validBindings(b, m) ? { left: [...b.left], right: [...b.right], reflex: m.reflex ? b.reflex : null } : defaultBindings(m.id);
+    bindings[m.id] = validBindings(b, m) ? { left: [...b.left], right: [...b.right], reflex: m.reflex ? b.reflex : null, alt: altOf(b.alt) } : defaultBindings(m.id);
   }
   const count = (v: unknown, fallback: number): number => {
     const n = Number(v);

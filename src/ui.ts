@@ -778,8 +778,11 @@ export function overview(history: RunRecord[]): string {
 export function keysHtml(s: Settings, keys: number, listening: string): string {
   const m = getMode(keys);
   const b = s.bindings[keys]!;
+  // Each action: its main key, any extra keys (click to remove), and + to add another.
   const slot = (id: string, code: string) =>
-    `<button class="slot${listening === id ? ' listen' : ''}" data-act="bind" data-arg="${id}">${listening === id ? 'press a key' : esc(keyLabel(code))}</button>`;
+    `<span class="slotset"><button class="slot${listening === id ? ' listen' : ''}" data-act="bind" data-arg="${id}">${listening === id ? 'press a key' : esc(keyLabel(code))}</button>${(b.alt?.[id] ?? [])
+      .map((c) => `<button class="slot alt" data-act="unbindalt" data-arg="${id}:${c}" title="Remove this extra key">${esc(keyLabel(c))}<span aria-hidden="true">\u00d7</span></button>`)
+      .join('')}<button class="slot add${listening === `alt:${id}` ? ' listen' : ''}" data-act="bind" data-arg="alt:${id}" title="Add another key for this">${listening === `alt:${id}` ? 'press a key' : '+'}</button></span>`;
   let rows = `<span class="l">${m.right === 0 ? 'Key' : 'Left'}</span><div>${b.left.map((c, i) => slot(`left:${i}`, c)).join('')}</div>`;
   if (m.right > 0) rows += `<span class="l">Right</span><div>${b.right.map((c, i) => slot(`right:${i}`, c)).join('')}</div>`;
   if (m.reflex && b.reflex) rows += `<span class="l">Reflex</span><div>${slot('reflex', b.reflex)}</div>`;
@@ -787,7 +790,7 @@ export function keysHtml(s: Settings, keys: number, listening: string): string {
   <h1>KEYS</h1>
   ${keySeg(keys, 'bindmode')}
   <div class="slots">${rows}</div>
-  <p class="muted">Click a key, then press the new one. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, used by every drill. Menus always use Z X C V B N M and their neighbours.</p>
+  <p class="muted">Click a key, then press the new one; + adds another key for the same action, and clicking an extra key removes it. Esc, Enter, Tab and \` are reserved.<br>Each key count keeps its own keys, used by every game.</p>
   ${foot([
     ['Back', 'menu', 'esc', 'Escape Backspace'],
     ['Reset these keys', 'resetkeys', ''],
