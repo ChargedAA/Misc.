@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
       { name: 'Rhythm games', desc: 'Read a rhythm, or hit notes as they fall, in time', ids: ['sight', 'notes'] },
@@ -84,7 +84,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   attention: {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
-      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds'] },
+      { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd'] },
@@ -120,8 +120,8 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
       { name: 'Test and deduce', desc: 'Gather clues, then reason to the answer. No clock', ids: ['probe', 'crack'] },
       { name: 'Plan', desc: 'Weigh deadlines and values to find the best order', ids: ['plan', 'hanoi', 'maze'] },
-      { name: 'Puzzles', desc: 'Small puzzles with one right state to reach', ids: ['slide', 'toggle', 'latin', 'target'] },
-      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view'] },
+      { name: 'Puzzles', desc: 'Small puzzles with one right state to reach', ids: ['slide', 'toggle', 'latin', 'target', 'pipes'] },
+      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view', 'gears'] },
     ],
     routine: ['sum', 'series', 'relate'],
     benchmark: 'matrix',
@@ -232,6 +232,10 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  spin: [20, 'shots'],
+  turned: [40, 'words'],
+  gears: [20, 'trains'],
+  pipes: [120, 's'],
   safe: [120, 's'],
   rapid: [10, 'passages'],
   relay: [90, 's'],
@@ -416,7 +420,7 @@ export const ROUNDS: Record<string, [number, string]> = {
  * Games that can be played until three mistakes: they have rounds, and they say when you get one
  * wrong (the mistake sound), which is what the framework counts. Length value -1.
  */
-export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'back', 'switch', 'choice', 'shape', 'aim', 'rotate', 'count', 'glance', 'spot', 'stream', 'side', 'where', 'flicker', 'meet', 'longer', 'more', 'middle', 'tilt', 'faster', 'shade', 'series', 'relate', 'matrix', 'balance', 'running', 'exact', 'ears', 'guess', 'shells', 'again', 'link', 'except', 'sync', 'lights', 'first', 'merge', 'pour', 'probe', 'plan', 'crack', 'pitch', 'bank', 'opposite', 'line', 'hold', 'chain', 'flow', 'away', 'late', 'remind', 'parry', 'goalie', 'hunt', 'chords', 'dial', 'fingers', 'flip', 'sweep', 'ghost', 'taps', 'arrows', 'reverse', 'combo', 'schulte', 'trail', 'maze', 'hanoi', 'slide', 'toggle', 'latin', 'target', 'tally', 'closer', 'topple', 'recall', 'queue', 'beeps', 'pattern', 'ruler', 'bat', 'stamp', 'morse', 'crane', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'ink', 'swap', 'louder', 'faint', 'vernier', 'ballpark', 'jars', 'twist', 'script', 'camo', 'triad', 'fold', 'symmetry']);
+export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'back', 'switch', 'choice', 'shape', 'aim', 'rotate', 'count', 'glance', 'spot', 'stream', 'side', 'where', 'flicker', 'meet', 'longer', 'more', 'middle', 'tilt', 'faster', 'shade', 'series', 'relate', 'matrix', 'balance', 'running', 'exact', 'ears', 'guess', 'shells', 'again', 'link', 'except', 'sync', 'lights', 'first', 'merge', 'pour', 'probe', 'plan', 'crack', 'pitch', 'bank', 'opposite', 'line', 'hold', 'chain', 'flow', 'away', 'late', 'remind', 'parry', 'goalie', 'hunt', 'chords', 'dial', 'fingers', 'flip', 'sweep', 'ghost', 'taps', 'arrows', 'reverse', 'combo', 'schulte', 'trail', 'maze', 'hanoi', 'slide', 'toggle', 'latin', 'target', 'tally', 'closer', 'topple', 'recall', 'queue', 'beeps', 'pattern', 'ruler', 'bat', 'stamp', 'morse', 'crane', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'ink', 'swap', 'louder', 'faint', 'vernier', 'ballpark', 'jars', 'twist', 'script', 'camo', 'triad', 'fold', 'symmetry', 'turned', 'gears']);
 
 /** The length value for "until three mistakes". */
 export const LIVES_LEN = -1;
