@@ -187,7 +187,7 @@ class Slash implements Mini {
       ctx.lineCap = 'butt';
     }
     ctx.fillStyle = COL_MID;
-    v.text(this.started ? `${this.dropped} dropped · ${this.bombs} bombs cut` : 'hold the button and drag across the white balls to cut them; never the bombs. click to start', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
+    v.text(this.started ? `${this.dropped} dropped · ${this.bombs} bomb${this.bombs === 1 ? '' : 's'} cut` : 'hold the button and drag across the white balls to cut them; never the bombs. click to start', a.cx, a.bottom - 4 * a.u, v.fontTiny, 'center');
     footer(v, touch, 0);
     return false;
   }
