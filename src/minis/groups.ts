@@ -99,7 +99,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   judgement: {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
-      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area', 'fit', 'dense', 'squeeze'] },
+      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area', 'fit', 'dense', 'squeeze', 'arrange'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align', 'illusion'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon', 'velo', 'race', 'lever', 'landing'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
@@ -127,7 +127,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Test and deduce', desc: 'Gather clues, then reason to the answer. No clock', ids: ['probe', 'crack'] },
       { name: 'Plan', desc: 'Weigh deadlines and values to find the best order', ids: ['plan', 'hanoi', 'maze'] },
       { name: 'Puzzles', desc: 'Small puzzles with one right state to reach', ids: ['slide', 'toggle', 'latin', 'target', 'pipes'] },
-      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view', 'gears', 'dice'] },
+      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view', 'gears', 'dice', 'glass'] },
     ],
     routine: ['sum', 'series', 'relate'],
     benchmark: 'matrix',
@@ -301,6 +301,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   retain: [20, 'trials'],
   cadence: [40, 'targets'],
   bus: [10, 'trips'],
+  arrange: [16, 'sets'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],

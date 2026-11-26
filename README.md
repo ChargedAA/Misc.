@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-357 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+359 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -315,6 +315,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Fit | A short bar and a tall one. How many of the short fit in the tall? | keyboard |
 | Dense | Two boxes of dots, different sizes. Which is more crowded? | keys, 2+ keys |
 | Squeeze | A block and a gap in a wall. Would it fit through? | keys, 2+ keys |
+| Arrange | Four bars of nearly the same length. Click them from shortest to longest. | mouse or tap |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -408,6 +409,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | View | Blocks seen from above, a camera on one side. Which picture does it take? | mouse or tap |
 | Gears | A train of gears. Which way does the last one turn? | keys, 2+ keys |
 | Dice | Opposite faces of a die add to seven. What do the faces underneath add to? | mouse or tap |
+| Glass | A clock seen in a mirror. What time is it really? | mouse or tap |
 
 ### Dexterity
 
