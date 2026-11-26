@@ -4,7 +4,7 @@
 //   Same  - two short rhythms, one after the other: the same, or different?
 //   Ferry - steer a ferry across a river whose current changes lane by lane, into the dock.
 
-import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
+import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
 import { SND_BEAT, SND_CATCH, SND_FALL, SND_FALSE, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
