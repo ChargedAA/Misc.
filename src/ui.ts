@@ -239,22 +239,25 @@ export function stepsHtml(how: string, hands?: { left: string; right: string }):
 }
 
 /** The pause card for a drill: the clock and the sound stop until you choose. */
-export function miniPauseHtml(name: string, inSet: boolean, practice: boolean): string {
-  return `<section class="screen ready">
-  <p class="rpos">paused${practice ? `${DOT}practice` : ''}</p>
-  <h1>${name.toUpperCase()}</h1>
-  <p class="msub">The clock and the sound are stopped until you choose.</p>
-  ${foot([
-    ['Resume', 'miniresume', 'space', 'Space Enter Escape'],
-    ['Restart', 'minirestart', 'r', 'KeyR'],
-    ['Finish and score it', 'minifinish', 'f', 'KeyF'],
-    ...(inSet
-      ? ([
-          ['Skip to the next', 'miniquit', 'n', 'KeyN'],
-          ['Stop the set', 'endrun', 'q', 'KeyQ Backspace'],
-        ] as [string, string, string, string][])
-      : ([['Quit, no score', 'miniquit', 'q', 'KeyQ Backspace']] as [string, string, string, string][])),
-  ])}
+export function miniPauseHtml(name: string, set: '' | 'daily' | 'set', elapsed: string): string {
+  const out: [string, string, string, string][] =
+    set === 'daily'
+      ? [['Leave, resume later', 'dailyleave', 'esc', 'Escape KeyQ Backspace'], ['Skip this one', 'miniquit', 'n', 'KeyN']]
+      : set === 'set'
+      ? [['Stop the set', 'endrun', 'esc', 'Escape KeyQ Backspace'], ['Skip this one', 'miniquit', 'n', 'KeyN']]
+      : [['Quit, no score', 'miniquit', 'esc', 'Escape KeyQ Backspace']];
+  return `<section class="screen pausecard">
+  <div class="pc">
+    <p class="rpos">paused${elapsed ? `${DOT}${elapsed} in` : ''}</p>
+    <h1>${name.toUpperCase()}</h1>
+    <button class="big main" data-act="miniresume" data-key="Space Enter"><span class="kb wide">SPACE</span>Resume</button>
+    <div class="pc-row">
+      <button data-act="minirestart" data-key="KeyR"><span class="kb">R</span>Restart</button>
+      <button data-act="minifinish" data-key="KeyF"><span class="kb">F</span>Finish and score</button>
+      ${out.map(([l, act, key, codes]) => `<button data-act="${act}" data-key="${codes}"><span class="kb${key.length > 2 ? ' wide' : ''}">${key.toUpperCase()}</span>${l}</button>`).join('')}
+    </div>
+    <p class="muted">Esc again leaves; the clock and sound wait while you choose.</p>
+  </div>
 </section>`;
 }
 
@@ -307,7 +310,8 @@ function cpsBlock(c: CpsStats, labels: string[], showJitter: boolean): string {
 const AGAIN: [string, string, string, string][] = [
   ['Again', 'again', 'space', 'Space Enter KeyR'],
   ['Stats', 'gamestats', 's', 'KeyS'],
-  ['Back', 'menu', 'esc', 'Escape Backspace'],
+  ['Game page', 'menu', 'g', 'KeyG'],
+  ['Back to the list', 'resultsback', 'esc', 'Escape Backspace'],
 ];
 
 export interface RunSummary {
@@ -411,8 +415,6 @@ export interface DailyStep {
   nextName: string | null;
   /** 'Daily set', or the name of a skill set. */
   label: string;
-  /** A practice run: shown, not saved. */
-  practice?: boolean;
 }
 
 export interface Compare {
@@ -486,18 +488,12 @@ export function miniResultsHtml(
   const p = r.primary;
   const e = entry(id);
   const skill = SKILLS.find((k) => k.id === e?.skill)?.name ?? '';
-  const actions: [string, string, string, string][] = daily?.practice
-    ? [
-        ['Play it for real', 'forreal', 'space', 'Space Enter'],
-        ['Practise again', 'practiceagain', 'r', 'KeyR'],
-        ['Back', 'menu', 'esc', 'Escape Backspace'],
-      ]
-    : daily
+  const actions: [string, string, string, string][] = daily
     ? daily.nextName
       ? [
           [`Next: ${daily.nextName}`, 'dailynext', 'space', 'Space Enter KeyN'],
           ['Stats', 'gamestats', 's', 'KeyS'],
-          [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
+          daily.label === 'Daily set' ? ['Leave, resume later', 'dailyleave', 'esc', 'Escape KeyQ Backspace'] : [daily.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
         ]
       : [
           [daily.label === 'Daily set' ? 'See the day' : 'See the set', 'dailynext', 'space', 'Space Enter KeyN'],
@@ -506,19 +502,19 @@ export function miniResultsHtml(
     : AGAIN;
   // Lower-is-better numbers are never really zero: zero means it was not measured.
   const measured = Number.isFinite(p.value) && (p.zeroOk || !(p.lower && p.value <= 0));
-  const practice = !!daily?.practice;
-  const value = (r.saved || practice) && measured ? fmtPrimary(p.value, p) : 'no score';
+  const value = r.saved && measured ? fmtPrimary(p.value, p) : 'no score';
   // Split the unit off so the number can be large and the unit small.
   const m = /^(.*?)(\s?[^\d\s\u2013.,-][^\d]*)?$/.exec(value);
   const num = m?.[1] && m[2] ? m[1] : value;
   const unit = m?.[1] && m[2] ? m[2].trim() : '';
   return `<section class="screen result">
-  <p class="rpos">${skill}${daily?.practice ? `${DOT}practice` : daily ? `${DOT}${daily.label} ${daily.index}${daily.total ? ` of ${daily.total}` : ''}` : ''}</p>
+  <p class="rpos">${skill}${daily ? `${DOT}${daily.label} ${daily.index}${daily.total ? ` of ${daily.total}` : ''}` : ''}</p>
   <h1>${(e?.name ?? id).toUpperCase()}</h1>
   <div class="hero-num"><span class="n">${num}</span>${unit ? `<span class="u">${unit}</span>` : ''}</div>
   <p class="hero-label">${p.label}<span>${p.lower ? 'lower is better' : 'higher is better'}</span></p>
-  ${practice ? '<p class="cmp">Practice: not saved, and no effect on bests or the streak.</p>' : flags.length ? `<p class="warn">Not saved: this run did not look like a person playing. ${flags.join('; ')}.</p>` : r.saved ? compareLine(p, cmp) : '<p class="warn">Nothing measured yet, so nothing was scored or saved. A run counts once there are a few real answers (three inputs over five seconds or more).</p>'}
-  ${r.saved && !practice ? '<p class="muted" id="lbnote"></p>' : ''}
+  ${r.saved && measured ? `<p class="scoreline"><span class="l">score</span><b>${Math.round(r.score).toLocaleString('en-US')}</b></p>` : ''}
+  ${flags.length ? `<p class="warn"><span class="tip" tabindex="0" title="${esc(`This run did not look like a person playing: ${flags.join('; ')}.`)}">Not saved</span></p>` : r.saved ? compareLine(p, cmp) : '<p class="warn"><span class="tip" tabindex="0" title="A run counts once there are a few real answers: three inputs over five seconds or more.">Not scored: too little played</span></p>'}
+  ${r.saved ? '<p class="muted" id="lbnote"></p>' : ''}
   ${r.saved && measured && cmp?.recent && cmp.recent.length >= 2 ? recentSvg(p, cmp.recent) : ''}
   ${r.saved && r.series ? seriesSvg(r.series) : ''}
   <table>${r.lines
@@ -623,7 +619,7 @@ export function readyHtml(r: ReadyInfo): string {
   ${foot([
     ['Start', 'readygo', 'space', 'Space Enter'],
     ['Skip to the next', 'skip', 'n', 'KeyN'],
-    [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
+    r.label === 'Daily set' ? ['Leave, resume later', 'dailyleave', 'esc', 'Escape KeyQ Backspace'] : [r.total ? 'Stop the set' : 'End the run', 'endrun', 'esc', 'Escape KeyQ Backspace'],
   ])}
 </section>`;
 }

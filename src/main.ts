@@ -153,8 +153,6 @@ let queueLabel = 'Daily set';
 let miniDef: MiniDef | null = null;
 /** Presses, taps and typed keys in the current mini-game. */
 let miniInputs = 0;
-/** A practice run: played and shown, never saved. */
-let practicing = false;
 /** Key count of the session in progress. */
 let activeKeys = settings.keys.climb ?? 2;
 /** Key count shown on the rebinding screen. */
@@ -313,6 +311,11 @@ function frame(now: number): void {
     if (done) finishBurst();
   } else if (screen === 'mini' && mini) {
     const done = mini.frame(now - clockShift(), view, touch);
+    if (miniDef && !showcase) {
+      // Which game this is, small in the top-left corner.
+      view.ctx.fillStyle = COL_DIM;
+      view.text(miniDef.name.toUpperCase(), 18 * view.dpr, 26 * view.dpr, view.fontTiny, 'left');
+    }
     if (lengthValue === LIVES_LEN) {
       // Lives left, at the top; the third mistake ends the run once its feedback has shown.
       const d = view.dpr;
@@ -321,7 +324,7 @@ function frame(now: number): void {
         view.ctx.fillRect(view.ox + (i - 1) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
       }
       view.ctx.fillStyle = COL_MID;
-      view.text(livesLeft === 1 ? 'last life' : 'lives', view.ox + 30 * d, 96 * d, view.fontTiny, 'left');
+      view.text('lives', view.ox + 30 * d, 96 * d, view.fontTiny, 'left');
       if (livesEndAt && performance.now() >= livesEndAt) {
         endMini();
         return;
@@ -454,7 +457,7 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id) };
+  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id), dailyResume: dailyProgress()?.idx ?? null };
 }
 
 /** Name Google suggested at sign-in, and a message for the account block. */
@@ -697,7 +700,6 @@ function showAttract(): void {
   mini = null;
   dailyQueue = null;
   endlessScope = null;
-  practicing = false;
   screen = 'attract';
   inputLockUntil = performance.now() + 400;
   ui.show(attractHtml());
@@ -740,12 +742,45 @@ function saveShowcase(): void {
   ui.show(boardHtml(e));
 }
 
-function startDaily(): void {
+const DAILY_KEY = 'tension.daily.progress';
+
+/** Today's daily set, if it was left part-way: the next drill and the rows so far. */
+function dailyProgress(): { idx: number; rows: DailyRow[] } | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(DAILY_KEY) ?? 'null') as { day: string; ids: string[]; idx: number; rows: DailyRow[] } | null;
+    const set = dailySet();
+    if (!p || p.day !== today() || p.ids.join() !== set.join() || !(p.idx > 0 && p.idx < set.length)) return null;
+    return { idx: p.idx, rows: p.rows };
+  } catch {
+    return null;
+  }
+}
+
+function saveDailyProgress(): void {
+  if (queueLabel !== 'Daily set' || !dailyQueue) return;
+  try {
+    localStorage.setItem(DAILY_KEY, JSON.stringify({ day: today(), ids: dailyQueue, idx: dailyIdx, rows: dailyRows }));
+  } catch {
+    // Without storage the set just starts over next time.
+  }
+}
+
+function clearDailyProgress(): void {
+  try {
+    localStorage.removeItem(DAILY_KEY);
+  } catch {
+    // Nothing to clear.
+  }
+}
+
+function startDaily(fresh = false): void {
   endlessScope = null;
   dailyQueue = dailySet();
   queueLabel = 'Daily set';
-  dailyIdx = 0;
-  dailyRows = [];
+  const p = fresh ? null : dailyProgress();
+  dailyIdx = p?.idx ?? 0;
+  dailyRows = p?.rows ?? [];
+  if (fresh) clearDailyProgress();
   showReady();
 }
 
@@ -753,9 +788,12 @@ function nextDaily(): void {
   if (!dailyQueue) return;
   dailyIdx++;
   if (dailyIdx < dailyQueue.length) {
+    // Kept as it goes, so the set can be picked up again after leaving or closing the tab.
+    saveDailyProgress();
     showReady();
     return;
   }
+  if (queueLabel === 'Daily set') clearDailyProgress();
   if (showcase && queueLabel === 'Showcase') {
     showcaseDone();
     return;
@@ -1050,7 +1088,8 @@ function pauseMini(): void {
   sfx.suspend();
   screen = 'miniPause';
   inputLockUntil = performance.now() + 200;
-  ui.show(miniPauseHtml(miniDef.name, !!dailyQueue, practicing));
+  const sec = Math.max(0, Math.round((pausedAt - clockShift() - miniStartAt) / 1000));
+  ui.show(miniPauseHtml(miniDef.name, dailyQueue ? (queueLabel === 'Daily set' ? 'daily' : 'set') : '', `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`));
 }
 
 function resumeMini(): void {
@@ -1216,16 +1255,6 @@ function finishMini(): void {
     ui.show(stepHtml(dailyIdx + 1, d ?? SHOWCASE[0]!, r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : 'nothing measured', pts, sofar, SHOWCASE.find((x) => x.id === nextId) ?? null));
     return;
   }
-  if (practicing) {
-    // Practice: show how it went, keep nothing.
-    stopLoop();
-    screen = 'miniResults';
-    inputLockUntil = performance.now() + 750;
-    const rts0 = r.rts ?? [];
-    const st0 = rtStats(rts0, rts0.length);
-    ui.show(miniResultsHtml(miniDef.id, r, rts0.length >= 3 ? histogram(rts0, rts0.length, 20) : null, st0.median, false, { index: 0, total: 0, nextName: null, label: '', practice: true }, null));
-    return;
-  }
   r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
   const pointerOnly = !picksKeys(miniDef.id, miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
@@ -1285,7 +1314,7 @@ function finishMini(): void {
   ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp, integrityFlags));
   if (r.saved && finishedEarly) {
     const el = uiRoot.querySelector('#lbnote');
-    if (el) el.textContent = 'Finished early: kept in your stats. Leaderboards take complete runs only.';
+    if (el) el.innerHTML = '<span class="tip" tabindex="0" title="Finished early: kept in your stats. Leaderboards take complete runs only.">Not submitted</span>';
   } else if (r.saved && !integrityFlags.length && Number.isFinite(r.primary.value)) void submitScore(r, miniDef.id, keys, performance.now() - clockShift() - miniStartAt);
 }
 
@@ -1303,7 +1332,6 @@ function startSoundCheck(): void {
   applyKeys(2);
   pointerSlot.fill(0);
   ui.hide();
-  practicing = false;
   miniDef = SOUND_CHECK;
   miniInputs = 0;
   setClockShift(0);
@@ -1439,13 +1467,6 @@ function onAction(action: string, arg: string): void {
     }
     case 'play': {
       const [id, n, lv] = arg.split(':');
-      practicing = false;
-      playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
-      break;
-    }
-    case 'practice': {
-      const [id, n, lv] = arg.split(':');
-      practicing = true;
       playWith(id as GameId, Number(n), lv === undefined ? undefined : Number(lv));
       break;
     }
@@ -1476,15 +1497,6 @@ function onAction(action: string, arg: string): void {
       break;
     }
     case 'again':
-      practicing = false;
-      startGame(lastGame);
-      break;
-    case 'practiceagain':
-      practicing = true;
-      startGame(lastGame);
-      break;
-    case 'forreal':
-      practicing = false;
       startGame(lastGame);
       break;
     case 'daily':
@@ -1525,7 +1537,6 @@ function onAction(action: string, arg: string): void {
       endRun();
       break;
     case 'readygo':
-      practicing = false;
       if (dailyQueue) startGame(dailyQueue[dailyIdx]! as GameId);
       break;
     case 'skip':
@@ -1683,6 +1694,28 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'dailyleave':
+      // Leave the daily mid-drill: that drill is dropped, the rest waits for later today.
+      sfx.unlock();
+      mini = null;
+      // From a drill's result, that drill is done: resume at the next one.
+      if (screen === 'miniResults' && dailyQueue && dailyIdx + 1 < dailyQueue.length) dailyIdx++;
+      saveDailyProgress();
+      dailyQueue = null;
+      showMenu(-1);
+      break;
+    case 'dailyfresh':
+      startDaily(true);
+      break;
+    case 'resultsback': {
+      // From a result: back to the list the game was picked from, not its own page.
+      dailyQueue = null;
+      endlessScope = null;
+      const page = new Set(['game', 'gamekeys', 'custom', 'gamestats']);
+      while (nav.length > 1 && page.has(nav[nav.length - 1]!.kind)) nav.pop();
+      showMenu(-1);
+      break;
+    }
     case 'miniresume':
       resumeMini();
       break;
@@ -1701,7 +1734,6 @@ function onAction(action: string, arg: string): void {
       mini = null;
       if (dailyQueue) skipDrill();
       else {
-        practicing = false;
         showMenu(-1);
       }
       break;

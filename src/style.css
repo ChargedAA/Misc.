@@ -1893,3 +1893,100 @@ body.showcase .screen.ready {
   text-transform: uppercase;
   font-size: 0.82em;
 }
+
+/* Pause: a centred card, one big way back in and the ways out beneath it. */
+.pausecard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  max-width: none;
+}
+
+.pausecard .pc {
+  width: min(460px, 100%);
+  padding: 28px 28px 22px;
+  border: 1px solid var(--dim);
+  border-radius: 10px;
+  background: #111114;
+  text-align: center;
+}
+
+.pausecard h1 {
+  margin: 0 0 22px;
+}
+
+.pausecard .big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  font-size: 16px;
+}
+
+.pausecard .big:hover,
+.pausecard .big:focus-visible {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.pc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.pc-row button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--dim);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.pc-row button:hover,
+.pc-row button:focus-visible {
+  border-color: var(--line);
+}
+
+.pausecard .muted {
+  margin: 16px 0 0;
+  font-size: 12px;
+}
+
+/* Results: the points for the run, under the headline number. */
+.scoreline {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 6px 12px;
+  border: 1px solid var(--dim);
+  border-radius: 999px;
+}
+
+.scoreline .l {
+  color: var(--mid);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scoreline b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A short note with its explanation on hover (or focus). */
+.tip {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}

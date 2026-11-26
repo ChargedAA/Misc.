@@ -210,6 +210,8 @@ export interface MenuCtx {
   online: { mode: 'google' | 'dev' | 'local' | 'none'; session?: string; name: string | null; suggested?: string; note?: string };
   /** A drill not yet opened in this browser, since it was added. */
   isNew?: (id: string) => boolean;
+  /** A daily set left part-way today: the next drill to play (0-based). */
+  dailyResume?: number | null;
 }
 
 const NEW_TAG = '<span class="nw">new</span>';
@@ -260,8 +262,8 @@ export function startMenu(c: MenuCtx): Menu {
     items: [
       {
         label: 'Daily',
-        desc: `${c.daily.length} drills, one per skill, about ${c.daily.length} minutes. The same set for everyone today.`,
-        meta: c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : 'today',
+        desc: c.dailyResume != null ? `Left part-way: resume at ${c.dailyResume + 1} of ${c.daily.length}.` : `${c.daily.length} drills, one per skill, about ${c.daily.length} minutes. The same set for everyone today.`,
+        meta: c.dailyResume != null ? 'resume' : c.dailyDone !== null ? `done${DOT}${fmtInt(c.dailyDone)}` : 'today',
         act: 'go',
         arg: 'daily',
         code: 'Space',
@@ -304,15 +306,25 @@ export function dailyMenu(c: MenuCtx): Menu {
     title: 'DAILY',
     sub: `The same set for everyone today${DOT}${done ? `${done} of ${c.daily.length} played today` : `about ${c.daily.length} minutes`}`,
     items: [
-      {
-        label: c.dailyDone !== null ? 'Play it again' : 'Play the set',
-        desc: `${c.daily.length} drills back to back, a ready card before each`,
-        meta: c.dailyDone !== null ? `today ${fmtInt(c.dailyDone)}` : '',
-        act: 'daily',
-        code: 'Space',
-        keyName: 'SPACE',
-        hero: true,
-      },
+      c.dailyResume != null
+        ? {
+            label: `Resume at ${c.dailyResume + 1} of ${c.daily.length}`,
+            desc: `Pick up where you left off: ${entry(c.daily[c.dailyResume]!)?.name ?? ''} is next`,
+            act: 'daily',
+            code: 'Space',
+            keyName: 'SPACE',
+            hero: true,
+          }
+        : {
+            label: c.dailyDone !== null ? 'Play it again' : 'Play the set',
+            desc: `${c.daily.length} drills back to back, a ready card before each`,
+            meta: c.dailyDone !== null ? `today ${fmtInt(c.dailyDone)}` : '',
+            act: 'daily',
+            code: 'Space',
+            keyName: 'SPACE',
+            hero: true,
+          },
+      ...(c.dailyResume != null ? [{ label: 'Start over', desc: 'Drop the part-played set and begin again', act: 'dailyfresh', code: 'KeyR', keyName: 'R' }] : []),
     ],
     enter: { label: 'Play', act: 'daily' },
     after: `<ol class="dlist">${c.daily.map(row).join('')}</ol>`,
@@ -582,7 +594,6 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
         keyName: 'SPACE',
         hero: true,
       },
-      { label: 'Practice', desc: 'Play it through to learn it. Nothing is saved', act: 'practice', arg: `${id}:${keys}${lv}`, code: 'KeyP', keyName: 'P' },
       { label: 'Stats', meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
       { label: 'Copy link', desc: 'A link straight to this game, to send to someone', meta: `#${id}`, act: 'share', arg: id, code: 'KeyK', keyName: 'K' },
     ],
