@@ -25,7 +25,7 @@ the left hand's keys and the Mind skills on the right hand's:
 `F` Find, `R` Random, `L` Boards, `S` Stats, `U` Account and `O` Settings sit in
 the header. **Find**
 (also `/` from any menu) searches every drill by name, skill or idea (pitch,
-balance, typing); arrows and `Enter` pick a result. The same keys mean the same thing on every screen. `Space` (or `Enter`) goes
+balance, typing); arrows and `Enter` pick a result. Drills you have not opened yet are marked NEW, each skill row counts them, and searching for “new” lists them all. The same keys mean the same thing on every screen. `Space` (or `Enter`) goes
 forward: start, resume, again, next, or a menu's main item. `Esc` backs out: back,
 pause, or stop the set. `N` skips to the next drill wherever there is one, `R`
 plays again or restarts, `F` finishes and scores a drill early, `Q` quits
