@@ -232,7 +232,7 @@ const newCount = (c: MenuCtx, ids: string[]) => (c.isNew ? ids.filter((id) => c.
 
 /** "best 222 ms": a game's best on its headline number, the one results lead with. Score for the built-in games. */
 function bestOf(c: MenuCtx, id: string): string {
-  const recs = c.history.filter((r) => r.kind === 'mini' && r.game === id && typeof r.value === 'number' && Number.isFinite(r.value));
+  const recs = c.history.filter((r) => r.kind === 'mini' && r.game === id && r.len !== 0 && typeof r.value === 'number' && Number.isFinite(r.value));
   if (!recs.length) return c.bests[id] ? `best ${fmtInt(c.bests[id]!)}` : '';
   const last = recs[recs.length - 1]!;
   const vals = recs.map((r) => r.value!);

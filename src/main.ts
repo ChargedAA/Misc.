@@ -262,7 +262,7 @@ function bestFor(game: GameId, keys: number): RunRecord | null {
   const anyKeys = e ? !picksKeys(game, e.input) : false;
   let top: RunRecord | null = null;
   for (const r of history) {
-    if (r.kind === 'mini' && r.game === game && (anyKeys || r.mode === keys) && (top === null || (r.score ?? 0) > (top.score ?? 0))) top = r;
+    if (r.kind === 'mini' && r.game === game && r.len !== 0 && (anyKeys || r.mode === keys) && (top === null || (r.score ?? 0) > (top.score ?? 0))) top = r;
   }
   return top;
 }
@@ -325,6 +325,7 @@ function frame(now: number): void {
     if (done) finishBurst();
   } else if (screen === 'mini' && mini) {
     const done = mini.frame(now - clockShift(), view, touch);
+    drawWrongKeyHint();
     if (miniDef && !showcase) {
       // Which game this is, small in the top-left corner.
       view.ctx.fillStyle = COL_DIM;
@@ -580,6 +581,40 @@ function buildMenu(n: NavEntry): Menu {
 }
 
 /** Draw the menu on top of the stack. `dir` picks the slide: 1 forward, -1 back, 0 none. */
+/** Keys pressed that the game does not use, lately: enough of them and a hint shows the right ones. */
+let wrongKeys: number[] = [];
+let wrongHintUntil = -1e9;
+function noteWrongKey(_code: string): void {
+  const now = performance.now();
+  wrongKeys = wrongKeys.filter((t) => now - t < 8000);
+  wrongKeys.push(now);
+  if (wrongKeys.length >= 6 && now > wrongHintUntil + 15000) {
+    wrongHintUntil = now + 4500;
+    wrongKeys = [];
+  }
+}
+
+/** The hint itself, over the top of the game. */
+function drawWrongKeyHint(): void {
+  if (performance.now() > wrongHintUntil || !liftLabels.length) return;
+  const d = view.dpr;
+  const text = `This game uses ${liftLabels.filter(Boolean).join(' ')}. Keys and layout can be changed on the home screen.`;
+  const ctx = view.ctx;
+  ctx.font = view.fontTiny;
+  const w = ctx.measureText(text).width + 32 * d;
+  const x = view.ox - w / 2;
+  const y = 112 * d;
+  ctx.fillStyle = '#1d1a12';
+  ctx.strokeStyle = '#ffd84d';
+  ctx.lineWidth = d;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, 32 * d, 6 * d);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#ffd84d';
+  view.text(text, view.ox, y + 21 * d, view.fontTiny, 'center');
+}
+
 /** Every button the cursor can land on, in the open page. */
 function cursorTargets(): HTMLElement[] {
   return [...uiRoot.querySelectorAll<HTMLElement>('button:not([disabled]):not([hidden]), select, input')].filter((el) => el.offsetParent !== null && el.getClientRects().length > 0);
@@ -1379,6 +1414,12 @@ function finishMini(): void {
     ui.show(stepHtml(dailyIdx + 1, d ?? SHOWCASE[0]!, r.saved ? `${r.primary.label} ${formatPrimary(r.primary)}` : 'nothing measured', pts, sofar, SHOWCASE.find((x) => x.id === nextId) ?? null));
     return;
   }
+  // Lives runs: fewer lives is harder, so the score is scaled (3 lives is the standard, x1).
+  if (lengthValue === LIVES_LEN && r.saved) {
+    const mult = Math.min(1.3, Math.max(0.4, Math.sqrt(3 / livesCount())));
+    r.score *= mult;
+    if (mult !== 1) r.lines.push({ label: `score for ${livesCount()} lives`, value: `\u00d7${mult.toFixed(2)}` });
+  }
   r.score = r.saved ? Math.max(0, Math.round(r.score)) : 0;
   const pointerOnly = !picksKeys(miniDef.id, miniDef.input);
   const keys = pointerOnly ? 0 : activeKeys;
@@ -1395,7 +1436,7 @@ function finishMini(): void {
   if (cmp.best !== null && !Number.isFinite(cmp.best)) cmp.best = null;
   // A personal best is judged on the headline number, the one the results lead with, not
   // on the score, so the two can never disagree. The first session is a baseline, not a best.
-  const isBest = r.saved && cmp.best !== null && Number.isFinite(r.primary.value) && (r.primary.lower ? (r.primary.zeroOk || r.primary.value > 0) && r.primary.value < cmp.best : r.primary.value > cmp.best);
+  const isBest = r.saved && lenNow !== 0 && cmp.best !== null && Number.isFinite(r.primary.value) && (r.primary.lower ? (r.primary.zeroOk || r.primary.value > 0) && r.primary.value < cmp.best : r.primary.value > cmp.best);
   if (isBest) sfx.play(SND_BURST_OK);
   const rtsNow = (r.rts ?? []).filter((t) => Number.isFinite(t) && t >= 0);
   const stNow = rtStats(rtsNow, rtsNow.length);
@@ -1436,7 +1477,10 @@ function finishMini(): void {
     step = { index: dailyIdx + 1, total: endlessScope ? 0 : dailyQueue.length, nextName: next ? (entry(next)?.name ?? next) : null, label: queueLabel };
   }
   ui.show(miniResultsHtml(miniDef.id, r, rts.length >= 3 ? histogram(rts, rts.length, 20) : null, st.median, isBest, step, cmp, integrityFlags));
-  if (r.saved && finishedEarly) {
+  if (r.saved && lengthValue === 0) {
+    const el = uiRoot.querySelector('#lbnote');
+    if (el) el.innerHTML = '<span class="tip" tabindex="0" title="Endless runs are kept in your stats but stay off the leaderboards and bests, so they never outscore a set length.">Endless: not ranked</span>';
+  } else if (r.saved && finishedEarly) {
     const el = uiRoot.querySelector('#lbnote');
     if (el) el.innerHTML = '<span class="tip" tabindex="0" title="Finished early: kept in your stats. Leaderboards take complete runs only.">Not submitted</span>';
   } else if (r.saved && !integrityFlags.length && Number.isFinite(r.primary.value)) void submitScore(r, miniDef.id, keys, performance.now() - clockShift() - miniStartAt);
@@ -2095,6 +2139,7 @@ function onKeyDown(e: KeyboardEvent): void {
       press(slot, stamp(e));
       return;
     }
+    if (screen === 'mini' && !e.repeat && miniDef && (miniDef.input === 'keys' || miniDef.input === 'both') && /^(Key[A-Z]|Digit\d|Arrow\w+|Space|Comma|Period|Slash|Semicolon)$/.test(code)) noteWrongKey(code);
     if (code === 'Escape') {
       e.preventDefault();
       if (!e.repeat) leave();
