@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-283 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+287 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -75,6 +75,8 @@ Respond to a signal fast, pick the right response, and hold back the wrong one.
 | Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
 | Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
 | Ruler | Catch a falling ruler. Where you catch it gives your reaction time. | keys or tap |
+| Edge | Keep your eyes on the middle. Press when a dot appears out at the edge. | keys or tap |
+| Dawn | A dark square starts, very slowly, to brighten. Press the moment you notice. | keys or tap |
 | Choice | Press whichever string lights. More strings, more thinking. | keys, 2+ keys |
 | Flank | Answer the middle arrow. Ignore the crowd. | keys |
 | Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | mouse or tap |
@@ -177,6 +179,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Link | Shapes and numbers, paired. Which number went with this shape? | mouse or tap |
 | Sounds | Tiles hide tones. Find the matching pairs by ear. | mouse or tap |
 | Legend | Learn which symbol goes with which number, then answer from memory, fast. | mouse or tap |
+| Tray | A tray of things, then the same tray with one gone. Which one is missing? | mouse or tap |
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
@@ -384,6 +387,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | In tune | One note, no reference: is it in tune? | mouse or tap |
 | Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
 | Louder | Two tones. Was the second louder or softer? | keys, 2+ keys |
+| Glide | A tone slides up or down in pitch. Which way? The slides get smaller. | keys, 2+ keys |
 | Pan | One tone, placed a little left or right. Which side? Best with headphones. | keys, 2+ keys |
 | Held | Two tones. Which one lasted longer? | keys, 2+ keys |
 | Octave | A note: which octave is it in? | mouse or tap |

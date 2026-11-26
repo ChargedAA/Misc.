@@ -23,7 +23,8 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reaction: {
     about: 'Respond to a signal fast, pick the right response, and hold back the wrong one.',
     groups: [
-      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert', 'ruler'] },
+      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert', 'ruler', 'edge'] },
+      { name: 'Notice a change', desc: 'Catch something that creeps up rather than flashes', ids: ['dawn'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'whack', 'reflex'] },
       { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'swap', 'opposite', 'dodge', 'parry', 'goalie', 'volley'] },
       { name: 'Steer clear', desc: 'Move something out of the way in time', ids: ['swerve', 'shield', 'catch', 'flipper'] },
@@ -74,7 +75,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route'] },
       { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold'] },
-      { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend'] },
+      { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend', 'tray'] },
       { name: 'Lists', desc: 'Remember what came and in what order', ids: ['recall', 'queue'] },
       { name: 'Remember to act', desc: 'Keep an intention in mind while busy with something else', ids: ['remind', 'oven'] },
     ],
@@ -145,7 +146,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   ear: {
     about: 'Hear pitch: which is higher, which is in tune, which note, interval or chord.',
     groups: [
-      { name: 'Higher or lower', desc: 'Fine differences in pitch and loudness', ids: ['pitch', 'intune', 'tune', 'louder'] },
+      { name: 'Higher or lower', desc: 'Fine differences in pitch and loudness', ids: ['pitch', 'intune', 'tune', 'louder', 'glide'] },
       { name: 'Where and how long', desc: 'Which side a sound came from; which lasted longer', ids: ['pan', 'held'] },
       { name: 'Name it', desc: 'Octaves, notes and the distance between them', ids: ['octave', 'note', 'interval'] },
       { name: 'Harmony and melody', desc: 'Chords, scales, the shape of a tune, and how many voices', ids: ['chord', 'scale', 'contour', 'voices', 'changed'] },
@@ -255,6 +256,10 @@ export const ROUNDS: Record<string, [number, string]> = {
   legend: [4, 'sets'],
   rooms: [12, 'houses'],
   shrink: [30, 'targets'],
+  dawn: [12, 'trials'],
+  edge: [24, 'dots'],
+  glide: [30, 'tones'],
+  tray: [12, 'trays'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
@@ -496,4 +501,4 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
 }
 
 /** Games that cannot be played without sound. */
-export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'glide', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
