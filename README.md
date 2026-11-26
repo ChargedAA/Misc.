@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-300 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+304 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -119,6 +119,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
 | Match | Two dot patterns: the same, or one dot different? As many as you can. | keys, 2+ keys |
 | Parity | Odd or even? Number after number, as fast as you can. | keys, 2+ keys |
+| Dots | A scatter of dots. How many? Answer at a glance, over and over. | mouse or tap |
 
 ### Timing
 
@@ -245,6 +246,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Juggle | Every key keeps its own ball in the air. | keys |
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
 | Pat | Tap a beat with one hand; keep the pointer on a circling marker with the other. | keys or tap |
+| Rally | Two paddles, one per hand: hold to raise, let go to sink. Keep the ball in. | keys, 2+ keys |
 | Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
 | Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
 | Ferry | Steer a ferry across a river whose current changes band by band, into the dock. | keys, 2+ keys |
@@ -381,6 +383,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Entry | Type numbers exactly, fast: amounts, codes and dates. | keyboard |
 | Abc | Type the alphabet, a to z, as fast as you can. | keyboard |
 | Caps | Type words exactly as shown, capitals and all. | keyboard |
+| Symbols | Type strings full of symbols: prices, emails, brackets, percentages. | keyboard |
 | Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
 | Sweep | Run along a keyboard row and back. | keyboard |
 | Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
@@ -434,6 +437,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Reflect | Trace a star while the pen moves as in a mirror. | mouse or tap |
 | Darts | The aim drifts like a real hand. Throw when it is over the bull. | mouse or tap |
 | Drag | Drag each piece into its slot and let go, quickly and squarely. | mouse or tap |
+| Still | Bring the pointer into a small circle and hold it there, steady. | mouse or tap |
 | Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
 | Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
 | Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |

@@ -39,7 +39,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal', 'ramp', 'shuttle'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
       { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain'] },
-      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity'] },
+      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity', 'dots'] },
     ],
     routine: ['sprint', 'steady', 'trill'],
     benchmark: 'sprint',
@@ -59,7 +59,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   coordination: {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
-      { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat'] },
+      { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat', 'rally'] },
       { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble', 'ferry'] },
       { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch', 'seesaw'] },
@@ -137,7 +137,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
       { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
-      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc', 'caps'] },
+      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc', 'caps', 'symbols'] },
       { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo', 'anchor'] },
     ],
     routine: ['hunt', 'chords', 'type'],
@@ -160,7 +160,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'The mouse (or a finger): get to a target fast, click it exactly, stay on it as it moves, and aim in 3D.',
     groups: [
       { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio'] },
-      { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts', 'drag'] },
+      { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts', 'drag', 'still'] },
       { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
     ],
@@ -269,6 +269,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   diff: [16, 'pairs'],
   recent: [20, 'questions'],
   drag: [20, 'pieces'],
+  still: [15, 'circles'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
