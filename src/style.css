@@ -2138,7 +2138,7 @@ body.showcase .screen.ready {
 .picks {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
+  gap: 10px 16px;
   margin: 18px 0 4px;
 }
 
@@ -2403,4 +2403,21 @@ body.showcase .screen.ready {
   min-width: 34px;
   color: var(--mid);
   border-style: dashed;
+}
+
+.home-picks {
+  gap: 10px 12px;
+}
+
+.home-picks .pick {
+  gap: 8px;
+}
+
+.home-picks .pick .lbl {
+  letter-spacing: 0.1em;
+}
+
+.home-picks .pick select {
+  padding-right: 28px;
+  background-position: right 10px center;
 }

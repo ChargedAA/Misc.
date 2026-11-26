@@ -215,8 +215,15 @@ export function scaled(base: number): number {
  * Until the first mistake every right answer steps harder at once (the usual fast start), so a
  * strong player reaches their level quickly instead of spending the session walking down.
  */
+/** The difficulty chosen on the home screen: -1 easier, 0 normal, 1 harder. Adaptive games start that far off. */
+let diffBias = 0;
+export function setDifficulty(d: number): void {
+  diffBias = Math.max(-1, Math.min(1, Math.round(d) || 0));
+}
+
 export class Stair {
   level: number;
+  private biased = false;
   readonly step: number;
   readonly min: number;
   readonly max: number;
@@ -232,6 +239,11 @@ export class Stair {
   }
   /** `harder` is the direction that makes the task harder (+1 or -1). */
   update(correct: boolean, harder = 1): void {
+    // The first answer tells which way is harder: shift the start there by the chosen difficulty.
+    if (!this.biased) {
+      this.biased = true;
+      if (diffBias) this.level = clamp(this.level + diffBias * 2 * this.step * harder, this.min, this.max);
+    }
     if (correct) {
       if (this.fast || ++this.run >= this.down) {
         this.run = 0;

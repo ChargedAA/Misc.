@@ -268,11 +268,13 @@ function playSettings(c: MenuCtx): string {
   const preset = [3, 5, 10].includes(lives);
   const sel = (act: string, label: string, title: string, opts: [string, string, boolean?][], disabled = false) =>
     `<label class="pick" title="${title}"><span class="lbl">${label}</span><select data-act="${act}" aria-label="${label}"${disabled ? ' disabled' : ''}>${opts.map(([v, l, on]) => `<option value="${v}"${on ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
+  const d = c.settings.difficulty ?? 0;
   return `<div class="picks home-picks">
+    ${sel('gdiff', 'Difficulty', 'Where adaptive games start: easier gives you a gentler first few rounds, harder skips them', [['-1', 'Easier', d === -1], ['0', 'Normal', d === 0], ['1', 'Harder', d === 1]])}
     ${sel('gkeys', 'Keys', 'Keys per game, where a game lets you choose. More keys is harder.', MODES.map((m) => [String(m.id), `${m.id} key${m.id === 1 ? '' : 's'}`, m.id === n]))}
     ${sel('glayout', 'Layout', 'Which pair of keys two-key games use', [['', 'Usual keys', set === ''], ...Object.entries(KEYSETS).map(([k, v]) => [k, v.label, k === set] as [string, string, boolean])], n !== 2)}
     ${sel('lives', 'Lives', 'For games played until you run out of lives', [['3', '3 lives', lives === 3], ['5', '5 lives', lives === 5], ['10', '10 lives', lives === 10], ['custom', 'Custom…', !preset]])}${preset ? '' : `<input class="num" type="number" min="1" max="99" value="${lives}" data-act="lives" aria-label="Number of lives">`}
-    <button class="linkbtn" data-act="keys">Rebind keys</button>
+    <button class="linkbtn" data-act="keys" title="Change which keys do what">Rebind</button>
   </div>`;
 }
 

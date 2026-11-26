@@ -85,6 +85,8 @@ export interface Settings {
   /** Keys per game and, for two keys, which pair: chosen once on the home screen. */
   keyCount?: number;
   keyset?: string;
+  /** Easier (-1), normal (0) or harder (1): where adaptive games start. */
+  difficulty?: number;
 }
 
 export interface RtSummary {
@@ -232,6 +234,7 @@ export function loadSettings(): Settings {
     lengths: record(saved?.lengths, isNum),
     lives: num(saved?.lives, 1, 99),
     keyCount: num(saved?.keyCount, 1, 6),
+    difficulty: num(saved?.difficulty, -1, 1),
     keyset: typeof saved?.keyset === 'string' ? saved.keyset : undefined,
     look: lookOf(saved?.look),
     session: typeof saved?.session === 'string' && saved.session.length < 300 ? saved.session : undefined,

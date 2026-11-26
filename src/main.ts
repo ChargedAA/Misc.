@@ -62,7 +62,7 @@ import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, liv
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
-import { clamp, clockShift, keysFor, picksKeys, setClockShift, setDefaultKeys, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, setDefaultKeys, setDifficulty, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { flagsHtml, gameBadge } from './icons.ts';
 import { Ui, esc, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { SHOWCASE, attractHtml, boardHtml, cleanInitials, doneHtml, saveEntry, setShowcaseOn, showcaseLength, showcaseOn, stepHtml, today, type ShowcaseEntry } from './showcase.ts';
@@ -119,6 +119,7 @@ let favs: string[] = (() => {
 const findOpts: FindOpts = { skill: '', need: '', sort: 'match' };
 setLives(settings.lives ?? 3);
 setDefaultKeys(settings.keyCount ?? 2);
+setDifficulty(settings.difficulty ?? 0);
 
 /** A game's last dozen saved results at a key count, oldest first. */
 function pastFor(id: string, keys: number): { value: number; label?: string }[] {
@@ -1914,6 +1915,14 @@ function onAction(action: string, arg: string): void {
       setDefaultKeys(n);
       for (const e of MINIS) if (picksKeys(e.id, e.input)) delete settings.keys[e.id];
       if (n !== 2) settings.keyset = undefined;
+      saveSettings(settings);
+      uiClick();
+      showMenu();
+      break;
+    }
+    case 'gdiff': {
+      settings.difficulty = Math.max(-1, Math.min(1, Number(arg) || 0));
+      setDifficulty(settings.difficulty);
       saveSettings(settings);
       uiClick();
       showMenu();
