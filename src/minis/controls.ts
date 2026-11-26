@@ -188,6 +188,7 @@ export const CONTROLS: Record<string, Control[]> = {
   wider: [['L', 'first was wider'], ['R', 'second was wider']],
   magnitude: [['L', 'left is bigger'], ['R', 'right is bigger']],
   switched: [['TAP', 'click the two that swapped']],
+  pendulum: [['ANY', 'tap at each end of the swing'], ['TAP', 'or tap']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

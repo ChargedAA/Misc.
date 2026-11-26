@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   timing: {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
-      { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace', 'carry', 'sustain'] },
+      { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace', 'carry', 'sustain', 'pendulum'] },
       { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'golf', 'doors', 'ripple', 'cyclone', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late', 'same'] },

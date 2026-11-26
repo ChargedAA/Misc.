@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-369 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+370 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -142,6 +142,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Pace | Hear a beat, then set its tempo. | keys, 2+ keys |
 | Carry | A few clicks set a beat, then silence. Press on the beat called for. | keys or tap |
 | Sustain | Over a steady beat, hold a key for exactly the number of beats asked. | keys or tap |
+| Pendulum | Tap each time the pendulum reaches an end of its swing. Now and then it swings unseen. | keys or tap |
 | Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
 | Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
