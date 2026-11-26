@@ -49,7 +49,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace'] },
       { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
-      { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
+      { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late', 'same'] },
       { name: 'Rhythm games', desc: 'Read a rhythm, or hit notes as they fall, in time', ids: ['sight', 'notes'] },
     ],
     routine: ['tempo', 'cross', 'gap'],
@@ -59,7 +59,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat'] },
-      { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble'] },
+      { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble', 'ferry'] },
       { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
@@ -98,7 +98,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   judgement: {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
-      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map'] },
+      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
@@ -117,6 +117,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten'] },
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
+      { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
       { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
@@ -243,6 +244,9 @@ export const ROUNDS: Record<string, [number, string]> = {
   map: [12, 'maps'],
   deal: [12, 'deals'],
   lantern: [12, 'rooms'],
+  area: [30, 'pairs'],
+  same: [16, 'pairs'],
+  ferry: [10, 'crossings'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
@@ -484,4 +488,4 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
 }
 
 /** Games that cannot be played without sound. */
-export const NEEDS_SOUND: ReadonlySet<string> = new Set(['pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);

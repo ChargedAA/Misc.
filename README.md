@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-267 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+271 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -145,6 +145,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Morse | Tap letters in Morse code: a short press is a dot, a long press a dash. | keys or tap |
 | Rope | Jump the skipping rope as it comes round. It speeds up and slows down. | keys or tap |
 | Late | Six beats by ear. Were they even, or did one land late? | keys, 2+ keys |
+| Same | Two short rhythms, one after the other. The same, or different? | keys, 2+ keys |
 | Sight | Sight-read a bar of rhythm in real notation, and tap it in time. | keys or tap |
 | Notes | Notes fall down your lanes to a beat. Hit each as it lands. | keys, 2+ keys |
 
@@ -231,6 +232,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Pat | Tap a beat with one hand; keep the pointer on a circling marker with the other. | keys or tap |
 | Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
 | Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
+| Ferry | Steer a ferry across a river whose current changes band by band, into the dock. | keys, 2+ keys |
 | Comet | Always moving forward: hold to turn. Collect the dots, miss the mines. | keys, 2+ keys |
 | Slalom | Ski down with momentum and pass every flag on the side its pennant points to. | keys, 2+ keys |
 | Row | One oar per hand. Pull evenly to go straight down the river. | keys, 2+ keys |
@@ -265,6 +267,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Share | A pie chart: what percentage is the orange slice? | keyboard |
 | Curves | Two zigzag paths. Which is longer? | keys, 2+ keys |
 | Map | Two places on a map and a scale bar. How far apart are they? | keyboard |
+| Area | Two different shapes. Which covers more ground? | keys, 2+ keys |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -310,6 +313,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Ten | A grid of digits. Click pairs that make ten, as fast as you can. | mouse or tap |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
+| Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |
 | Script | A tiny program. Type what it prints. | keyboard |
 | Later | Clock arithmetic: what time will it be? | keyboard |
 | Till | A price and what was paid. Type the change. | keyboard |
@@ -384,6 +388,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Copy | Learn Morse by ear: two letters at full speed, one more each time you are sure. | keyboard |
 | Safe | Turn a dial and listen: a louder click marks each number of the combination. | keys, 2+ keys |
 | Clicks | A quick burst of clicks. How many were there? | keyboard |
+| Same | Two short rhythms, one after the other. The same, or different? | keys, 2+ keys |
 
 ### Aim
 
