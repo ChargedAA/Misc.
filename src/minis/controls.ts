@@ -185,6 +185,7 @@ export const CONTROLS: Record<string, Control[]> = {
   counterpart: [['a-z', 'the mirror-image key']],
   keypad: [['KeyQ', 'to C: the lit square']],
   slice: [['L', 'left slice is bigger'], ['R', 'right slice is bigger']],
+  wider: [['L', 'first was wider'], ['R', 'second was wider']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

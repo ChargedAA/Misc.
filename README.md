@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-366 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+367 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -462,6 +462,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Octave | A note: which octave is it in? | mouse or tap |
 | Note | A note in any octave: name it. | mouse or tap |
 | Interval | Two notes, up, down or together: how far apart? | mouse or tap |
+| Wider | Two pairs of notes. Which pair is further apart in pitch? | keys, 2+ keys |
 | Retain | A note, then others to distract you. Was the last note the first one again? | keys, 2+ keys |
 | Chord | A chord: name it, root and type. | mouse or tap |
 | Scale | A scale: major, which minor, or which mode? | mouse or tap |
