@@ -59,7 +59,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Use both hands at once: separate jobs, shared rhythms, and exact togetherness.',
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat'] },
-      { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch'] },
+      { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble'] },
       { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
@@ -98,7 +98,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Size and amount', desc: 'Lengths, counts, midpoints and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
-      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop'] },
+      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
       { name: 'Colour', desc: 'See, remember and mix a colour exactly', ids: ['hue', 'mix'] },
       { name: 'Drawing eye', desc: 'Perspective and proportion, as artists judge them', ids: ['vanish', 'figure'] },
@@ -113,7 +113,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern', 'triad'] },
@@ -232,6 +232,10 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  carom: [12, 'shots'],
+  prime: [60, 's'],
+  fraction: [60, 's'],
+  marble: [120, 's'],
   spin: [20, 'shots'],
   turned: [40, 'words'],
   gears: [20, 'trains'],
