@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-295 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+300 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -87,6 +87,7 @@ Respond to a signal fast, pick the right response, and hold back the wrong one.
 | Parry | A fencer attacks left or right. Parry the real ones; hold on the feints. | keys, 2+ keys |
 | Goalie | Penalties. Dive the way the ball goes, or stay put when it comes down the middle. | keys, 2+ keys |
 | Volley | Return the ball with the hand on its side as it reaches your line. It comes back faster. | keys, 2+ keys |
+| Brake | The car ahead brakes: press. It signals a turn: don’t. | keys or tap |
 | Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
 | Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
 | Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
@@ -176,6 +177,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Back | Does it match the one n steps ago? Two streams at once. | keys |
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |
+| Recent | Words go by. Then, of two you saw, which came more recently? | keys, 2+ keys |
 | Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap |
 | Link | Shapes and numbers, paired. Which number went with this shape? | mouse or tap |
@@ -228,6 +230,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Cancel | A block of letters: click every E, as fast as you can. | mouse or tap |
 | Lantern | A dark room, a small pool of light. Find the one T among the Ls. | mouse or tap |
 | Proof | A line of words with one misspelled. Click it. | mouse or tap |
+| Diff | Two strings of characters. How many places differ? | mouse or tap |
 
 ### Coordination
 
@@ -281,6 +284,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Curves | Two zigzag paths. Which is longer? | keys, 2+ keys |
 | Map | Two places on a map and a scale bar. How far apart are they? | keyboard |
 | Area | Two different shapes. Which covers more ground? | keys, 2+ keys |
+| Fit | A short bar and a tall one. How many of the short fit in the tall? | keyboard |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -429,6 +433,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
 | Reflect | Trace a star while the pen moves as in a mirror. | mouse or tap |
 | Darts | The aim drifts like a real hand. Throw when it is over the bull. | mouse or tap |
+| Drag | Drag each piece into its slot and let go, quickly and squarely. | mouse or tap |
 | Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
 | Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
 | Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |
