@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-316 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+320 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -142,6 +142,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Stack | A block slides over the tower. Drop it square: what hangs over is cut off. | keys or tap |
 | Golf | A swing meter. Press once for power on the mark, once more on the line back. | keys or tap |
 | Doors | Sliding doors open and shut. Set off so you arrive while they are open. | keys or tap |
+| Ripple | A ring spreads from the middle. Press as it reaches the line. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -173,6 +174,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Order | Numbers flash. Tap them in order, blind. | mouse or tap |
 | Melody | Pads play a tune. Play it back. Later you only hear it. | mouse or tap |
 | Route | Learn a string of turns, then drive it from memory. | keys, 2+ keys |
+| Backward | Squares light up in turn. Click them back in reverse order. | mouse or tap |
 | Grid | Tiles flash. Tap every one once they hide. | mouse or tap |
 | Where | Shapes scatter and vanish. Tap where one of them was. | mouse or tap |
 | Pairs | Turn tiles two at a time. Remember where everything was. | mouse or tap |
@@ -295,6 +297,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Area | Two different shapes. Which covers more ground? | keys, 2+ keys |
 | Fit | A short bar and a tall one. How many of the short fit in the tall? | keyboard |
 | Dense | Two boxes of dots, different sizes. Which is more crowded? | keys, 2+ keys |
+| Squeeze | A block and a gap in a wall. Would it fit through? | keys, 2+ keys |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -340,6 +343,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Ten | A grid of digits. Click pairs that make ten, as fast as you can. | mouse or tap |
 | Percent | Quick percentages: 15% of 80, or what share 12 is of 48. | mouse or tap |
 | Product | Two products, like 23 × 4 and 19 × 5. Which is bigger? | keys, 2+ keys |
+| Solve | Find x: x + 7 = 15, 3x = 21, 2x + 3 = 11. | keyboard |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |
