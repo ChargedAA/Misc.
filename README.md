@@ -10,7 +10,7 @@ npm run dev
 ```
 
 The home screen leads with **Daily** (`Space`): one drill per skill, the same
-set for everyone that day. Below it are the ten skills, the Reflexes skills on
+set for everyone that day. Below it are the eleven skills, the Reflexes skills on
 the left hand's keys and the Mind skills on the right hand's:
 
 | Left hand | | Right hand | |
@@ -20,6 +20,7 @@ the left hand's keys and the Mind skills on the right hand's:
 | `C` | Timing | `M` | Judgement |
 | `V` | Coordination | `,` | Reasoning |
 | `A` | Dexterity (the whole keyboard) | `.` | Ear (pitch, intervals, chords) |
+| `G` | Aim (the mouse, in 2D and 3D) | | |
 
 `F` Find, `R` Random, `L` Boards, `S` Stats, `U` Account and `O` Settings sit in
 the header. **Find**
@@ -59,237 +60,332 @@ not saved; neither are practice runs.
 
 ## Games
 
+248 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+
 ### Reaction
+
+Respond to a signal fast, pick the right response, and hold back the wrong one.
 
 | Game | What it is | Input |
 | --- | --- | --- |
 | Reflex | Six rule games that change every round. Three strikes. | keys |
 | Snap | Pure reaction time. One disc, one press. | keys or tap |
-| Stop | Press fast, unless it gets struck out. | keys |
-| Flank | Answer the middle arrow. Ignore the crowd. | keys |
-| Choice | Press whichever string lights. More strings, more thinking. | keys, 2+ keys |
-| Aim | Tap each target the moment it appears. They shrink. | tap or click |
-| Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
-| Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
-| Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | tap or click |
-| Dodge | Shots come from either side. Block with that hand; let grey ones by. | keys, 2+ keys |
-| Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
-| Lanes | The ball rolls on. Blocks pop up ahead: sidestep them. | keys, 2+ keys |
-| Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
-| Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 2+ keys |
 | Lights | Five lights come on one by one, then go out together. Go. | keys or tap |
-| Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
-| Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
-| Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
+| Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
+| Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
+| Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
+| Ruler | Catch a falling ruler. Where you catch it gives your reaction time. | keys or tap |
+| Choice | Press whichever string lights. More strings, more thinking. | keys, 2+ keys |
+| Flank | Answer the middle arrow. Ignore the crowd. | keys |
+| Whack | Discs pop up and vanish. Tap the white ones, leave the grey. | mouse or tap |
+| Stop | Press fast, unless it gets struck out. | keys |
+| Swap | Press the side the arrow points. Sometimes it flips: change your press. | keys, 2+ keys |
 | Opposite | Press the side away from the dot. Blocks of "same" and "opposite". | keys, 2+ keys |
+| Dodge | Shots come from either side. Block with that hand; let grey ones by. | keys, 2+ keys |
 | Parry | A fencer attacks left or right. Parry the real ones; hold on the feints. | keys, 2+ keys |
 | Goalie | Penalties. Dive the way the ball goes, or stay put when it comes down the middle. | keys, 2+ keys |
 | Volley | Return the ball with the hand on its side as it reaches your line. It comes back faster. | keys, 2+ keys |
-| Ruler | Catch a falling ruler. Where you catch it gives your reaction time. | keys or tap |
+| Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
+| Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
+| Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
 | Flipper | Two flippers keep the ball in play. | keys, 2+ keys |
+| Lanes | The ball rolls on. Blocks pop up ahead: sidestep them. | keys, 2+ keys |
+| Hurdles | The ball rolls on. Bars pop up across the track: jump them. | keys |
+| Rush | Blocks and bars, at random. Sidestep or jump, and do not mix them up. | keys, 2+ keys |
 
 ### Speed
+
+Tap fast, hold a rate, and stay controlled and in order while you do.
 
 | Game | What it is | Input |
 | --- | --- | --- |
 | Burst | Hold a rising tap rate for five seconds. | keys |
 | Sprint | Ten seconds, flat out. Watch your rate fade. | keys |
+| Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
+| Tug | Tug of war against a rate that never gets tired. | keys |
+| Pedal | Alternate the pedals to keep the bike above stalling speed up the hills. | keys, 2+ keys |
+| Ladder | The target rate steps up every second. Hang on. | keys |
 | Pulse | Ride a target rate that rises, drops and stops. | keys |
 | Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
-| Ladder | The target rate steps up every second. Hang on. | keys |
-| Tug | Tug of war against a rate that never gets tired. | keys |
-| Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
-| Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 | Exact | Tap exactly N times inside the window. Fast enough, and stop on time. | keys or tap |
-| Rain | Letters fall. Type them before they land. | keys |
+| Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 | Trill | Alternate in order, flat out, for ten seconds. Fast and even both count. | keys, 2+ keys |
+| Rain | Letters fall. Type them before they land. | keyboard |
 | Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
-| Pedal | Alternate the pedals to keep the bike above stalling speed up the hills. | keys, 2+ keys |
 
 ### Timing
+
+Press at exactly the right moment: on a beat, as something arrives, or after a set time.
 
 | Game | What it is | Input |
 | --- | --- | --- |
 | Tempo | Keep the beat going after it goes silent. | keys or tap |
-| Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
-| Gap | Two clicks make a gap. Copy it from memory. | keys or tap |
-| Echo | Hear a rhythm. Tap it back. It gets longer. | keys or tap |
-| Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
-| Second | Hold a key for exactly the time shown. No clock. | keys |
-| Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
 | Offbeat | Tap exactly halfway between the clicks. | keys or tap |
+| Drift | Tap with a silent pulse that speeds up and slows down. | keys or tap |
+| Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
+| Shuffle | Tap the swung offbeat, then keep the swing when the hi-hat drops out. | keys or tap |
+| Pace | Hear a beat, then set its tempo. | keys, 2+ keys |
+| Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
+| Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
+| Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
+| Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
-| Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
 | Tower | A block slides over the stack. Drop it squarely; overhang is cut off. | keys or tap |
 | Keep | Steer a paddle to keep the balls in play. A second one joins later. | keys, 2+ keys |
-| Late | Six beats by ear. Were they even, or did one land late? | keys, 2+ keys |
 | Bat | Swing as the pitch reaches the plate. Fast balls, slow balls, change-ups. | keys or tap |
 | Stamp | Stamp each box as it passes under the press. Not the grey ones. | keys or tap |
 | Drive | A three-press golf swing: start, set the power, hit the sweet spot. | keys or tap |
 | Hopper | Hop across lanes of traffic through the gaps. | keys, 2+ keys |
-| Rope | Jump the skipping rope as it comes round. It speeds up and slows down. | keys or tap |
+| Gap | Two clicks make a gap. Copy it from memory. | keys or tap |
+| Second | Hold a key for exactly the time shown. No clock. | keys |
+| Echo | Hear a rhythm. Tap it back. It gets longer. | keys or tap |
 | Morse | Tap letters in Morse code: a short press is a dot, a long press a dash. | keys or tap |
+| Rope | Jump the skipping rope as it comes round. It speeds up and slows down. | keys or tap |
+| Late | Six beats by ear. Were they even, or did one land late? | keys, 2+ keys |
+| Sight | Sight-read a bar of rhythm in real notation, and tap it in time. | keys or tap |
+| Notes | Notes fall down your lanes to a beat. Hit each as it lands. | keys, 2+ keys |
 
 ### Memory
 
+Hold more in your head, keep it up to date, and remember where things were.
+
 | Game | What it is | Input |
 | --- | --- | --- |
+| Digits | Remember a number. Type it back, sometimes backwards. | mouse or tap |
 | Sequence | A pattern plays across your strings. Play it back. | keys, 2+ keys |
-| Grid | Tiles flash. Tap every one once they hide. | tap or click |
-| Order | Numbers flash. Tap them in order, blind. | tap or click |
-| Back | Does it match the one n steps ago? Two streams at once. | keys |
-| Pairs | Turn tiles two at a time. Remember where everything was. | tap or click |
-| Path | Blocks light up in order. Tap the same path, sometimes backwards. | tap or click |
-| Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
-| Digits | Remember a number. Type it back, sometimes backwards. | tap or click |
-| Where | Shapes scatter and vanish. Tap where one of them was. | tap or click |
-| Running | Digits stream by and stop without warning. Type the last few. | tap or click |
-| Melody | Pads play a tune. Play it back. Later you only hear it. | tap or click |
-| Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap, 2+ keys |
-| Link | Shapes and numbers, paired. Which number went with this shape? | tap or click |
+| Path | Blocks light up in order. Tap the same path, sometimes backwards. | mouse or tap |
+| Order | Numbers flash. Tap them in order, blind. | mouse or tap |
+| Melody | Pads play a tune. Play it back. Later you only hear it. | mouse or tap |
 | Route | Learn a string of turns, then drive it from memory. | keys, 2+ keys |
-| Hold | Remember positions while checking sums in between. | keys or tap, 2+ keys |
+| Grid | Tiles flash. Tap every one once they hide. | mouse or tap |
+| Where | Shapes scatter and vanish. Tap where one of them was. | mouse or tap |
+| Pairs | Turn tiles two at a time. Remember where everything was. | mouse or tap |
+| Twist | Tiles flash on a grid, then the grid turns. Tap where they are now. | mouse or tap |
+| Back | Does it match the one n steps ago? Two streams at once. | keys |
+| Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
+| Hold | Remember positions while checking sums in between. | keys or tap |
+| Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
+| Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap |
+| Link | Shapes and numbers, paired. Which number went with this shape? | mouse or tap |
+| Sounds | Tiles hide tones. Find the matching pairs by ear. | mouse or tap |
+| Recall | Words go by one at a time. Type every one you remember. | keyboard |
+| Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
-| Recall | Words go by one at a time. Type every one you remember. | keys |
-| Queue | Shapes join a queue one at a time. Which was third? | tap or click |
-| Sounds | Tiles hide tones. Find the matching pairs by ear. | tap or click |
+| Oven | Sort numbers, and take the cakes out on time, with no clock in sight. | keyboard |
 
 ### Attention
 
+Pick the signal out of the noise, follow it, and stay sharp when little happens.
+
 | Game | What it is | Input |
 | --- | --- | --- |
-| Track | Follow a few dots among identical ones. | tap or click |
 | Find | Spot the one that matches, among look-alikes. | keys or tap |
-| Switch | The rule depends on where the number lands. | keys, 2+ keys |
 | Shape | The word says square. The outline is a circle. | keys, 2+ keys |
-| Rotate | Same shape, turned, or its mirror image? | keys, 2+ keys |
-| Count | How many dots were there, in that blink? | tap or click |
-| Glance | A shape in the middle, a dot out wide. One blink to see both. | tap or click |
-| Stream | Letters fly past. Press for the X. | keys or tap |
 | Side | Shade picks the hand. Where it appears pulls the other way. | keys, 2+ keys |
-| Flicker | Two versions flicker back and forth. Find what changes. | tap or click |
-| Shells | A ball under a cup, then the cups swap. Where is it? | tap or click |
+| Switch | The rule depends on where the number lands. | keys, 2+ keys |
+| Sort | Flip the switch to send each item down the right chute. The rule changes. | keys, 2+ keys |
+| Away | A flash grabs your eyes. The arrow you must read is on the other side. | keys, 2+ keys |
+| Beeps | Count the beeps. The flashes are there to mislead you. | mouse or tap |
+| Ink | A colour word in another colour of ink. Name the ink, not the word. | mouse or tap |
+| Camo | A ring hides in a field of random strokes. Click inside it. | mouse or tap |
+| Kinds | Words flash: living thing or not? Sort them as fast as you can. | keys, 2+ keys |
+| Turned | A word shown mirrored or upside down. A real word, or not? | keys, 2+ keys |
+| Track | Follow a few dots among identical ones. | mouse or tap |
+| Shells | A ball under a cup, then the cups swap. Where is it? | mouse or tap |
+| Tangle | Follow one line through a tangle to its end. | mouse or tap |
+| Shadow | Keep your pointer on a wandering target. Catch flashes at the edges. | mouse or tap |
+| Fly | Swat a fly that never flies straight. | mouse or tap |
+| Glance | A shape in the middle, a dot out wide. One blink to see both. | mouse or tap |
+| Count | How many dots were there, in that blink? | mouse or tap |
+| Flicker | Two versions flicker back and forth. Find what changes. | mouse or tap |
+| Rotate | Same shape, turned, or its mirror image? | keys, 2+ keys |
+| Schulte | Tap 1 to 25, scattered on a grid, in order. | mouse or tap |
+| Blink | Letters flash past ten a second, with two digits hidden among them. Type both. | keyboard |
+| Gauges | Four needles drift up. Reset any that creep into the red. | mouse or tap |
+| Tally | Shapes pop up all over. Keep a running count of the squares. | mouse or tap |
+| Trail | Connect 1-A-2-B-3-C, switching between numbers and letters. | mouse or tap |
+| Radar | The sweep reveals contacts. Tap the hostile ones before it comes round again. | mouse or tap |
+| Herd | Sheep wander in and out of a pen. How many are inside now? | keyboard |
+| Stream | Letters fly past. Press for the X. | keys or tap |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
-| Tangle | Follow one line through a tangle to its end. | tap or click |
-| Sort | Flip the switch to send each item down the right chute. The rule changes. | keys, 2+ keys |
-| Shadow | Keep your pointer on a wandering target. Catch flashes at the edges. | tap or click |
-| Away | A flash grabs your eyes. The arrow you must read is on the other side. | keys, 2+ keys |
-| Schulte | Tap 1 to 25, scattered on a grid, in order. | tap or click |
-| Trail | Connect 1-A-2-B-3-C, switching between numbers and letters. | tap or click |
-| Gauges | Four needles drift up. Reset any that creep into the red. | tap or click |
-| Tally | Shapes pop up all over. Keep a running count of the squares. | tap or click |
-| Beeps | Count the beeps. The flashes are there to mislead you. | tap or click |
-| Fly | Swat a fly that never flies straight. | tap or click |
-| Radar | The sweep reveals contacts. Tap the hostile ones before it comes round again. | tap or click |
+| Cancel | A block of letters: click every E, as fast as you can. | mouse or tap |
 
 ### Coordination
+
+Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 
 | Game | What it is | Input |
 | --- | --- | --- |
 | Climb | Dash between lanes, surge over holes, catch the cables. Endless. | keys |
-| Strings | Pluck notes on time: streams, chords, holds. Endless. | keys |
 | Split | Each hand steers its own dot. Dodge on both sides at once. | keys, 2+ keys |
-| Juggle | Every key keeps its own ball in the air. | keys |
-| Poly | Two hands, two tempos at once. Two against three, and up. | keys, 2+ keys |
-| Zigzag | Hold to rise, let go to fall. The corridor narrows. | keys |
-| Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
-| Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
 | Twin | Two tunnels, one per hand. Hold to climb, let go to fall. | keys, 2+ keys |
+| Orbit | Each hand flips the direction of its own orbiting dot. | keys, 2+ keys |
+| Juggle | Every key keeps its own ball in the air. | keys |
 | Pole | Balance a pole on a cart. One hand pushes each way. | keys, 2+ keys |
-| Sync | Two balls drop, one per hand. Press as each hits the line, together or one after the other. | keys, 2+ keys |
+| Pat | Tap a beat with one hand; keep the pointer on a circling marker with the other. | keys or tap |
+| Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
+| Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
+| Comet | Always moving forward: hold to turn. Collect the dots, miss the mines. | keys, 2+ keys |
+| Slalom | Ski down with momentum and pass every flag on the side its pennant points to. | keys, 2+ keys |
+| Row | One oar per hand. Pull evenly to go straight down the river. | keys, 2+ keys |
+| Drone | A rotor per hand. Fly through the gates. | keys, 2+ keys |
 | Dock | Thrust a drifting ship into the dock and stop dead inside it. | keys, 2+ keys |
 | Lander | Feather the thrust and touch down softly on the pad. | keys |
 | Mirror | Steer along a track. Every so often the controls swap sides. | keys, 2+ keys |
-| Comet | Always moving forward: hold to turn. Collect the dots, miss the mines. | keys, 2+ keys |
-| Slalom | Ski down with momentum and pass every flag on the side its pennant points to. | keys, 2+ keys |
-| Etch | Left hand moves across, right hand moves up and down. Trace the path. | keys |
-| Row | One oar per hand. Pull evenly to go straight down the river. | keys, 2+ keys |
 | Crane | Move the crane, let the swing settle, drop the crate on the pad. | keys, 2+ keys |
-| Drone | A rotor per hand. Fly through the gates. | keys, 2+ keys |
+| Etch | Left hand moves across, right hand moves up and down. Trace the path. | keyboard |
+| Sync | Two balls drop, one per hand. Press as each hits the line, together or one after the other. | keys, 2+ keys |
+| Poly | Two tempos at once: 1 against 2, then 2 against 3, up to 7 against 8. Three-way with three keys. | keys, 2+ keys |
+| Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
+| Strings | Pluck notes on time: streams, chords, holds. Endless. | keys |
+| Zigzag | Hold to rise, let go to fall. The corridor narrows. | keys |
+| Ship | Hold to fly up, let go to sink. Thread the gaps. | keys or tap |
+| Straight | Straight-fly: hold a level line through a tight tunnel with quick taps. | keys or tap |
 
 ### Judgement
 
+Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
+
 | Game | What it is | Input |
 | --- | --- | --- |
-| Longer | Which line is longer? The difference keeps shrinking. | keys or tap, 2+ keys |
-| More | Which cloud had more dots? There is no time to count. | keys or tap, 2+ keys |
-| Middle | Tap the exact middle of a line. | tap or click |
-| Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap, 2+ keys |
-| Faster | Which dot moved faster? Distance is no clue. | keys or tap, 2+ keys |
-| Shade | Which square is lighter? Their surroundings lie. | keys or tap, 2+ keys |
-| Guess | A cloud of dots flashes. How many? | tap or click |
-| First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap, 2+ keys |
+| Longer | Which line is longer? The difference keeps shrinking. | keys or tap |
+| More | Which cloud had more dots? There is no time to count. | keys or tap |
+| Guess | A cloud of dots flashes. How many? | mouse or tap |
+| Middle | Tap the exact middle of a line. | mouse or tap |
+| Line | Put a number on a number line. | mouse or tap |
+| Angle | How wide is this angle? Mark it on a 0 to 180 scale. | mouse or tap |
+| Centroid | Tap the balance point of a cloud of dots. | mouse or tap |
+| Closer | Which dot is nearer the cross? | keys, 2+ keys |
+| Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
+| Shade | Which square is lighter? Their surroundings lie. | keys or tap |
+| Faster | Which dot moved faster? Distance is no clue. | keys or tap |
+| First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap |
+| Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
+| Align | Turn your line until it is parallel to the other, then let go. | keys, 2+ keys |
 | Merge | Cars stream past the junction. Pull out into the first safe gap. | keys or tap |
 | Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
-| Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | tap or click |
-| Line | Put a number on a number line. | tap or click |
-| Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
-| Pump | Pump a balloon for points; bank before it pops. Each size has its own risk. | keys, 2+ keys |
-| Angle | How wide is this angle? Mark it on a 0 to 180 scale. | tap or click |
-| Duration | How long was the disc on screen? Mark it on a time scale. | tap or click |
-| Centroid | Tap the balance point of a cloud of dots. | tap or click |
-| Align | Turn your line until it is parallel to the other, then let go. | keys, 2+ keys |
-| Closer | Which dot is nearer the cross? | keys, 2+ keys |
+| Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | mouse or tap |
 | Topple | Will this stack of blocks stand or fall? | keys, 2+ keys |
 | Hoop | Hold to charge, release to shoot. The basket moves each time. | keys or tap |
+| Carom | A ball sets off and vanishes. Where will it stop, after its bounces? | mouse or tap |
+| Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
+| Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
+| Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
+| Vanish | A street in perspective. Click where its lines meet. | mouse or tap |
+| Figure | Place a feature on a figure by the classic drawing proportions. | mouse or tap |
+| Sure | Which line is longer, and how sure are you? Scored on calibration. | keys, 2+ keys |
+| Range | How many dots? Give a range you are 80% sure of. | mouse or tap |
+| Hands | An analog clock flashes. What time was it? | keyboard |
+| Meter | Read a needle on a scale, between the marks. | keyboard |
+| Faint | A faint striped patch flashes. Do the stripes lean left or right? | keys, 2+ keys |
+| Vernier | Two lines, one a hair to the side. Which side? | keys, 2+ keys |
+| Pump | Pump a balloon for points; bank before it pops. Each size has its own risk. | keys, 2+ keys |
+| Jars | Two jars of marbles. Which gives the better chance of drawing orange? | keys, 2+ keys |
 
 ### Reasoning
 
+Think fast and stay right: numbers, patterns, rules, space and words.
+
 | Game | What it is | Input |
 | --- | --- | --- |
-| Sum | True or false, as fast as you can. | keys or tap, 2+ keys |
-| Compare | Two expressions. Which is bigger? | keys or tap, 2+ keys |
-| Series | Five numbers. What comes next? | tap or click |
-| Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap, 2+ keys |
-| Matrix | A three-by-three pattern with a gap. Which piece fits? | tap or click |
-| Balance | The scales balance. How many triangles weigh the same as a square? | tap or click |
-| Odd | All but one share something. Which one does not? | tap or click |
-| Probe | A hidden rule says yes or no to shapes. Test it three times, then classify. | keys or tap, 2+ keys |
-| Plan | Jobs with lengths, deadlines and values. Put them in the best order. | tap or click |
-| Crack | Find the hidden code from right-place and wrong-place clues. | tap or click |
-| Compass | Follow a string of turns in your head. Which way are you facing? | tap or click |
-| Letters | Unscramble the word. Type it. | keys |
-| Chain | Keep a running total through a string of operations. | tap or click |
-| Maze | Arrow keys through a maze to the exit. | keys |
-| Hanoi | Move the tower peg to peg, never a big disk on a small one. | tap or click |
-| Slide | Put a scrambled 3×3 sliding puzzle back in order. | tap or click |
-| Toggle | Each tap flips a tile and its neighbours. Turn them all off. | tap or click |
-| Latin | Fill a 4×4 square so each row and column has 1 to 4 once. | tap or click |
-| Target | Pick numbers that add up to exactly the target. | tap or click |
-| Pattern | A shape changes step by step. Which comes next? | tap or click |
+| Sum | True or false, as fast as you can. | keys or tap |
+| Compare | Two expressions. Which is bigger? | keys or tap |
+| Chain | Keep a running total through a string of operations. | mouse or tap |
+| Ballpark | A sum and four answers. No time to work it out: pick the closest. | mouse or tap |
+| Sevens | Count back from a number in sevens, as fast as you can. | keyboard |
+| Prime | A number: prime or not? As fast as you can. | keys, 2+ keys |
+| Fraction | Two fractions. Which is bigger? | keys, 2+ keys |
+| Script | A tiny program. Type what it prints. | keyboard |
+| Later | Clock arithmetic: what time will it be? | keyboard |
+| Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
+| Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
+| Series | Five numbers. What comes next? | mouse or tap |
+| Matrix | A three-by-three pattern with a gap. Which piece fits? | mouse or tap |
+| Odd | All but one share something. Which one does not? | mouse or tap |
+| Pattern | A shape changes step by step. Which comes next? | mouse or tap |
+| Triad | Twelve cards. Find three where every feature is all the same or all different. | mouse or tap |
+| Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap |
+| Balance | The scales balance. How many triangles weigh the same as a square? | mouse or tap |
+| Probe | A hidden rule says yes or no to shapes. Test it three times, then classify. | keys or tap |
+| Crack | Find the hidden code from right-place and wrong-place clues. | mouse or tap |
+| Plan | Jobs with lengths, deadlines and values. Put them in the best order. | mouse or tap |
+| Hanoi | Move the tower peg to peg, never a big disk on a small one. | mouse or tap |
+| Maze | Arrow keys through a maze to the exit. | keyboard |
+| Slide | Put a scrambled 3×3 sliding puzzle back in order. | mouse or tap |
+| Toggle | Each tap flips a tile and its neighbours. Turn them all off. | mouse or tap |
+| Latin | Fill a 4×4 square so each row and column has 1 to 4 once. | mouse or tap |
+| Target | Pick numbers that add up to exactly the target. | mouse or tap |
+| Pipes | Turn the tiles to join the pipe from start to finish. | mouse or tap |
+| Compass | Follow a string of turns in your head. Which way are you facing? | mouse or tap |
+| Letters | Unscramble the word. Type it. | keyboard |
+| Jumble | An anagram. Type the word. | keyboard |
+| Fold | Paper folds, a hole is punched. Where are the holes when it opens? | mouse or tap |
+| Symmetry | Half a pattern. Complete its mirror image. | mouse or tap |
+| Net | A flat cube net and four cubes. Which cube does it fold into? | mouse or tap |
+| View | Blocks seen from above, a camera on one side. Which picture does it take? | mouse or tap |
+| Gears | A train of gears. Which way does the last one turn? | keys, 2+ keys |
 
 ### Dexterity
 
+The whole keyboard: find any key blind, press chords, type fast, and keep fingers independent.
+
 | Game | What it is | Input |
 | --- | --- | --- |
-| Hunt | A letter appears: press it. The whole keyboard, as fast as you can find it. | keys |
-| Chords | Press two or three keys at exactly the same instant. | keys |
-| Type | Common words, one after another. Words per minute. | keys |
-| Dial | Type numbers on the number row. | keys |
-| Fingers | A home-row pattern, typed three times. Watch it get faster. | keys |
-| Flip | Press the key mirrored across the keyboard from the one shown. | keys |
-| Sweep | Run along a keyboard row and back. | keys |
-| Ghost | A word flashes and hides. Type it. | keys |
-| Taps | Press each key the number of times shown: D×3 K×2. | keys |
-| Arrows | Arrow-key sequences, quick and clean. | keys |
-| Reverse | Type the word backwards. | keys |
-| Combo | Land a combo of letters, arrows and Space before the clock runs out. | keys |
+| Hunt | A letter appears: press it. The whole keyboard, as fast as you can find it. | keyboard |
+| Flip | Press the key mirrored across the keyboard from the one shown. | keyboard |
+| Dial | Type numbers on the number row. | keyboard |
+| Arrows | Arrow-key sequences, quick and clean. | keyboard |
+| Chords | Press two or three keys at exactly the same instant. | keyboard |
+| Type | A typing test: lines of common words. Words per minute. | keyboard |
+| Ghost | A word flashes and hides. Type it. | keyboard |
+| Reverse | Type the word backwards. | keyboard |
+| Syntax | Type real lines of code, symbols and all. | keyboard |
+| Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
+| Sweep | Run along a keyboard row and back. | keyboard |
+| Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
+| Combo | Land a combo of letters, arrows and Space before the clock runs out. | keyboard |
 
 ### Ear
 
+Hear pitch: which is higher, which is in tune, which note, interval or chord.
+
 | Game | What it is | Input |
 | --- | --- | --- |
-| Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap, 2+ keys |
+| Pitch | Two tones. Was the second higher or lower? By ear alone. | keys or tap |
+| In tune | One note, no reference: is it in tune? | mouse or tap |
 | Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
-| In tune | One note, no reference: is it in tune? | tap or click |
-| Octave | A note: which octave is it in? | tap or click |
-| Note | A note in any octave: name it. | tap or click |
-| Interval | Two notes, up, down or together: how far apart? | tap or click |
-| Chord | A chord: name it, root and type. | tap or click |
-| Contour | A melody: which of four near-identical shapes? | tap or click |
-| Scale | A scale: major, which minor, or which mode? | tap or click |
+| Louder | Two tones. Was the second louder or softer? | keys, 2+ keys |
+| Octave | A note: which octave is it in? | mouse or tap |
+| Note | A note in any octave: name it. | mouse or tap |
+| Interval | Two notes, up, down or together: how far apart? | mouse or tap |
+| Chord | A chord: name it, root and type. | mouse or tap |
+| Scale | A scale: major, which minor, or which mode? | mouse or tap |
+| Contour | A melody: which of four near-identical shapes? | mouse or tap |
+| Voices | Several notes sound at once. How many? | mouse or tap |
+| Changed | A melody plays twice; one note is different the second time. Which? | mouse or tap |
+| Dictate | Hear a bar of rhythm, then pick its notation from four. | mouse or tap |
+| Copy | Learn Morse by ear: two letters at full speed, one more each time you are sure. | keyboard |
+| Safe | Turn a dial and listen: a louder click marks each number of the combination. | keys, 2+ keys |
+
+### Aim
+
+The mouse (or a finger): get to a target fast, click it exactly, stay on it as it moves, and aim in 3D.
+
+| Game | What it is | Input |
+| --- | --- | --- |
+| Flick | A target appears anywhere. Click it, fast. Then the next. | mouse or tap |
+| Shrink | Tap each target the moment it appears. They shrink. | mouse or tap |
+| Pop | Discs appear and shrink away. Click them before they vanish. | mouse or tap |
+| Lead | Discs fly in arcs. Your shot takes a moment to land: aim ahead. | mouse or tap |
+| Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
+| Round | Draw a circle in one stroke. How round is it? | mouse or tap |
+| Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
+| Reflect | Trace a star while the pen moves as in a mirror. | mouse or tap |
+| Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
+| Sphere | 3D: look around with the mouse and shoot the balls. | mouse or tap |
+| Strafe | 3D tracking: keep the crosshair on a ball that strafes and changes direction. | mouse or tap |
 
 ## Why these games
 
