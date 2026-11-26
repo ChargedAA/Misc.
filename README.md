@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-340 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+342 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -248,6 +248,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Lantern | A dark room, a small pool of light. Find the one T among the Ls. | mouse or tap |
 | Proof | A line of words with one misspelled. Click it. | mouse or tap |
 | Diff | Two strings of characters. How many places differ? | mouse or tap |
+| Pictures | Two grids of shapes, one cell different. Click it. | mouse or tap |
 
 ### Coordination
 
@@ -323,6 +324,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Cannon | Set the barrel’s angle to land a shot on the target. Wind joins later. | keys, 2+ keys |
 | Velo | Watch a dot’s speed, then set your own to the same speed from memory. | keys, 2+ keys |
 | Race | One ball rolls steadily, one speeds up from rest. Both vanish: which wins? | keys, 2+ keys |
+| Lever | Weights on a beam. Click where the pivot must go to balance it. | mouse or tap |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |

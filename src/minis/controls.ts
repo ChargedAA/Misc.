@@ -159,6 +159,8 @@ export const CONTROLS: Record<string, Control[]> = {
   cyclone: [['ANY', 'stop the light'], ['TAP', 'or tap']],
   slash: [['TAP', 'hold and drag to cut']],
   dice: [['1-4', 'pick the sum'], ['TAP', 'or click']],
+  lever: [['TAP', 'click where the pivot goes']],
+  pictures: [['TAP', 'click the cell that differs']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],
