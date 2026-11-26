@@ -46,13 +46,13 @@ function length(f: Figure): number {
 }
 
 /** A placed symbol: its figure index, start in beats from the bar start, and the symbol. */
-interface Placed extends Sym {
+export interface Placed extends Sym {
   at: number;
   fig: number;
 }
 
 /** Build `bars` bars of 4/4 from the figures of tiers up to `tier`, leaning on the newest. */
-function compose(tier: number, bars: number): Placed[] {
+export function compose(tier: number, bars: number): Placed[] {
   for (let attempt = 0; attempt < 50; attempt++) {
     const out: Placed[] = [];
     let fig = 0;
@@ -79,6 +79,127 @@ function compose(tier: number, bars: number): Placed[] {
   }
   return [{ d: 1, at: 0, fig: 0 }, { d: 1, at: 1, fig: 1 }, { d: 1, at: 2, fig: 2 }, { d: 1, at: 3, fig: 3 }];
 }
+
+/** Notes, rests, beams, flags, dots and triplet marks: a bar of rhythm on a one-line staff. */
+export function drawRhythm(v: View, syms: Placed[], xOf: (t: number) => number, y: number, u: number, col: (s: Placed) => string = () => COL_LINE): void {
+  const ctx = v.ctx;
+  const dpr = v.dpr;
+  const stemH = 34 * u;
+  const top = y - stemH;
+  // Group the symbols of each figure.
+  const figs = new Map<number, Placed[]>();
+  for (const s of syms) figs.set(s.fig, [...(figs.get(s.fig) ?? []), s]);
+  for (const group of figs.values()) {
+    const triplet = group.some((s) => Math.abs(s.d - T) < 1e-6);
+    const short = group.filter((s) => !s.rest && s.d < 1 - 1e-6);
+    // Beam the short notes of a figure that fits in one beat; a lone one gets a flag.
+    const beamed = short.length >= 2 && length(group) <= 1 + 1e-6;
+    for (const s of group) {
+      const x = xOf(s.at);
+      ctx.fillStyle = col(s);
+      ctx.strokeStyle = col(s);
+      if (s.rest) {
+        drawRest(v, x + 4 * u, y, s.d, u);
+        continue;
+      }
+      // Head: filled for a quarter and shorter, open for a half.
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.35);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 6.6 * u, 4.6 * u, 0, 0, TAU);
+      if (s.d >= 2) {
+        ctx.lineWidth = 1.8 * dpr;
+        ctx.stroke();
+      } else ctx.fill();
+      ctx.restore();
+      // Stem.
+      ctx.fillRect(x + 5.6 * u, top, 1.6 * dpr, stemH - 1 * u);
+      if (s.dot) {
+        ctx.beginPath();
+        ctx.arc(x + 12 * u, y - 4 * u, 2.2 * u, 0, TAU);
+        ctx.fill();
+      }
+      // A flag, for a short note on its own.
+      if (s.d < 1 - 1e-6 && !beamed) {
+        const flags = s.d <= 0.25 + 1e-6 ? 2 : 1;
+        ctx.lineWidth = 2.2 * dpr;
+        for (let k = 0; k < flags; k++) {
+          const fy = top + k * 7 * u;
+          ctx.beginPath();
+          ctx.moveTo(x + 6.4 * u, fy);
+          ctx.quadraticCurveTo(x + 16 * u, fy + 8 * u, x + 13 * u, fy + 18 * u);
+          ctx.stroke();
+        }
+      }
+    }
+    if (beamed) {
+      ctx.fillStyle = COL_LINE;
+      const xa = xOf(short[0]!.at) + 5.6 * u;
+      const xb = xOf(short[short.length - 1]!.at) + 7.2 * u;
+      ctx.fillRect(xa, top, xb - xa, 4 * u);
+      // Second beams for sixteenths: joined between neighbours, a stub otherwise.
+      for (let i = 0; i < short.length; i++) {
+        const s = short[i]!;
+        if (s.d > 0.25 + 1e-6) continue;
+        const sx = xOf(s.at) + 5.6 * u;
+        const nxt = short[i + 1];
+        const prv = short[i - 1];
+        if (nxt && nxt.d <= 0.25 + 1e-6) ctx.fillRect(sx, top + 7 * u, xOf(nxt.at) + 7.2 * u - sx, 4 * u);
+        else if (!(prv && prv.d <= 0.25 + 1e-6)) {
+          const toward = nxt ? 1 : -1;
+          ctx.fillRect(toward > 0 ? sx : sx - 8 * u + 1.6 * dpr, top + 7 * u, 8 * u, 4 * u);
+        }
+      }
+    }
+    if (triplet) {
+      const xa = xOf(group[0]!.at);
+      const xb = xOf(group[group.length - 1]!.at);
+      ctx.fillStyle = COL_MID;
+      v.text('3', (xa + xb) / 2 + 6 * u, top - 8 * u, v.fontTiny, 'center');
+    }
+  }
+}
+
+function drawRest(v: View, x: number, y: number, d: number, u: number): void {
+  const ctx = v.ctx;
+  const dpr = v.dpr;
+  if (d >= 2) {
+    // Half rest: a block sitting on the line.
+    ctx.fillRect(x - 7 * u, y - 5 * u, 14 * u, 5 * u);
+    return;
+  }
+  ctx.lineWidth = 2.4 * dpr;
+  ctx.lineJoin = 'round';
+  if (d >= 1) {
+    // Quarter rest: the zigzag.
+    ctx.beginPath();
+    ctx.moveTo(x - 3 * u, y - 15 * u);
+    ctx.lineTo(x + 3 * u, y - 8 * u);
+    ctx.lineTo(x - 2 * u, y - 2 * u);
+    ctx.lineTo(x + 3 * u, y + 5 * u);
+    ctx.quadraticCurveTo(x - 5 * u, y + 2 * u, x - 1 * u, y + 12 * u);
+    ctx.stroke();
+    return;
+  }
+  // Eighth (one hook) or sixteenth (two): dots with a slanted stem.
+  const hooks = d <= 0.26 ? 2 : d < 0.4 ? 1 : 1;
+  ctx.beginPath();
+  ctx.moveTo(x + 4 * u, y - 10 * u);
+  ctx.lineTo(x - 1 * u, y + 8 * u + (hooks - 1) * 5 * u);
+  ctx.stroke();
+  for (let k = 0; k < hooks; k++) {
+    const hy = y - 10 * u + k * 7 * u;
+    ctx.beginPath();
+    ctx.arc(x - 3 * u - k * 1.5 * u, hy - 1 * u, 2.4 * u, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x - 3 * u - k * 1.5 * u, hy + 1 * u);
+    ctx.quadraticCurveTo(x, hy + 2 * u, x + 4 * u - k * 2 * u, hy - 0 * u);
+    ctx.stroke();
+  }
+}
+
 
 // --- Sight ---------------------------------------------------------------------------
 
@@ -248,7 +369,11 @@ class Sight implements Mini {
       ctx.fillRect(xOf(t) - dpr / 2, y + 44 * su, dpr, 6 * su);
     }
 
-    this.drawSymbols(v, xOf, y, su);
+    drawRhythm(v, this.syms, xOf, y, su, (sym) => {
+      if (this.state !== 1 || sym.rest) return COL_LINE;
+      const o = this.onsets.find((x) => Math.abs(x.at - sym.at) < 1e-6);
+      return o && !o.hit ? COL_ACCENT : COL_LINE;
+    });
 
     // After the bar: how each note went, a tick early (left) or late (right) of it.
     if (this.state === 1) {
@@ -304,131 +429,6 @@ class Sight implements Mini {
     }
     footer(v, touch, this.held);
     return false;
-  }
-
-  /** Notes, rests, beams, flags, dots and triplet marks. */
-  private drawSymbols(v: View, xOf: (t: number) => number, y: number, u: number): void {
-    const ctx = v.ctx;
-    const dpr = v.dpr;
-    const stemH = 34 * u;
-    const top = y - stemH;
-    const col = (s: Placed) => {
-      if (this.state !== 1 || s.rest) return COL_LINE;
-      const o = this.onsets.find((x) => Math.abs(x.at - s.at) < 1e-6);
-      return o && !o.hit ? COL_ACCENT : COL_LINE;
-    };
-    // Group the symbols of each figure.
-    const figs = new Map<number, Placed[]>();
-    for (const s of this.syms) figs.set(s.fig, [...(figs.get(s.fig) ?? []), s]);
-    for (const group of figs.values()) {
-      const triplet = group.some((s) => Math.abs(s.d - T) < 1e-6);
-      const short = group.filter((s) => !s.rest && s.d < 1 - 1e-6);
-      // Beam the short notes of a figure that fits in one beat; a lone one gets a flag.
-      const beamed = short.length >= 2 && length(group) <= 1 + 1e-6;
-      for (const s of group) {
-        const x = xOf(s.at);
-        ctx.fillStyle = col(s);
-        ctx.strokeStyle = col(s);
-        if (s.rest) {
-          this.rest(v, x + 4 * u, y, s.d, u);
-          continue;
-        }
-        // Head: filled for a quarter and shorter, open for a half.
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(-0.35);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 6.6 * u, 4.6 * u, 0, 0, TAU);
-        if (s.d >= 2) {
-          ctx.lineWidth = 1.8 * dpr;
-          ctx.stroke();
-        } else ctx.fill();
-        ctx.restore();
-        // Stem.
-        ctx.fillRect(x + 5.6 * u, top, 1.6 * dpr, stemH - 1 * u);
-        if (s.dot) {
-          ctx.beginPath();
-          ctx.arc(x + 12 * u, y - 4 * u, 2.2 * u, 0, TAU);
-          ctx.fill();
-        }
-        // A flag, for a short note on its own.
-        if (s.d < 1 - 1e-6 && !beamed) {
-          const flags = s.d <= 0.25 + 1e-6 ? 2 : 1;
-          ctx.lineWidth = 2.2 * dpr;
-          for (let k = 0; k < flags; k++) {
-            const fy = top + k * 7 * u;
-            ctx.beginPath();
-            ctx.moveTo(x + 6.4 * u, fy);
-            ctx.quadraticCurveTo(x + 16 * u, fy + 8 * u, x + 13 * u, fy + 18 * u);
-            ctx.stroke();
-          }
-        }
-      }
-      if (beamed) {
-        ctx.fillStyle = COL_LINE;
-        const xa = xOf(short[0]!.at) + 5.6 * u;
-        const xb = xOf(short[short.length - 1]!.at) + 7.2 * u;
-        ctx.fillRect(xa, top, xb - xa, 4 * u);
-        // Second beams for sixteenths: joined between neighbours, a stub otherwise.
-        for (let i = 0; i < short.length; i++) {
-          const s = short[i]!;
-          if (s.d > 0.25 + 1e-6) continue;
-          const sx = xOf(s.at) + 5.6 * u;
-          const nxt = short[i + 1];
-          const prv = short[i - 1];
-          if (nxt && nxt.d <= 0.25 + 1e-6) ctx.fillRect(sx, top + 7 * u, xOf(nxt.at) + 7.2 * u - sx, 4 * u);
-          else if (!(prv && prv.d <= 0.25 + 1e-6)) {
-            const toward = nxt ? 1 : -1;
-            ctx.fillRect(toward > 0 ? sx : sx - 8 * u + 1.6 * dpr, top + 7 * u, 8 * u, 4 * u);
-          }
-        }
-      }
-      if (triplet) {
-        const xa = xOf(group[0]!.at);
-        const xb = xOf(group[group.length - 1]!.at);
-        ctx.fillStyle = COL_MID;
-        v.text('3', (xa + xb) / 2 + 6 * u, top - 8 * u, v.fontTiny, 'center');
-      }
-    }
-  }
-
-  private rest(v: View, x: number, y: number, d: number, u: number): void {
-    const ctx = v.ctx;
-    const dpr = v.dpr;
-    if (d >= 2) {
-      // Half rest: a block sitting on the line.
-      ctx.fillRect(x - 7 * u, y - 5 * u, 14 * u, 5 * u);
-      return;
-    }
-    ctx.lineWidth = 2.4 * dpr;
-    ctx.lineJoin = 'round';
-    if (d >= 1) {
-      // Quarter rest: the zigzag.
-      ctx.beginPath();
-      ctx.moveTo(x - 3 * u, y - 15 * u);
-      ctx.lineTo(x + 3 * u, y - 8 * u);
-      ctx.lineTo(x - 2 * u, y - 2 * u);
-      ctx.lineTo(x + 3 * u, y + 5 * u);
-      ctx.quadraticCurveTo(x - 5 * u, y + 2 * u, x - 1 * u, y + 12 * u);
-      ctx.stroke();
-      return;
-    }
-    // Eighth (one hook) or sixteenth (two): dots with a slanted stem.
-    const hooks = d <= 0.26 ? 2 : d < 0.4 ? 1 : 1;
-    ctx.beginPath();
-    ctx.moveTo(x + 4 * u, y - 10 * u);
-    ctx.lineTo(x - 1 * u, y + 8 * u + (hooks - 1) * 5 * u);
-    ctx.stroke();
-    for (let k = 0; k < hooks; k++) {
-      const hy = y - 10 * u + k * 7 * u;
-      ctx.beginPath();
-      ctx.arc(x - 3 * u - k * 1.5 * u, hy - 1 * u, 2.4 * u, 0, TAU);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(x - 3 * u - k * 1.5 * u, hy + 1 * u);
-      ctx.quadraticCurveTo(x, hy + 2 * u, x + 4 * u - k * 2 * u, hy - 0 * u);
-      ctx.stroke();
-    }
   }
 
   result(): MiniResult {

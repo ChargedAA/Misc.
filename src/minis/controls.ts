@@ -76,6 +76,7 @@ export const CONTROLS: Record<string, Control[]> = {
   ship: [['ANY', 'hold to fly up, let go to sink'], ['TAP', 'or touch and hold']],
   flick: [['TAP', 'click each target']],
   round: [['TAP', 'hold and draw a circle, then let go']],
+  dictate: [['1-4', 'the bar you heard'], ['KeyR', 'play it again'], ['TAP', 'or tap it']],
   net: [['1-4', 'the cube it folds into'], ['TAP', 'or tap it']],
   herd: [['0-9', 'how many in the pen'], ['Enter', 'answer']],
   camo: [['TAP', 'click inside the ring']],
