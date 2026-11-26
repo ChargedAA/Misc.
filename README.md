@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-308 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+312 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -109,6 +109,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Pedal | Alternate the pedals to keep the bike above stalling speed up the hills. | keys, 2+ keys |
 | Ramp | A beat that keeps speeding up. Keep pressing with it until you fall behind. | keys or tap |
 | Shuttle | Sweep the mouse from bar to bar and back, as many times as you can. | mouse or tap |
+| Clicker | Click as fast as you can for ten seconds. | mouse or tap |
 | Ladder | The target rate steps up every second. Hang on. | keys |
 | Pulse | Ride a target rate that rises, drops and stops. | keys |
 | Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
@@ -186,6 +187,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Sounds | Tiles hide tones. Find the matching pairs by ear. | mouse or tap |
 | Legend | Learn which symbol goes with which number, then answer from memory, fast. | mouse or tap |
 | Tray | A tray of things, then the same tray with one gone. Which one is missing? | mouse or tap |
+| Newest | Things gather on the board one at a time. Which one is new? | mouse or tap |
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Tag | A few things and their prices. Then: what did this one cost? | keyboard |
@@ -418,6 +420,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Dictate | Hear a bar of rhythm, then pick its notation from four. | mouse or tap |
 | Copy | Learn Morse by ear: two letters at full speed, one more each time you are sure. | keyboard |
 | Brisk | Two runs of clicks. Was the second faster or slower? | keys, 2+ keys |
+| Missing | A run of beats with one left out. Which beat was missing? | mouse or tap |
 | Safe | Turn a dial and listen: a louder click marks each number of the combination. | keys, 2+ keys |
 | Clicks | A quick burst of clicks. How many were there? | keyboard |
 | Same | Two short rhythms, one after the other. The same, or different? | keys, 2+ keys |
@@ -442,6 +445,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Darts | The aim drifts like a real hand. Throw when it is over the bull. | mouse or tap |
 | Drag | Drag each piece into its slot and let go, quickly and squarely. | mouse or tap |
 | Still | Bring the pointer into a small circle and hold it there, steady. | mouse or tap |
+| Circle | Draw a circle freehand around the dot, as round as you can. | mouse or tap |
 | Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
 | Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
 | Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |
