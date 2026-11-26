@@ -89,6 +89,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
+      { name: 'Search', desc: 'Find every target on a busy page', ids: ['cancel'] },
     ],
     routine: ['track', 'find', 'except'],
     benchmark: 'track',
@@ -115,6 +116,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
+      { name: 'Everyday sums', desc: 'Times and clocks, worked out in your head', ids: ['later'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern', 'triad'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
@@ -142,7 +144,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Higher or lower', desc: 'Fine differences in pitch and loudness', ids: ['pitch', 'intune', 'tune', 'louder'] },
       { name: 'Name it', desc: 'Octaves, notes and the distance between them', ids: ['octave', 'note', 'interval'] },
-      { name: 'Harmony and melody', desc: 'Chords, scales, the shape of a tune, and how many voices', ids: ['chord', 'scale', 'contour', 'voices'] },
+      { name: 'Harmony and melody', desc: 'Chords, scales, the shape of a tune, and how many voices', ids: ['chord', 'scale', 'contour', 'voices', 'changed'] },
       { name: 'Rhythm by ear', desc: 'Hear a rhythm or a code and write it down', ids: ['dictate', 'copy'] },
       { name: 'Listen closely', desc: 'Pick one faint sound out of many', ids: ['safe'] },
     ],
@@ -232,6 +234,8 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  cancel: [3, 'sheets'],
+  later: [12, 'questions'],
   carom: [12, 'shots'],
   prime: [60, 's'],
   fraction: [60, 's'],
@@ -465,4 +469,4 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
 }
 
 /** Games that cannot be played without sound. */
-export const NEEDS_SOUND: ReadonlySet<string> = new Set(['pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
