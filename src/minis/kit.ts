@@ -101,7 +101,7 @@ export interface Mini {
   /** A key or pad came up. `ts` is the event's timeStamp. */
   release?(slot: number, ts: number): void;
   /** Any other key (games that type, like Digits). Return true if it was used. */
-  typeKey?(code: string, ts: number): boolean;
+  typeKey?(code: string, ts: number, key?: string): boolean;
   /** A key let go, for typing games that need held keys. */
   typeKeyUp?(code: string, ts: number): void;
   /** A click or tap at canvas device pixels (pointer games). */

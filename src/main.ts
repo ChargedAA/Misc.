@@ -1799,7 +1799,7 @@ function onKeyDown(e: KeyboardEvent): void {
     return;
   }
   if (screen === 'mini' && !e.repeat) integrity.note(e, stamp(e), code);
-  if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift())) {
+  if (screen === 'mini' && mini?.typeKey && !e.repeat && mini.typeKey(code, stamp(e) - clockShift(), e.key)) {
     miniInputs++;
     e.preventDefault();
     return;

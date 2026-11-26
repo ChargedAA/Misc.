@@ -72,7 +72,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Hold more in your head, keep it up to date, and remember where things were.',
     groups: [
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route'] },
-      { name: 'Places', desc: 'Where things were', ids: ['grid', 'where', 'pairs'] },
+      { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds'] },
       { name: 'Lists', desc: 'Remember what came and in what order', ids: ['recall', 'queue'] },
@@ -86,7 +86,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly'] },
-      { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte'] },
+      { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
     ],
@@ -102,7 +102,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
       { name: 'Colour', desc: 'See and remember a colour exactly', ids: ['hue'] },
       { name: 'Eyesight', desc: 'The faintest and finest you can see', ids: ['faint', 'vernier'] },
-      { name: 'Risk', desc: 'Weigh a bigger reward against the chance of losing it', ids: ['pump'] },
+      { name: 'Risk', desc: 'Weigh chances and rewards: which bet is better?', ids: ['pump', 'jars'] },
     ],
     routine: ['longer', 'tilt', 'more'],
     benchmark: 'longer',
@@ -110,7 +110,8 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare and carry sums against the clock', ids: ['sum', 'compare', 'chain'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark'] },
+      { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
       { name: 'Test and deduce', desc: 'Gather clues, then reason to the answer. No clock', ids: ['probe', 'crack'] },
@@ -126,7 +127,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
       { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
-      { name: 'Typing', desc: 'Words at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse'] },
+      { name: 'Typing', desc: 'Words and code at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax'] },
       { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo'] },
     ],
     routine: ['hunt', 'chords', 'type'],
@@ -225,6 +226,10 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  ballpark: [30, 'sums'],
+  jars: [30, 'picks'],
+  blink: [24, 'streams'],
+  syntax: [60, 's'],
   hitch: [120, 's'],
   wire: [3, 'wires'],
   bounce: [8, 'drops'],
@@ -381,7 +386,7 @@ export const ROUNDS: Record<string, [number, string]> = {
  * Games that can be played until three mistakes: they have rounds, and they say when you get one
  * wrong (the mistake sound), which is what the framework counts. Length value -1.
  */
-export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'back', 'switch', 'choice', 'shape', 'aim', 'rotate', 'count', 'glance', 'spot', 'stream', 'side', 'where', 'flicker', 'meet', 'longer', 'more', 'middle', 'tilt', 'faster', 'shade', 'series', 'relate', 'matrix', 'balance', 'running', 'exact', 'ears', 'guess', 'shells', 'again', 'link', 'except', 'sync', 'lights', 'first', 'merge', 'pour', 'probe', 'plan', 'crack', 'pitch', 'bank', 'opposite', 'line', 'hold', 'chain', 'flow', 'away', 'late', 'remind', 'parry', 'goalie', 'hunt', 'chords', 'dial', 'fingers', 'flip', 'sweep', 'ghost', 'taps', 'arrows', 'reverse', 'combo', 'schulte', 'trail', 'maze', 'hanoi', 'slide', 'toggle', 'latin', 'target', 'tally', 'closer', 'topple', 'recall', 'queue', 'beeps', 'pattern', 'ruler', 'bat', 'stamp', 'morse', 'crane', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'ink', 'swap', 'louder', 'faint', 'vernier']);
+export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'back', 'switch', 'choice', 'shape', 'aim', 'rotate', 'count', 'glance', 'spot', 'stream', 'side', 'where', 'flicker', 'meet', 'longer', 'more', 'middle', 'tilt', 'faster', 'shade', 'series', 'relate', 'matrix', 'balance', 'running', 'exact', 'ears', 'guess', 'shells', 'again', 'link', 'except', 'sync', 'lights', 'first', 'merge', 'pour', 'probe', 'plan', 'crack', 'pitch', 'bank', 'opposite', 'line', 'hold', 'chain', 'flow', 'away', 'late', 'remind', 'parry', 'goalie', 'hunt', 'chords', 'dial', 'fingers', 'flip', 'sweep', 'ghost', 'taps', 'arrows', 'reverse', 'combo', 'schulte', 'trail', 'maze', 'hanoi', 'slide', 'toggle', 'latin', 'target', 'tally', 'closer', 'topple', 'recall', 'queue', 'beeps', 'pattern', 'ruler', 'bat', 'stamp', 'morse', 'crane', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'ink', 'swap', 'louder', 'faint', 'vernier', 'ballpark', 'jars', 'twist', 'script']);
 
 /** The length value for "until three mistakes". */
 export const LIVES_LEN = -1;
