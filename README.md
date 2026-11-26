@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-304 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+308 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -139,6 +139,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Pins | A lock’s pins bob up and down. Press as each crosses the line to set it. | keys or tap |
 | Stack | A block slides over the tower. Drop it square: what hangs over is cut off. | keys or tap |
 | Golf | A swing meter. Press once for power on the mark, once more on the line back. | keys or tap |
+| Doors | Sliding doors open and shut. Set off so you arrive while they are open. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -224,6 +225,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Trail | Connect 1-A-2-B-3-C, switching between numbers and letters. | mouse or tap |
 | Radar | The sweep reveals contacts. Tap the hostile ones before it comes round again. | mouse or tap |
 | Herd | Sheep wander in and out of a pen. How many are inside now? | keyboard |
+| Mover | A field of still dots. One starts to creep. Click it. | mouse or tap |
 | Stream | Letters fly past. Press for the X. | keys or tap |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
@@ -287,6 +289,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Map | Two places on a map and a scale bar. How far apart are they? | keyboard |
 | Area | Two different shapes. Which covers more ground? | keys, 2+ keys |
 | Fit | A short bar and a tall one. How many of the short fit in the tall? | keyboard |
+| Dense | Two boxes of dots, different sizes. Which is more crowded? | keys, 2+ keys |
 | Tilt | Which way does the line lean? Later, a tilted frame tries to fool you. | keys or tap |
 | Shade | Which square is lighter? Their surroundings lie. | keys or tap |
 | Faster | Which dot moved faster? Distance is no clue. | keys or tap |
@@ -330,6 +333,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Rank | Four numbers: press them from smallest to largest. | keyboard |
 | Units | Two amounts in different units. Which is bigger? | keys, 2+ keys |
 | Ten | A grid of digits. Click pairs that make ten, as fast as you can. | mouse or tap |
+| Percent | Quick percentages: 15% of 80, or what share 12 is of 48. | mouse or tap |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |

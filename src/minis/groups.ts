@@ -48,7 +48,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'golf', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'golf', 'doors', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late', 'same'] },
       { name: 'Rhythm games', desc: 'Read a rhythm, or hit notes as they fall, in time', ids: ['sight', 'notes'] },
@@ -88,7 +88,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned'] },
       { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink'] },
-      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd'] },
+      { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd', 'mover'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
       { name: 'Keep count', desc: 'Tally what flashes past, then report it', ids: ['deal'] },
       { name: 'Search', desc: 'Find the target on a busy page, or in the dark', ids: ['cancel', 'lantern', 'proof', 'diff'] },
@@ -99,7 +99,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   judgement: {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
-      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area', 'fit'] },
+      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area', 'fit', 'dense'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
@@ -116,7 +116,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten', 'percent'] },
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
@@ -270,6 +270,9 @@ export const ROUNDS: Record<string, [number, string]> = {
   recent: [20, 'questions'],
   drag: [20, 'pieces'],
   still: [15, 'circles'],
+  doors: [15, 'doors'],
+  mover: [15, 'fields'],
+  dense: [30, 'pairs'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
