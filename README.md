@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-328 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+332 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -222,6 +222,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Tangle | Follow one line through a tangle to its end. | mouse or tap |
 | Shadow | Keep your pointer on a wandering target. Catch flashes at the edges. | mouse or tap |
 | Fly | Swat a fly that never flies straight. | mouse or tap |
+| Bounces | One bright ball among grey ones. Count how often it hits the walls. | keyboard |
 | Glance | A shape in the middle, a dot out wide. One blink to see both. | mouse or tap |
 | Count | How many dots were there, in that blink? | mouse or tap |
 | Flicker | Two versions flicker back and forth. Find what changes. | mouse or tap |
@@ -317,6 +318,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Hoop | Hold to charge, release to shoot. The basket moves each time. | keys or tap |
 | Carom | A ball sets off and vanishes. Where will it stop, after its bounces? | mouse or tap |
 | Cannon | Set the barrel’s angle to land a shot on the target. Wind joins later. | keys, 2+ keys |
+| Velo | Watch a dot’s speed, then set your own to the same speed from memory. | keys, 2+ keys |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
@@ -357,6 +359,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Later | Clock arithmetic: what time will it be? | keyboard |
 | Till | A price and what was paid. Type the change. | keyboard |
 | Weekday | “Tuesday, plus 10 days.” What day is it? | mouse or tap |
+| Roman | Roman numerals: type the number. | keyboard |
 | Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
 | Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
 | Series | Five numbers. What comes next? | mouse or tap |
@@ -454,6 +457,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Gallery | Targets ride across on belts. Hit the white ones, spare the hollow ones. | mouse or tap |
 | Shrink | A target shrinks away to nothing. Click it before it is gone. | mouse or tap |
 | Trio | Three targets on a grid. Hit one and it jumps to an empty square. | mouse or tap |
+| Reset | Click the middle, then the target that appears. Back to the middle each time. | mouse or tap |
 | Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |

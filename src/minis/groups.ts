@@ -86,7 +86,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Pick the signal out of the noise, follow it, and stay sharp when little happens.',
     groups: [
       { name: 'Filter', desc: 'Answer the right thing and ignore what pulls you away', ids: ['find', 'shape', 'side', 'switch', 'sort', 'away', 'beeps', 'ink', 'camo', 'kinds', 'turned'] },
-      { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly'] },
+      { name: 'Follow', desc: 'Keep track of something as it moves or winds', ids: ['track', 'shells', 'tangle', 'shadow', 'fly', 'bounces'] },
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink', 'blinks', 'glimpse'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd', 'mover'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
@@ -101,7 +101,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves', 'map', 'area', 'fit', 'dense', 'squeeze'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align', 'illusion'] },
-      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon'] },
+      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon', 'velo'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
       { name: 'Colour', desc: 'See, remember and mix a colour exactly', ids: ['hue', 'mix'] },
       { name: 'Drawing eye', desc: 'Perspective and proportion, as artists judge them', ids: ['vanish', 'figure'] },
@@ -120,7 +120,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
-      { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till', 'weekday'] },
+      { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till', 'weekday', 'roman'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern', 'triad', 'oddword'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
@@ -159,7 +159,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   aim: {
     about: 'The mouse (or a finger): get to a target fast, click it exactly, stay on it as it moves, and aim in 3D.',
     groups: [
-      { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio'] },
+      { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio', 'reset'] },
       { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts', 'drag', 'still', 'circle'] },
       { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
@@ -283,6 +283,9 @@ export const ROUNDS: Record<string, [number, string]> = {
   illusion: [30, 'pairs'],
   glimpse: [20, 'words'],
   carry: [16, 'runs'],
+  bounces: [10, 'runs'],
+  velo: [12, 'rounds'],
+  reset: [25, 'targets'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
