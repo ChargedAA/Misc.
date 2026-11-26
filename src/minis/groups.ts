@@ -39,7 +39,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal', 'ramp', 'shuttle'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
       { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain'] },
-      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match'] },
+      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity'] },
     ],
     routine: ['sprint', 'steady', 'trill'],
     benchmark: 'sprint',
@@ -137,7 +137,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
       { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
-      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc'] },
+      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc', 'caps'] },
       { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo', 'anchor'] },
     ],
     routine: ['hunt', 'chords', 'type'],
@@ -150,7 +150,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Where and how long', desc: 'Which side a sound came from; which lasted longer', ids: ['pan', 'held'] },
       { name: 'Name it', desc: 'Octaves, notes and the distance between them', ids: ['octave', 'note', 'interval'] },
       { name: 'Harmony and melody', desc: 'Chords, scales, the shape of a tune, and how many voices', ids: ['chord', 'scale', 'contour', 'voices', 'changed'] },
-      { name: 'Rhythm by ear', desc: 'Hear a rhythm or a code and write it down', ids: ['dictate', 'copy'] },
+      { name: 'Rhythm by ear', desc: 'Hear a rhythm or a code and write it down', ids: ['dictate', 'copy', 'brisk'] },
       { name: 'Listen closely', desc: 'Pick one faint sound out of many, or count them', ids: ['safe', 'clicks'] },
     ],
     routine: ['pitch', 'interval', 'chord'],
@@ -159,7 +159,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   aim: {
     about: 'The mouse (or a finger): get to a target fast, click it exactly, stay on it as it moves, and aim in 3D.',
     groups: [
-      { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink'] },
+      { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio'] },
       { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts'] },
       { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
@@ -260,6 +260,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   edge: [24, 'dots'],
   glide: [30, 'tones'],
   tray: [12, 'trays'],
+  brisk: [30, 'pairs'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
@@ -501,4 +502,4 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
 }
 
 /** Games that cannot be played without sound. */
-export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'glide', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'glide', 'brisk', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);

@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-287 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+291 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -117,6 +117,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Rain | Letters fall. Type them before they land. | keyboard |
 | Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
 | Match | Two dot patterns: the same, or one dot different? As many as you can. | keys, 2+ keys |
+| Parity | Odd or even? Number after number, as fast as you can. | keys, 2+ keys |
 
 ### Timing
 
@@ -371,6 +372,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Syntax | Type real lines of code, symbols and all. | keyboard |
 | Entry | Type numbers exactly, fast: amounts, codes and dates. | keyboard |
 | Abc | Type the alphabet, a to z, as fast as you can. | keyboard |
+| Caps | Type words exactly as shown, capitals and all. | keyboard |
 | Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
 | Sweep | Run along a keyboard row and back. | keyboard |
 | Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
@@ -400,6 +402,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Changed | A melody plays twice; one note is different the second time. Which? | mouse or tap |
 | Dictate | Hear a bar of rhythm, then pick its notation from four. | mouse or tap |
 | Copy | Learn Morse by ear: two letters at full speed, one more each time you are sure. | keyboard |
+| Brisk | Two runs of clicks. Was the second faster or slower? | keys, 2+ keys |
 | Safe | Turn a dial and listen: a louder click marks each number of the combination. | keys, 2+ keys |
 | Clicks | A quick burst of clicks. How many were there? | keyboard |
 | Same | Two short rhythms, one after the other. The same, or different? | keys, 2+ keys |
@@ -416,6 +419,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Lead | Discs fly in arcs. Your shot takes a moment to land: aim ahead. | mouse or tap |
 | Gallery | Targets ride across on belts. Hit the white ones, spare the hollow ones. | mouse or tap |
 | Shrink | A target shrinks away to nothing. Click it before it is gone. | mouse or tap |
+| Trio | Three targets on a grid. Hit one and it jumps to an empty square. | mouse or tap |
 | Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |
