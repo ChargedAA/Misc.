@@ -9,7 +9,7 @@
 //   Vernier - two lines, one a hair to the side: which side?
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { Stair, arena, footer, header, mean, median, message, ms, pct, scaled, shown, sideOf, type Arena, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -730,7 +730,7 @@ class Swap implements Mini {
       this.feedback = 'too slow';
       this.state = 2;
       this.next = now + 700;
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
     }
     v.clear();
     const a = arena(v, touch);

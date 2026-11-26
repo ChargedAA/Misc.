@@ -6,7 +6,7 @@
 //   Hue    - a colour shows, then hides. Find it on the colour wheel.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_BEAT, SND_CATCH, SND_FALSE, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
+import { SND_BEAT, SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_WEAK, SND_TONE } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, header, mean, median, message, ms, pct, scaled, shown, slotsOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -281,7 +281,7 @@ class Notes implements Mini {
       this.combo = 0;
       this.judgeText = 'miss';
       this.judgeAt = now;
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
     }
     if (t > this.end + 600) return true;
     v.clear();

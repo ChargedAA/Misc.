@@ -4,7 +4,7 @@
 //   Slalom (coordination) - ski down with momentum and pass every flag on its marked side.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R } from '../audio.ts';
+import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_MISS, SND_RING, SND_TAP_L, SND_TAP_R } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { ship } from './sprites.ts';
@@ -436,7 +436,7 @@ class Slalom implements Mini {
           this.env.sound(SND_CATCH);
         } else {
           this.missed++;
-          this.env.sound(this.missed >= 3 ? SND_FALL : SND_FALSE);
+          this.env.sound(this.missed >= 3 ? SND_FALL : SND_MISS);
           if (this.missed >= 3) {
             this.over = true;
             this.overAt = now + 1300;

@@ -5,7 +5,7 @@
 //   Tray  - a tray of things, then the same tray with one gone. Which one is missing?
 
 import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, foreperiod, handLabel, header, median, message, ms, pct, scaled, shuffle, sideOf, Stair, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -200,7 +200,7 @@ class Edge implements Mini {
       this.misses++;
       this.trial++;
       this.last = 'missed it';
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
       this.state = 2;
       this.at = now + 700;
     }

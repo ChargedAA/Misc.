@@ -6,7 +6,7 @@
 //   Drag   - drag each piece into its slot and let go, quickly and squarely.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, foreperiod, handLabel, header, mean, median, ms, pct, scaled, shuffle, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -94,7 +94,7 @@ class Brake implements Mini {
       if (this.kind === 0) {
         this.missed++;
         this.last = 'too late: it braked';
-        this.env.sound(SND_FALSE);
+        this.env.sound(SND_MISS);
       } else this.last = 'right: no brake';
       this.n++;
       this.state = 2;

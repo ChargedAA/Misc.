@@ -5,7 +5,7 @@
 //   Tangle (attention) - follow one line through a tangle to its end.
 
 import { ANTICIPATION_MS, COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
-import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALSE, SND_TAP_WEAK } from '../audio.ts';
+import { SND_BEAT, SND_BEAT_UP, SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import {
@@ -111,7 +111,7 @@ class Lights implements Mini {
       this.misses++;
       this.last = -1;
       this.jumped = false;
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
       this.state = 3;
       this.at = now + 1200;
     }

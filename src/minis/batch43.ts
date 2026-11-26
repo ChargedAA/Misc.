@@ -5,7 +5,7 @@
 //   Pipes  - turn the tiles to join the pipe from start to finish.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, header, median, ms, pct, scaled, shown, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -245,7 +245,7 @@ class Turned implements Mini {
       this.last = 'too slow';
       this.state = 2;
       this.next = now + 800;
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
     }
     v.clear();
     const a = arena(v, touch);

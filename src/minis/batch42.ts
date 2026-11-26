@@ -5,7 +5,7 @@
 //   Kinds - words flash: living thing or not? Sort them as fast as you can.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, header, mean, median, ms, pct, scaled, sideOf, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -397,7 +397,7 @@ class Relay implements Mini {
       this.word = pick(ENGLISH_5K.filter((w) => w.length >= 4 && w.length <= 6 && /^[a-z]+$/.test(w) && !/[xzq]$/.test(w)));
       this.turnAt = now;
       this.typed = '';
-      this.env.sound(SND_FALSE);
+      this.env.sound(SND_MISS);
     }
     v.clear();
     const a = arena(v, touch);

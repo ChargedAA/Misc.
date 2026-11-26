@@ -9,7 +9,7 @@
 //   Drone  (coordination) - a rotor per hand. Fly through the gates.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI } from '../audio.ts';
+import { SND_CATCH, SND_FALL, SND_FALSE, SND_LURCH, SND_RING, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK, SND_UI, SND_WARN } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { TONE, ball, crate as crateBox, jumper, ngon, person, rowboat } from './sprites.ts';
@@ -953,8 +953,8 @@ class Pedal implements Mini {
         if (short > 0) {
           this.strain = Math.min(1, this.strain + dt * (0.6 + short * 0.4));
           if (now >= this.strainTickAt) {
-            this.strainTickAt = now + 260 - this.strain * 140;
-            this.env.tone?.(150 + this.strain * 90, 60, 0, 0.1);
+            this.strainTickAt = now + 520 - this.strain * 300;
+            this.env.sound(SND_WARN);
           }
         } else this.strain = Math.max(0, this.strain - dt * 0.8);
         if (this.strain >= 1) {

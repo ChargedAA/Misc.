@@ -20,7 +20,16 @@ export const SND_TONE = 15;
 /** Metronome: SND_BEAT, and a brighter SND_BEAT_UP for the first beat of a bar. */
 export const SND_BEAT = 22;
 export const SND_BEAT_UP = 23;
-const SOUND_COUNT = 24;
+/** Too slow: no press in time (a miss, not a wrong press). */
+export const SND_MISS = 24;
+/** Something is about to go wrong: strain, time nearly out, a last life. */
+export const SND_WARN = 25;
+/** A countdown beep, and the higher one that starts the round. */
+export const SND_COUNT = 26;
+export const SND_GO = 27;
+/** Choosing in a menu; SND_UI is moving through it. */
+export const SND_UI_PICK = 28;
+const SOUND_COUNT = 29;
 
 type Synth = (t: number, i: number) => number;
 
@@ -83,6 +92,7 @@ export class Sfx {
       }
     }
     this.build(ctx);
+    void this.buildGraphs(ctx);
   }
 
   /** Master volume, 0 to 1. */
@@ -280,5 +290,159 @@ export class Sfx {
 
     // Cleared / best: three rising notes.
     this.make(ctx, SND_BURST_OK, 0.4, 0, two(two(strike(659, 0.06, 0.12, 3.01), strike(880, 0.06, 0.12, 3.01), 0.06), strike(1319, 0.14, 0.12, 3.01), 0.12));
+  }
+
+  /**
+   * The sounds picked in the sound lab, built as small Web Audio graphs and rendered once,
+   * offline, into buffers. Each is scaled to a set peak so it sits right beside the rest.
+   */
+  private async buildGraphs(ctx: AudioContext): Promise<void> {
+    if (typeof OfflineAudioContext === 'undefined') return;
+    const rate = ctx.sampleRate;
+    const noiseBuf = (c: BaseAudioContext): AudioBuffer => {
+      const b = c.createBuffer(1, rate * 2, rate);
+      const d = b.getChannelData(0);
+      let s = 22222;
+      for (let i = 0; i < d.length; i++) {
+        s = (Math.imul(s, 1664525) + 1013904223) | 0;
+        d[i] = (s >>> 8) / 8388608 - 1;
+      }
+      return b;
+    };
+    type G = { c: BaseAudioContext; out: AudioNode; noise: AudioBuffer };
+    const env = (g: GainNode, t: number, peak: number, attack: number, decay: number, lin = false) => {
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t + attack);
+      if (lin) g.gain.linearRampToValueAtTime(0.0001, t + attack + decay);
+      else g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+    };
+    type ToneOpts = { t?: number; f: number; f2?: number; glide?: number; type?: OscillatorType; dur: number; gain?: number; attack?: number; lin?: boolean; lp?: number; lp2?: number; vib?: [number, number] };
+    const tone = ({ c, out }: G, o: ToneOpts) => {
+      const t = o.t ?? 0;
+      const attack = o.attack ?? 0.003;
+      const osc = c.createOscillator();
+      osc.type = o.type ?? 'sine';
+      osc.frequency.setValueAtTime(o.f, t);
+      if (o.f2) osc.frequency.exponentialRampToValueAtTime(o.f2, t + (o.glide ?? o.dur));
+      if (o.vib) {
+        const lfo = c.createOscillator();
+        const lg = c.createGain();
+        lfo.frequency.value = o.vib[0];
+        lg.gain.value = o.vib[1];
+        lfo.connect(lg).connect(osc.frequency);
+        lfo.start(t);
+        lfo.stop(t + attack + o.dur + 0.1);
+      }
+      const g = c.createGain();
+      env(g, t, o.gain ?? 0.3, attack, o.dur, o.lin);
+      let node: AudioNode = osc.connect(g);
+      if (o.lp) {
+        const f = c.createBiquadFilter();
+        f.type = 'lowpass';
+        f.frequency.setValueAtTime(o.lp, t);
+        if (o.lp2) f.frequency.exponentialRampToValueAtTime(o.lp2, t + o.dur);
+        node = node.connect(f);
+      }
+      node.connect(out);
+      osc.start(t);
+      osc.stop(t + attack + o.dur + 0.05);
+    };
+    type NoiseOpts = { t?: number; f: number; f2?: number; sweep?: number; filter?: BiquadFilterType; q?: number; dur: number; gain?: number; attack?: number; lin?: boolean };
+    const noise = ({ c, out, noise: nb }: G, o: NoiseOpts) => {
+      const t = o.t ?? 0;
+      const attack = o.attack ?? 0.002;
+      const src = c.createBufferSource();
+      src.buffer = nb;
+      const f = c.createBiquadFilter();
+      f.type = o.filter ?? 'bandpass';
+      f.frequency.setValueAtTime(o.f, t);
+      if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + (o.sweep ?? o.dur));
+      f.Q.value = o.q ?? 1;
+      const g = c.createGain();
+      env(g, t, o.gain ?? 0.3, attack, o.dur, o.lin);
+      src.connect(f).connect(g).connect(out);
+      src.start(t);
+      src.stop(t + attack + o.dur + 0.05);
+    };
+    const fm = ({ c, out }: G, o: { t?: number; f: number; ratio: number; index: number; dur: number; modDecay?: number; gain?: number }) => {
+      const t = o.t ?? 0;
+      const car = c.createOscillator();
+      const mod = c.createOscillator();
+      const mg = c.createGain();
+      car.frequency.value = o.f;
+      mod.frequency.value = o.f * o.ratio;
+      mg.gain.setValueAtTime(o.f * o.index, t);
+      mg.gain.exponentialRampToValueAtTime(Math.max(1, o.f * o.index * 0.02), t + (o.modDecay ?? o.dur));
+      mod.connect(mg).connect(car.frequency);
+      const g = c.createGain();
+      env(g, t, o.gain ?? 0.25, 0.002, o.dur);
+      car.connect(g).connect(out);
+      car.start(t);
+      mod.start(t);
+      car.stop(t + o.dur + 0.05);
+      mod.stop(t + o.dur + 0.05);
+    };
+    const render = async (id: number, seconds: number, peak: number, pan: number, draw: (g: G) => void) => {
+      try {
+        const off = new OfflineAudioContext(1, Math.ceil((seconds + 0.05) * rate), rate);
+        const bus = off.createGain();
+        bus.connect(off.destination);
+        draw({ c: off, out: bus, noise: noiseBuf(off) });
+        const buf = await off.startRendering();
+        const x = buf.getChannelData(0);
+        let top = 0;
+        for (let i = 0; i < x.length; i++) top = Math.max(top, Math.abs(x[i]!));
+        if (top > 0) for (let i = 0; i < x.length; i++) x[i]! *= peak / top;
+        this.buffers[id] = buf;
+        this.panOf[id] = pan;
+      } catch {
+        // Leave the built-in sound in place.
+      }
+    };
+    const semis = (base: number, n: number) => base * Math.pow(2, n / 12);
+
+    // Wrong: a short, low, filtered buzz.
+    await render(SND_FALSE, 0.25, 0.2, 0, (g) => tone(g, { f: 110, type: 'sawtooth', dur: 0.17, gain: 0.3, lp: 900, vib: [28, 6], lin: true }));
+    // Too slow: a faint puff and a hollow low note.
+    await render(SND_MISS, 0.4, 0.24, 0, (g) => {
+      noise(g, { f: 4000, filter: 'highpass', dur: 0.08, attack: 0.02, gain: 0.12 });
+      tone(g, { t: 0.03, f: 147, dur: 0.3, attack: 0.02, gain: 0.3 });
+    });
+    // Crash: a metal bar struck.
+    await render(SND_LURCH, 0.7, 0.3, 0, (g) => {
+      fm(g, { f: 320, ratio: 1.41, index: 4, dur: 0.6, modDecay: 0.2, gain: 0.25 });
+      noise(g, { f: 2500, dur: 0.02, gain: 0.2 });
+    });
+    // Game over: the old drop (a knock and a falling tone) running into a long deflate.
+    await render(SND_FALL, 1.3, 0.4, 0, (g) => {
+      noise(g, { f: 500, filter: 'lowpass', dur: 0.03, gain: 0.5 });
+      tone(g, { f: 165, f2: 55, glide: 0.45, dur: 0.5, gain: 0.45 });
+      tone(g, { t: 0.08, f: 320, f2: 70, glide: 1.05, dur: 1.1, attack: 0.04, gain: 0.22, type: 'triangle', vib: [9, 16], lin: true });
+      noise(g, { t: 0.08, f: 1400, f2: 250, dur: 1.0, attack: 0.05, gain: 0.09, lin: true });
+    });
+    // New best: a short brassy flourish.
+    await render(SND_BURST_OK, 0.9, 0.3, 0, (g) => {
+      for (const [t, f, d] of [[0, 523, 0.08], [0.09, 659, 0.08], [0.18, 784, 0.08], [0.3, 1047, 0.5]] as const) tone(g, { t, f, dur: d, gain: 0.14, type: 'sawtooth', lp: 2600, attack: 0.01 });
+    });
+    // Pickups: hard little xylophone bars up a pentatonic scale.
+    const penta = [0, 2, 4, 7, 9];
+    for (let i = 0; i < 5; i++) {
+      await render(SND_RING + i, 0.16, 0.22, 0, (g) => {
+        const f = semis(1047, penta[i]!);
+        tone(g, { f, dur: 0.12, gain: 0.25 });
+        tone(g, { f: f * 3.93, dur: 0.02, gain: 0.08 });
+      });
+    }
+    // Warning: two quick high chirps.
+    await render(SND_WARN, 0.2, 0.16, 0, (g) => {
+      tone(g, { f: 1800, f2: 2200, dur: 0.05, gain: 0.15 });
+      tone(g, { t: 0.08, f: 1800, f2: 2200, dur: 0.05, gain: 0.15 });
+    });
+    // Get ready: square beeps, and a higher, longer one to go.
+    await render(SND_COUNT, 0.12, 0.2, 0, (g) => tone(g, { f: 440, type: 'square', dur: 0.08, gain: 0.1, lp: 4000 }));
+    await render(SND_GO, 0.35, 0.22, 0, (g) => tone(g, { f: 880, type: 'square', dur: 0.3, gain: 0.1, lp: 4000 }));
+    // Menus: a light glass tap to move, a fuller one to choose.
+    await render(SND_UI, 0.08, 0.07, 0, (g) => fm(g, { f: 2093, ratio: 3.5, index: 0.5, dur: 0.05, gain: 0.12 }));
+    await render(SND_UI_PICK, 0.24, 0.09, 0, (g) => fm(g, { f: 1568, ratio: 3.5, index: 0.5, dur: 0.2, gain: 0.12 }));
   }
 }

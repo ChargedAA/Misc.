@@ -6,7 +6,7 @@
 //   Ship   - hold to fly up, let go to sink, through gaps in the walls.
 
 import { COL_ACCENT, COL_DIM, COL_FAINT, COL_LINE, COL_MID, COL_TICK } from '../config.ts';
-import { SND_CATCH, SND_FALL, SND_TAP_L, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_COUNT, SND_FALL, SND_GO, SND_TAP_L, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, header, mean, median, message, ms, pct, scaled, type Arena, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
@@ -411,7 +411,11 @@ class Sphere implements Mini {
     for (const b of this.balls) b.born = this.t0;
     this.last = this.t0;
     this.turnAt = this.t0 + 600;
-    this.env.sound(SND_TAP_L);
+    // Three beeps a second apart, then a higher one as the clock starts.
+    if (this.env.soundAt) {
+      for (const d of [0, 1000, 2000]) this.env.soundAt(SND_COUNT, d);
+      this.env.soundAt(SND_GO, 3000);
+    } else this.env.sound(SND_TAP_L);
   }
 
   /** Camera space: rotate a world direction into view (x right, y up, z forward). */

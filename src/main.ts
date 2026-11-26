@@ -11,6 +11,9 @@ import {
   SND_CATCH,
   SND_FALL,
   SND_FALSE,
+  SND_MISS,
+  SND_UI_PICK,
+  SND_WARN,
   SND_LURCH,
   SND_RING,
   SND_SURGE,
@@ -364,6 +367,11 @@ function frame(now: number): void {
       const left = miniLimit - (now - clockShift() - miniStartAt);
       view.ctx.fillStyle = COL_MID;
       view.text(miniLimit ? `${Math.floor(Math.max(0, left) / 60000)}:${String(Math.ceil(Math.max(0, left) / 1000) % 60).padStart(2, '0')} left` : 'endless · esc to finish', view.ox, 22 * view.dpr, view.fontTiny, 'center');
+      // Five seconds to go: one warning.
+      if (miniLimit && left <= 5000 && !timeWarned) {
+        timeWarned = true;
+        sfx.play(SND_WARN);
+      }
       if (miniLimit && left <= 0) {
         endMini();
         return;
@@ -494,7 +502,7 @@ let onlineSuggested = '';
 let onlineNote = '';
 
 function uiClick(): void {
-  if (settings.look?.uiSound !== false) sfx.play(SND_UI);
+  if (settings.look?.uiSound !== false) sfx.play(SND_UI_PICK);
 }
 
 /** Apply Customize: colours, sizes, motion. */
@@ -656,6 +664,7 @@ function moveCursor(code: string): void {
   if (best) {
     best.focus();
     best.scrollIntoView({ block: 'nearest' });
+    if (settings.look?.uiSound !== false) sfx.play(SND_UI);
   }
 }
 
@@ -1145,6 +1154,8 @@ function endRun(): void {
 
 /** Three lives: mistakes left, and when the run ends after the last one. */
 let livesLeft = 3;
+/** The five-seconds-left warning has played this run. */
+let timeWarned = false;
 let livesEndAt = 0;
 
 /** Set when the player chose Finish on the pause screen; such runs stay off the leaderboards. */
@@ -1184,10 +1195,15 @@ function startGame(game: GameId): void {
     miniStartAt = performance.now();
     livesLeft = livesCount();
     livesEndAt = 0;
+    timeWarned = false;
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => {
       sfx.play(id);
       // Three lives: the mistake sounds are the mistakes.
-      if (lengthValue === LIVES_LEN && (id === SND_FALSE || id === SND_LURCH) && livesLeft > 0 && --livesLeft === 0) livesEndAt = performance.now() + 900;
+      if (lengthValue === LIVES_LEN && (id === SND_FALSE || id === SND_LURCH || id === SND_MISS) && livesLeft > 0) {
+        if (--livesLeft === 0) livesEndAt = performance.now() + 900;
+        // Down to the last life: a warning after the mistake's own sound.
+        else if (livesLeft === 1 && livesCount() > 1) sfx.play(SND_WARN, 350);
+      }
     }, soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan, gain, toHz) => sfx.tone(hz, d, pan, gain, toHz), note: (hz, d, delay) => sfx.note(hz, d, delay), muted: settings.muted, level: e.def.levels ? currentLevel : undefined, past: pastFor(e.def.id, activeKeys) }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {

@@ -5,7 +5,7 @@
 //   Oddword  - four words, three of a kind: which one does not belong?
 
 import { COL_ACCENT, COL_DIM, COL_LINE, COL_MID } from '../config.ts';
-import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
+import { SND_CATCH, SND_FALSE, SND_MISS, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../audio.ts';
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { arena, footer, foreperiod, handLabel, header, mean, median, ms, pct, scaled, shuffle, sideOf, Stair, type Mini, type MiniDef, type MiniEnv, type MiniResult, plural } from './kit.ts';
@@ -98,7 +98,7 @@ class Twice implements Mini {
       } else {
         this.missed++;
         this.last = 'missed it';
-        this.env.sound(SND_FALSE);
+        this.env.sound(SND_MISS);
       }
       this.trial++;
       this.state = 2;
