@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-320 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+324 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -88,6 +88,7 @@ Respond to a signal fast, pick the right response, and hold back the wrong one.
 | Goalie | Penalties. Dive the way the ball goes, or stay put when it comes down the middle. | keys, 2+ keys |
 | Volley | Return the ball with the hand on its side as it reaches your line. It comes back faster. | keys, 2+ keys |
 | Brake | The car ahead brakes: press. It signals a turn: don’t. | keys or tap |
+| Twice | One flash: press. Two flashes in quick succession: hold back. | keys or tap |
 | Swerve | Drive up the road. Hazards pop up in your path: steer clear. | keys, 2+ keys |
 | Shield | Spin a shield round the core. Block every shot, from any side. | keys, 2+ keys |
 | Catch | Slide a basket. Catch the white drops, dodge the grey. | keys, 2+ keys |
@@ -304,6 +305,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | First | Two dots race for the line and vanish on the way. Which gets there first? | keys or tap |
 | Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
 | Align | Turn your line until it is parallel to the other, then let go. | keys, 2+ keys |
+| Illusion | Two lines dressed to fool the eye. Which is really longer? | keys, 2+ keys |
 | Merge | Cars stream past the junction. Pull out into the first safe gap. | keys or tap |
 | Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
 | Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | mouse or tap |
@@ -358,6 +360,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Odd | All but one share something. Which one does not? | mouse or tap |
 | Pattern | A shape changes step by step. Which comes next? | mouse or tap |
 | Triad | Twelve cards. Find three where every feature is all the same or all different. | mouse or tap |
+| Oddword | Four words, three of a kind. Which one does not belong? | mouse or tap |
 | Relate | Square above circle, circle above triangle. Is the square above the triangle? | keys or tap |
 | Balance | The scales balance. How many triangles weigh the same as a square? | mouse or tap |
 | Probe | A hidden rule says yes or no to shapes. Test it three times, then classify. | keys or tap |
@@ -403,6 +406,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
 | Combo | Land a combo of letters, arrows and Space before the clock runs out. | keyboard |
 | Anchor | Hold one key down while the fingers beside it tap a pattern. | keyboard |
+| Lefty | Type words that use only one hand’s half of the keyboard. | keyboard |
 
 ### Ear
 
