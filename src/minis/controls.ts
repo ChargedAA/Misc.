@@ -184,6 +184,7 @@ export const CONTROLS: Record<string, Control[]> = {
   parallel: [['L', 'turn anticlockwise'], ['R', 'turn clockwise'], ['BOTH', 'lock it in']],
   counterpart: [['a-z', 'the mirror-image key']],
   keypad: [['KeyQ', 'to C: the lit square']],
+  slice: [['L', 'left slice is bigger'], ['R', 'right slice is bigger']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-365 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+366 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -312,6 +312,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Centroid | Tap the balance point of a cloud of dots. | mouse or tap |
 | Closer | Which dot is nearer the cross? | keys, 2+ keys |
 | Share | A pie chart: what percentage is the orange slice? | keyboard |
+| Slice | Two pies of different sizes, a slice picked out of each. Which is the bigger share? | keys, 2+ keys |
 | Curves | Two zigzag paths. Which is longer? | keys, 2+ keys |
 | Map | Two places on a map and a scale bar. How far apart are they? | keyboard |
 | Area | Two different shapes. Which covers more ground? | keys, 2+ keys |
