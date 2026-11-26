@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-324 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+328 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -123,6 +123,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Parity | Odd or even? Number after number, as fast as you can. | keys, 2+ keys |
 | Dots | A scatter of dots. How many? Answer at a glance, over and over. | mouse or tap |
 | Alpha | Two words. Which comes first in the dictionary? | keys, 2+ keys |
+| Warm | A colour: warm or cool? Later the word printed on it tries to mislead. | keys, 2+ keys |
 
 ### Timing
 
@@ -136,6 +137,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Even | Your keys in order, to a click, then alone. Perfectly even. The pace climbs. | keys, 2+ keys |
 | Shuffle | Tap the swung offbeat, then keep the swing when the hi-hat drops out. | keys or tap |
 | Pace | Hear a beat, then set its tempo. | keys, 2+ keys |
+| Carry | A few clicks set a beat, then silence. Press on the beat called for. | keys or tap |
 | Cross | Press as the dot crosses the line. Then it vanishes early. | keys or tap |
 | Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
@@ -227,6 +229,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Schulte | Tap 1 to 25, scattered on a grid, in order. | mouse or tap |
 | Blink | Letters flash past ten a second, with two digits hidden among them. Type both. | keyboard |
 | Blinks | A light flickers, too fast to count comfortably. How many flashes? | keyboard |
+| Glimpse | A word flashes and is masked. Type it. The flashes get shorter. | keyboard |
 | Gauges | Four needles drift up. Reset any that creep into the red. | mouse or tap |
 | Tally | Shapes pop up all over. Keep a running count of the squares. | mouse or tap |
 | Trail | Connect 1-A-2-B-3-C, switching between numbers and letters. | mouse or tap |
@@ -257,6 +260,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Pat | Tap a beat with one hand; keep the pointer on a circling marker with the other. | keys or tap |
 | Rally | Two paddles, one per hand: hold to raise, let go to sink. Keep the ball in. | keys, 2+ keys |
 | Basins | Two basins fill at their own rates. Each hand stops its own at the line. | keys, 2+ keys |
+| Runners | Two runners, one per hand. Jump each over its own hurdles. | keys, 2+ keys |
 | Hitch | Back a car and trailer into a bay. Steering works backwards, and late. | keys, 2+ keys |
 | Marble | Tilt the board with the mouse; roll the marble into the goal, round the holes. | mouse or tap |
 | Ferry | Steer a ferry across a river whose current changes band by band, into the dock. | keys, 2+ keys |
