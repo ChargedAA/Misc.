@@ -682,10 +682,10 @@ export const BATCH11: MiniDef[] = [
   },
   {
     id: 'ears',
-    name: 'Ears',
+    name: 'Flash or beep',
     skill: 'reaction',
     blurb: 'A flash or a beep, at random. Which do you react to faster?',
-    how: 'Press the moment you see the circle flash or hear the beep. They are mixed at random. Most people react to sound a few tens of milliseconds faster; the results show your gap. Needs sound on.',
+    how: 'Press the moment you see the circle flash or hear the beep. They are mixed at random. Most people react to sound a few tens of milliseconds faster; the results show your gap.',
     input: 'both',
     make: () => new Ears(),
   },

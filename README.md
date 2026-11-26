@@ -71,7 +71,7 @@ Respond to a signal fast, pick the right response, and hold back the wrong one.
 | Reflex | Six rule games that change every round. Three strikes. | keys |
 | Snap | Pure reaction time. One disc, one press. | keys or tap |
 | Lights | Five lights come on one by one, then go out together. Go. | keys or tap |
-| Ears | A flash or a beep, at random. Which do you react to faster? | keys or tap |
+| Flash or beep | A flash or a beep, at random. Which do you react to faster? | keys or tap |
 | Duel | Quick draw against an opponent who keeps pace with you. | keys or tap |
 | Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
 | Ruler | Catch a falling ruler. Where you catch it gives your reaction time. | keys or tap |
@@ -108,7 +108,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Sprint | Ten seconds, flat out. Watch your rate fade. | keys |
 | Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
 | Tug | Tug of war against a rate that never gets tired. | keys |
-| Pedal | Alternate the pedals to keep the bike above stalling speed up the hills. | keys, 2+ keys |
+| Pedal | Alternate the pedals and hold each hill’s rate to the top. The hills get steeper as you climb them. | keys, 2+ keys |
 | Ramp | A beat that keeps speeding up. Keep pressing with it until you fall behind. | keys or tap |
 | Shuttle | Sweep the mouse from bar to bar and back, as many times as you can. | mouse or tap |
 | Clicker | Click as fast as you can for ten seconds. | mouse or tap |
@@ -192,7 +192,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Rooms | Things appear around a floor plan, one at a time. Where was this one? | mouse or tap |
 | Hide | Digits fill a grid, then are covered. Where was the 7? | mouse or tap |
 | Switched | A row of symbols. After a blink, two have traded places. Click both. | mouse or tap |
-| Back | Does it match the one n steps ago? Two streams at once. | keys |
+| N-back | Does it match the one n steps ago? Two streams at once. | keys |
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |
 | Recent | Words go by. Then, of two you saw, which came more recently? | keys, 2+ keys |
@@ -442,7 +442,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Reverse | Type the word backwards. | keyboard |
 | Syntax | Type real lines of code, symbols and all. | keyboard |
 | Entry | Type numbers exactly, fast: amounts, codes and dates. | keyboard |
-| Abc | Type the alphabet, a to z, as fast as you can. | keyboard |
+| Alphabet | Type the alphabet, a to z, as fast as you can. | keyboard |
 | Caps | Type words exactly as shown, capitals and all. | keyboard |
 | Symbols | Type strings full of symbols: prices, emails, brackets, percentages. | keyboard |
 | Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
@@ -492,7 +492,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Game | What it is | Input |
 | --- | --- | --- |
 | Flick | A target appears anywhere. Click it, fast. Then the next. | mouse or tap |
-| Shrink | Tap each target the moment it appears. They shrink. | mouse or tap |
+| Pinpoint | Tap each target the moment it appears. They shrink. | mouse or tap |
 | Pop | Discs appear and shrink away. Click them before they vanish. | mouse or tap |
 | Lead | Discs fly in arcs. Your shot takes a moment to land: aim ahead. | mouse or tap |
 | Gallery | Targets ride across on belts. Hit the white ones, spare the hollow ones. | mouse or tap |

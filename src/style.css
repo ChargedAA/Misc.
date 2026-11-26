@@ -1,8 +1,8 @@
 :root {
   --bg: #0a0a0b;
   --line: #ececee;
-  --mid: #8b8b92;
-  --dim: #7a7a82;
+  --mid: #8f9bb2;
+  --dim: #737d94;
   --faint: #1b1b1e;
   --accent: #ff5a36;
   color-scheme: dark;
@@ -1989,4 +1989,323 @@ body.showcase .screen.ready {
 .tip {
   border-bottom: 1px dotted currentColor;
   cursor: help;
+}
+
+/* --- Icons and the menu cursor ------------------------------------------------- */
+
+.ico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  vertical-align: middle;
+}
+
+.logo {
+  width: 34px;
+  height: 34px;
+  color: var(--line);
+  vertical-align: middle;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand .wm {
+  letter-spacing: 0.32em;
+}
+
+.crumbs .logo {
+  width: 20px;
+  height: 20px;
+  margin: -4px 0;
+}
+
+.sk {
+  display: inline-flex;
+  color: var(--c);
+}
+
+.mhead h1 .sk,
+.mhead h1 .gb {
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+.mhead h1 .sk .ico {
+  width: 24px;
+  height: 24px;
+}
+
+/* A game's badge: initials on a tile in its skill's colour. */
+.gb {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid color-mix(in srgb, var(--c) 70%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+  color: var(--c);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* What a game needs: blue if needed, yellow if one of several ways. */
+.flags {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.flag {
+  display: inline-flex;
+  color: #8fb8ff;
+}
+
+.flag.opt {
+  color: #ffd84d;
+}
+
+.flag .ico {
+  width: 15px;
+  height: 15px;
+}
+
+.mhead h1 .flag .ico {
+  width: 18px;
+  height: 18px;
+}
+
+.item {
+  grid-template-columns: 46px 1fr auto;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.item .ic {
+  grid-row: 1 / span 2;
+  align-self: center;
+  display: inline-flex;
+  color: var(--mid);
+}
+
+.item .ic .ico {
+  width: 22px;
+  height: 22px;
+}
+
+/* The cursor: wherever the arrows, the mouse or Tab put you. */
+.item:hover,
+.item:focus-visible,
+.item:focus {
+  background: #141418;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.item:focus-visible .n,
+.item:hover .n {
+  color: #fff;
+}
+
+.item.hero {
+  padding: 18px 16px;
+}
+
+.item.hero .ic {
+  color: var(--accent);
+}
+
+.tools button .ico {
+  width: 17px;
+  height: 17px;
+  color: var(--mid);
+}
+
+.tools button:hover .ico,
+.tools button:focus-visible .ico {
+  color: var(--line);
+}
+
+/* Setup dropdowns on a game page. */
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 18px 0 4px;
+}
+
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pick .lbl {
+  color: var(--mid);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pick select,
+.pick .num {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 34px 8px 12px;
+  border: 1px solid var(--dim);
+  border-radius: 6px;
+  background: #121215 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238b8b92' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center / 11px 8px;
+  color: var(--line);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.pick .num {
+  width: 72px;
+  padding-right: 10px;
+  background-image: none;
+  cursor: text;
+}
+
+.pick select:hover,
+.pick select:focus-visible,
+.pick .num:focus-visible {
+  border-color: var(--line);
+  outline: none;
+}
+
+.pick select option {
+  background: #121215;
+}
+
+.note {
+  margin: 4px 0 0;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+/* No doubled ring: the cursor's own highlight shows focus on items. */
+.item:focus-visible {
+  outline: none;
+}
+
+.item.hero:focus-visible,
+.item.hero:hover {
+  border-color: var(--accent);
+}
+
+.ready h1 .gb {
+  margin-right: 12px;
+  vertical-align: middle;
+}
+
+.ready h1 .flag .ico {
+  width: 18px;
+  height: 18px;
+}
+
+/* Share: a small dialog over the page. */
+.share-dlg {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.share-dlg .sd {
+  width: min(460px, 100%);
+  padding: 22px;
+  border: 1px solid var(--dim);
+  border-radius: 10px;
+  background: #111114;
+}
+
+.share-dlg h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+.sd-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sd-url {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--dim);
+  border-radius: 6px;
+  background: #0b0b0d;
+  color: var(--line);
+  font: inherit;
+  font-size: 13px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.sd-row button {
+  padding: 9px 14px;
+  border: 1px solid var(--dim);
+  border-radius: 6px;
+}
+
+.sd-row button.main {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.sd-row button:hover,
+.sd-row button:focus-visible {
+  border-color: var(--line);
+}
+
+.sd-close .k {
+  margin-left: 8px;
+  color: var(--dim);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+/* Touch screens: the icon keeps its column; there are no key badges to hide. */
+@media (hover: none) and (pointer: coarse) {
+  .item {
+    grid-template-columns: 40px 1fr auto;
+    padding: 14px 8px;
+  }
+
+  .item .ic {
+    grid-column: 1;
+  }
+
+  .item .n {
+    grid-column: 2;
+  }
+
+  .item .m {
+    grid-column: 3;
+  }
+
+  .item .d {
+    grid-column: 2 / -1;
+  }
+
+  .item:focus:not(:focus-visible) {
+    background: none;
+    box-shadow: none;
+  }
 }

@@ -653,7 +653,7 @@ export const MEMORY: MiniDef[] = [
   },
   {
     id: 'back',
-    name: 'Back',
+    name: 'N-back',
     skill: 'memory',
     blurb: 'Does it match the one n steps ago? Two streams at once.',
     how: 'A square lights up in a grid every couple of seconds. Press when it is in the same place as the square one step back (the number on screen says how many steps; it rises as you improve). With sound on, a note plays with each square too: left hand for a place match, right hand when the note matches the one that many steps back. It gets harder when you are right 85% of the time and easier below 65%.',

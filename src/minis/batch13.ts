@@ -647,7 +647,7 @@ export const BATCH13: MiniDef[] = [
     name: 'Rain',
     skill: 'speed',
     blurb: 'Letters fall. Type them before they land.',
-    how: 'Letters drift down the screen. Type one and the lowest of that letter vanishes. It starts on the home row and adds letters as you go, and the rain gets heavier. Three that land end it. Needs a keyboard.',
+    how: 'Letters drift down the screen. Type one and the lowest of that letter vanishes. It starts on the home row and adds letters as you go, and the rain gets heavier. Three that land end it.',
     input: 'type',
     make: () => new Rain(),
   },

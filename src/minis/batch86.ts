@@ -123,5 +123,5 @@ class Wider implements Mini {
 }
 
 export const BATCH86: MiniDef[] = [
-  { id: 'wider', name: 'Wider', skill: 'ear', blurb: 'Two pairs of notes. Which pair is further apart in pitch?', how: 'Two notes, then two more. Which pair spans the bigger interval? Left for the first, right for the second. Each pair starts on its own note and some step down, so only the distance counts. The difference shrinks to a single semitone as you get them right. Twenty-four pairs. Needs sound on.', input: 'keys', minKeys: 2, make: () => new Wider() },
+  { id: 'wider', name: 'Wider', skill: 'ear', blurb: 'Two pairs of notes. Which pair is further apart in pitch?', how: 'Two notes, then two more. Which pair spans the bigger interval? Left for the first, right for the second. Each pair starts on its own note and some step down, so only the distance counts. The difference shrinks to a single semitone as you get them right. Twenty-four pairs.', input: 'keys', minKeys: 2, make: () => new Wider() },
 ];

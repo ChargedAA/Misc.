@@ -148,8 +148,8 @@ export let COL_BG = '#0a0a0b';
 export const COL_HOLE = '#000000';
 export const COL_FAINT = '#26262b';
 export const COL_TICK = '#3a3a41';
-export const COL_DIM = '#6c6c74';
-export const COL_MID = '#8b8b92';
+export const COL_DIM = '#626c80';
+export const COL_MID = '#8d9cb8';
 export const COL_LINE = '#ececee';
 export let COL_ACCENT = '#ff5a36';
 

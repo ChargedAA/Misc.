@@ -58,12 +58,13 @@ import { HIT_CORNER, TouchLayout } from './touch.ts';
 import { CpsTrainer } from './trainers.ts';
 import { LATER, MINIS, dailySet, entry } from './minis/index.ts';
 import { SKILLS } from './minis/kit.ts';
-import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, quick } from './minis/groups.ts';
+import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, livesCount, quick, setLives } from './minis/groups.ts';
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
 import { clamp, clockShift, keysFor, picksKeys, setClockShift, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
-import { Ui, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
+import { flagsHtml, gameBadge } from './icons.ts';
+import { Ui, esc, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { SHOWCASE, attractHtml, boardHtml, cleanInitials, doneHtml, saveEntry, setShowcaseOn, showcaseLength, showcaseOn, stepHtml, today, type ShowcaseEntry } from './showcase.ts';
 import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
 
@@ -105,6 +106,7 @@ const settings = loadSettings();
 sfx.muted = settings.muted;
 sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
+setLives(settings.lives ?? 3);
 
 /** A game's last dozen saved results at a key count, oldest first. */
 function pastFor(id: string, keys: number): { value: number; label?: string }[] {
@@ -319,12 +321,18 @@ function frame(now: number): void {
     if (lengthValue === LIVES_LEN) {
       // Lives left, at the top; the third mistake ends the run once its feedback has shown.
       const d = view.dpr;
-      for (let i = 0; i < 3; i++) {
-        view.ctx.fillStyle = i < livesLeft ? COL_ACCENT : COL_DIM;
-        view.ctx.fillRect(view.ox + (i - 1) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
+      const max = livesCount();
+      if (max <= 10) {
+        for (let i = 0; i < max; i++) {
+          view.ctx.fillStyle = i < livesLeft ? COL_ACCENT : COL_DIM;
+          view.ctx.fillRect(view.ox + (i - (max - 1) / 2) * 14 * d - 4 * d, 88 * d, 8 * d, 8 * d);
+        }
+        view.ctx.fillStyle = COL_MID;
+        view.text('lives', view.ox + ((max - 1) / 2) * 14 * d + 16 * d, 96 * d, view.fontTiny, 'left');
+      } else {
+        view.ctx.fillStyle = COL_MID;
+        view.text(`${livesLeft} of ${max} lives`, view.ox, 96 * d, view.fontTiny, 'center');
       }
-      view.ctx.fillStyle = COL_MID;
-      view.text('lives', view.ox + 30 * d, 96 * d, view.fontTiny, 'left');
       if (livesEndAt && performance.now() >= livesEndAt) {
         endMini();
         return;
@@ -560,6 +568,66 @@ function buildMenu(n: NavEntry): Menu {
 }
 
 /** Draw the menu on top of the stack. `dir` picks the slide: 1 forward, -1 back, 0 none. */
+/** Every button the cursor can land on, in the open page. */
+function cursorTargets(): HTMLElement[] {
+  return [...uiRoot.querySelectorAll<HTMLElement>('button:not([disabled]):not([hidden]), select, input')].filter((el) => el.offsetParent !== null && el.getClientRects().length > 0);
+}
+
+/** Move the cursor to the closest target in an arrow's direction, favouring ones straight ahead. */
+function moveCursor(code: string): void {
+  const all = cursorTargets();
+  if (!all.length) return;
+  const cur = document.activeElement instanceof HTMLElement && all.includes(document.activeElement) ? document.activeElement : null;
+  if (!cur) {
+    (uiRoot.querySelector<HTMLElement>('.item:not([disabled])') ?? all[0]!).focus();
+    return;
+  }
+  const r = cur.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const [dx, dy] = code === 'ArrowUp' ? [0, -1] : code === 'ArrowDown' ? [0, 1] : code === 'ArrowLeft' ? [-1, 0] : [1, 0];
+  let best: HTMLElement | null = null;
+  let bestCost = Infinity;
+  for (const el of all) {
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect();
+    // Distance to the nearest edge along the arrow, and sideways drift from the current centre.
+    const along = dx ? (dx > 0 ? b.left - r.right : r.left - b.right) : dy > 0 ? b.top - r.bottom : r.top - b.bottom;
+    if (along < -2) continue;
+    const side = dx ? Math.max(0, Math.abs(b.top + b.height / 2 - cy) - b.height / 2) : Math.max(0, Math.abs(b.left + b.width / 2 - cx) - b.width / 2 - r.width / 2);
+    const cost = Math.max(0, along) + side * 3;
+    if (cost < bestCost) [best, bestCost] = [el, cost];
+  }
+  if (best) {
+    best.focus();
+    best.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+// Dropdowns and number boxes on a page: their choice goes through the same actions as buttons.
+uiRoot.addEventListener('change', (e) => {
+  const el = e.target as HTMLSelectElement | HTMLInputElement;
+  const act = el.dataset?.act;
+  if (!act) return;
+  let v = el.value;
+  if (act === 'lives' && v === 'custom') v = String([3, 5, 10].includes(livesCount()) ? 7 : livesCount());
+  const arg = el.dataset.arg;
+  if (act === 'setlevel' && v === 'custom') {
+    onAction('go', `custom:${arg}`);
+    return;
+  }
+  onAction(act, arg ? `${arg}:${v}` : v);
+  // Keep the cursor on the control just changed.
+  uiRoot.querySelector<HTMLElement>(`${el.tagName.toLowerCase()}[data-act="${act}"]`)?.focus({ preventScroll: true });
+});
+
+// The mouse moves the same cursor as the arrows, so there is only ever one highlighted choice.
+document.addEventListener('mousemove', (e) => {
+  if (screen !== 'menu' || document.activeElement instanceof HTMLInputElement) return;
+  const el = (e.target as HTMLElement | null)?.closest?.<HTMLElement>('#ui .item:not([disabled])');
+  if (el && el !== document.activeElement) el.focus({ preventScroll: true });
+});
+
 function showMenu(dir = 0): void {
   if (showcase) {
     showAttract();
@@ -584,6 +652,8 @@ function showMenu(dir = 0): void {
       q.setSelectionRange(q.value.length, q.value.length);
     }
   }
+  // The cursor starts on the page's first item, so the arrows and Enter work straight away.
+  if (!q && matchMedia('(hover: hover)').matches && (document.activeElement === document.body || !uiRoot.contains(document.activeElement))) uiRoot.querySelector<HTMLElement>('.item:not([disabled])')?.focus({ preventScroll: true });
 }
 
 /** Send a verified run to the leaderboard, if the player is signed in with a name. */
@@ -671,22 +741,62 @@ function syncHash(): void {
   if (location.hash !== want) window.history.replaceState(null, '', location.pathname + location.search + want);
 }
 
+/** Share a game: the device's own share sheet where there is one, else a small dialog with the link and Copy. */
 async function shareGame(id: string): Promise<void> {
   const url = `${location.origin}${location.pathname}#${id}`;
   const name = entry(id)?.name ?? id;
-  let note = 'Link copied';
-  try {
-    if (navigator.share && matchMedia('(pointer: coarse)').matches) {
-      await navigator.share({ title: `TENSION · ${name}`, url });
-      note = '';
-    } else await navigator.clipboard.writeText(url);
-  } catch {
-    note = url;
+  if (navigator.share && matchMedia('(pointer: coarse)').matches) {
+    try {
+      await navigator.share({ title: `TENSION · ${name}`, text: `Try ${name} on TENSION`, url });
+      return;
+    } catch {
+      // Cancelled or refused: fall back to the dialog.
+    }
   }
-  if (!note) return;
-  const el = [...uiRoot.querySelectorAll<HTMLElement>('[data-act="share"]')].pop();
-  const meta = el?.querySelector<HTMLElement>('.m');
-  if (meta) meta.textContent = note;
+  shareDialog(name, url);
+}
+
+function shareDialog(name: string, url: string): void {
+  uiRoot.querySelector('.share-dlg')?.remove();
+  const box = document.createElement('div');
+  box.className = 'share-dlg';
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-label', `Share ${name}`);
+  box.innerHTML = `<div class="sd">
+    <h2>Share ${esc(name)}</h2>
+    <p class="muted">A link that opens this game directly.</p>
+    <div class="sd-row"><input class="sd-url" type="text" readonly value="${esc(url)}" aria-label="Link"><button class="sd-copy main">Copy</button></div>
+    <div class="sd-row">${'share' in navigator ? '<button class="sd-more">More ways to share…</button>' : ''}<button class="sd-close">Close<span class="k">esc</span></button></div>
+  </div>`;
+  uiRoot.appendChild(box);
+  const input = box.querySelector<HTMLInputElement>('.sd-url')!;
+  const copy = box.querySelector<HTMLButtonElement>('.sd-copy')!;
+  const close = () => {
+    box.remove();
+    uiRoot.querySelector<HTMLElement>('[data-act="share"]')?.focus({ preventScroll: true });
+  };
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      input.select();
+      document.execCommand?.('copy');
+    }
+    copy.textContent = 'Copied';
+  });
+  box.querySelector('.sd-more')?.addEventListener('click', () => void navigator.share?.({ title: `TENSION · ${name}`, url }).catch(() => {}));
+  box.querySelector('.sd-close')!.addEventListener('click', close);
+  box.addEventListener('click', (e) => {
+    if (e.target === box) close();
+  });
+  box.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.code === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  });
+  copy.focus();
 }
 
 // --- Showcase ------------------------------------------------------------------------
@@ -939,6 +1049,8 @@ function showReady(): void {
       index: dailyIdx + 1,
       total: endlessScope ? 0 : dailyQueue.length,
       name: e.name,
+      badge: gameBadge(e.name, e.skill),
+      flags: flagsHtml(e),
       skill: SKILLS.find((k) => k.id === e.skill)?.name ?? '',
       blurb: e.blurb,
       how: e.def ? e.def.how : '',
@@ -1015,7 +1127,7 @@ function startGame(game: GameId): void {
     void canvas.offsetWidth;
     canvas.classList.add('zoom');
     miniStartAt = performance.now();
-    livesLeft = 3;
+    livesLeft = livesCount();
     livesEndAt = 0;
     mini.start({ mode: getMode(activeKeys), labels: slotLabels, sound: (id) => {
       sfx.play(id);
@@ -1694,6 +1806,16 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'lives': {
+      // How many lives a lives run has, for every game.
+      const n = Math.max(1, Math.min(99, Math.round(Number(arg)) || 3));
+      settings.lives = n;
+      setLives(n);
+      saveSettings(settings);
+      uiClick();
+      showMenu();
+      break;
+    }
     case 'dailyleave':
       // Leave the daily mid-drill: that drill is dropped, the rest waits for later today.
       sfx.unlock();
@@ -1852,6 +1974,18 @@ function onKeyDown(e: KeyboardEvent): void {
       }
       return;
     }
+    if (e.target.classList.contains('num')) {
+      // A number box (lives): Enter or Esc settles it; the change applies it.
+      if (code === 'Enter' || code === 'Escape') {
+        e.preventDefault();
+        e.target.blur();
+      } else if (code === 'Space') {
+        // Space starts the game from here too.
+        e.preventDefault();
+        uiRoot.querySelector<HTMLButtonElement>('[data-act="play"]')?.click();
+      }
+      return;
+    }
     if (code === 'Enter') {
       e.preventDefault();
       onAction(e.target.id === 'initials' ? 'scsave' : e.target.id === 'devname' ? 'devsignin' : 'lbname', '');
@@ -1938,6 +2072,16 @@ function onKeyDown(e: KeyboardEvent): void {
   if (performance.now() < inputLockUntil) return;
   // A button reached with Tab keeps its own Enter / Space activation.
   if ((code === 'Enter' || code === 'Space') && document.activeElement instanceof HTMLButtonElement) return;
+  // On a dropdown, Enter opens it (Space still starts the game, as everywhere).
+  if (code === 'Enter' && document.activeElement instanceof HTMLSelectElement) {
+    e.preventDefault();
+    try {
+      document.activeElement.showPicker();
+    } catch {
+      // Older browsers: the arrows below still move off it, and a click opens it.
+    }
+    return;
+  }
   sfx.unlock();
   const digit = code.startsWith('Digit') ? Number(code.slice(5)) : code.startsWith('Numpad') ? Number(code.slice(6)) : NaN;
   // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
@@ -1962,13 +2106,10 @@ function onKeyDown(e: KeyboardEvent): void {
     e.preventDefault();
     if (screen === 'menu') back();
     else onAction('menu', '');
-  } else if (code === 'ArrowDown' || code === 'ArrowUp') {
-    // Arrow keys walk the items; Enter on a focused item opens it.
-    const list = [...document.querySelectorAll<HTMLButtonElement>('#ui .item:not([disabled])')];
-    const at = list.indexOf(document.activeElement as HTMLButtonElement);
-    const step = code === 'ArrowDown' ? 1 : -1;
-    list[at < 0 ? 0 : (at + step + list.length) % list.length]?.focus();
+  } else if (code.startsWith('Arrow')) {
+    // The cursor: arrows move to the nearest button that way; Enter or Space presses it.
     e.preventDefault();
+    moveCursor(code);
   }
 }
 

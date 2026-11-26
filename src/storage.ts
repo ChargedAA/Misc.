@@ -69,6 +69,8 @@ export interface Settings {
   look?: Look;
   /** Rounds or length chosen per game, where a game offers the choice. */
   lengths?: Record<string, number>;
+  /** Lives per run when a game is played until you run out (3 unless chosen). */
+  lives?: number;
 }
 
 export interface RtSummary {
@@ -214,6 +216,7 @@ export function loadSettings(): Settings {
     volume: num(saved?.volume, 0, 1),
     keysets: record(saved?.keysets, isStr),
     lengths: record(saved?.lengths, isNum),
+    lives: num(saved?.lives, 1, 99),
     look: lookOf(saved?.look),
     session: typeof saved?.session === 'string' && saved.session.length < 300 ? saved.session : undefined,
     account: typeof saved?.account === 'string' ? saved.account.slice(0, 16) : undefined,

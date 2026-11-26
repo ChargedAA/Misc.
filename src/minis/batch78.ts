@@ -312,5 +312,5 @@ class Bus implements Mini {
 
 export const BATCH78: MiniDef[] = [
   { id: 'cadence', name: 'Cadence', skill: 'aim', blurb: 'Targets appear on the beat. Click each one as its ring closes.', how: 'Targets appear around the screen, each with a ring closing in on it. Click the target just as its ring meets it: that moment falls on the beat you hear. Later some fall on the half beat. Forty targets; scored on how many you hit in time, and how close.', input: 'pointer', make: () => new Cadence() },
-  { id: 'bus', name: 'Bus', skill: 'memory', blurb: 'People get on and off at each stop. How many are on the bus now?', how: 'A bus starts with some people on board. At each stop, some get off and some get on. Keep a running count; at the end, type how many are on board and press Enter. Get it right and the next trip has another stop. Ten trips. Needs a keyboard.', input: 'type', make: () => new Bus() },
+  { id: 'bus', name: 'Bus', skill: 'memory', blurb: 'People get on and off at each stop. How many are on the bus now?', how: 'A bus starts with some people on board. At each stop, some get off and some get on. Keep a running count; at the end, type how many are on board and press Enter. Get it right and the next trip has another stop. Ten trips.', input: 'type', make: () => new Bus() },
 ];

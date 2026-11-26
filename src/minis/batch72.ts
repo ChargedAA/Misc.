@@ -295,5 +295,5 @@ class Accent implements Mini {
 
 export const BATCH72: MiniDef[] = [
   { id: 'operator', name: 'Operator', skill: 'reasoning', blurb: '6 □ 3 = 18. Which sign goes in the gap?', how: 'A sum with its sign missing. Pick plus, minus, times or divide (1 to 4, the sign keys, or a click). After eight right, a second step is added after the gap. Only one sign ever fits. A minute; a mistake shows the full sum.', input: 'pointer', make: () => new Operator() },
-  { id: 'accent', name: 'Accent', skill: 'ear', blurb: 'Eight beats, one a little louder. Which one?', how: 'Eight short beats at the same pitch; one of them is slightly louder. Press its number, 1 to 8 (or click its box). Get it right and the next accent is softer; miss and it is stronger. Twenty-four runs; scored on the smallest accent you can hear. Needs sound on.', input: 'pointer', make: () => new Accent() },
+  { id: 'accent', name: 'Accent', skill: 'ear', blurb: 'Eight beats, one a little louder. Which one?', how: 'Eight short beats at the same pitch; one of them is slightly louder. Press its number, 1 to 8 (or click its box). Get it right and the next accent is softer; miss and it is stronger. Twenty-four runs; scored on the smallest accent you can hear.', input: 'pointer', make: () => new Accent() },
 ];

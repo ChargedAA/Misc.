@@ -603,13 +603,16 @@ export interface ReadyInfo {
   controls: string;
   length: string;
   hands?: { left: string; right: string };
+  /** Html: the game's badge before its name and what it needs after. */
+  badge?: string;
+  flags?: string;
 }
 
 /** The card before each drill of a set. */
 export function readyHtml(r: ReadyInfo): string {
   return `<section class="screen ready">
   <p class="rpos">${r.label}${DOT}${r.total ? `${r.index} of ${r.total}` : `drill ${r.index}`}</p>
-  <h1>${r.name.toUpperCase()}</h1>
+  <h1>${r.badge ?? ''}${r.name.toUpperCase()}${r.flags ?? ''}</h1>
   <p class="msub">${r.skill}</p>
   ${r.how ? stepsHtml(r.how, r.hands) : `<p class="mblurb">${r.blurb}</p>`}
   <dl class="facts">

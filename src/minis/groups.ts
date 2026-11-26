@@ -517,12 +517,21 @@ export const LIVES: ReadonlySet<string> = new Set(['snap', 'stop', 'flank', 'bac
 /** The length value for "until three mistakes". */
 export const LIVES_LEN = -1;
 
+/** How many lives a lives run has: set from the player's choice. */
+let livesN = 3;
+export function setLives(n: number): void {
+  livesN = Math.max(1, Math.min(99, Math.round(n) || 3));
+}
+export function livesCount(): number {
+  return livesN;
+}
+
 export function lengthsFor(id: string): { value: number; label: string }[] {
   const r = ROUNDS[id];
   if (!r) return [];
   const timedGame = r[1] === 's';
   return [
-    ...(LIVES.has(id) ? [{ value: LIVES_LEN, label: '3 lives' }] : []),
+    ...(LIVES.has(id) ? [{ value: LIVES_LEN, label: 'Lives' }] : []),
     { value: 0.5, label: 'Short' },
     { value: 1, label: 'Standard' },
     { value: 2, label: 'Long' },
@@ -536,7 +545,7 @@ export function roundsLabel(id: string, value: number): string {
   const r = ROUNDS[id];
   if (!r) return '';
   if (value === 0) return 'until you stop';
-  if (value === LIVES_LEN) return 'until 3 mistakes';
+  if (value === LIVES_LEN) return `until ${livesN} mistake${livesN === 1 ? '' : 's'}`;
   if (value < 0) return 'as many as fit';
   const n = Math.max(2, Math.round(r[0] * value));
   return r[1] === 's' ? `${n} s` : `${n} ${r[1]}`;

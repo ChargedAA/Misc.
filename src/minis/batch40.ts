@@ -197,5 +197,5 @@ class Dictate implements Mini {
 }
 
 export const BATCH40: MiniDef[] = [
-  { id: 'dictate', name: 'Dictate', skill: 'ear', blurb: 'Hear a bar of rhythm, then pick its notation from four.', how: 'After a count of four, a bar of rhythm plays twice over a click. Four bars of notation are shown: pick the one you heard (1 to 4, or tap); R plays it again. The mirror image of Sight. It starts with quarters and halves and moves on to eighths, dotted notes, syncopation, sixteenths and triplets. Three wrong ends it. Needs sound on.', input: 'pointer', make: () => new Dictate() },
+  { id: 'dictate', name: 'Dictate', skill: 'ear', blurb: 'Hear a bar of rhythm, then pick its notation from four.', how: 'After a count of four, a bar of rhythm plays twice over a click. Four bars of notation are shown: pick the one you heard (1 to 4, or tap); R plays it again. The mirror image of Sight. It starts with quarters and halves and moves on to eighths, dotted notes, syncopation, sixteenths and triplets. Three wrong ends it.', input: 'pointer', make: () => new Dictate() },
 ];

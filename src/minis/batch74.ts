@@ -334,6 +334,6 @@ class Wanted implements Mini {
 }
 
 export const BATCH74: MiniDef[] = [
-  { id: 'coins', name: 'Coins', skill: 'reasoning', blurb: 'Make the amount with the fewest coins. How many does it take?', how: 'An amount in cents, and coins of 50, 25, 10, 5 and 1. What is the fewest coins that make it exactly? Type the number and press Enter. Amounts up to 49¢ at first, then up to 99¢. A minute; a mistake shows the coins. Needs a keyboard.', input: 'type', make: () => new Coins() },
+  { id: 'coins', name: 'Coins', skill: 'reasoning', blurb: 'Make the amount with the fewest coins. How many does it take?', how: 'An amount in cents, and coins of 50, 25, 10, 5 and 1. What is the fewest coins that make it exactly? Type the number and press Enter. Amounts up to 49¢ at first, then up to 99¢. A minute; a mistake shows the coins.', input: 'type', make: () => new Coins() },
   { id: 'wanted', name: 'Wanted', skill: 'attention', blurb: 'Shapes fall. Click every one that matches the wanted shape, nothing else.', how: 'The wanted shape is posted at the top. Shapes fall down the screen, many of them look-alikes: the right shape in the wrong colour, or the right colour in the wrong shape or turn. Click only exact matches before they fall away. The wanted shape changes every twenty seconds. A minute.', input: 'pointer', make: () => new Wanted() },
 ];

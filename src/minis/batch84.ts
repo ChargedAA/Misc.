@@ -235,6 +235,6 @@ class Keypad implements Mini {
 }
 
 export const BATCH84: MiniDef[] = [
-  { id: 'counterpart', name: 'Counterpart', skill: 'dexterity', blurb: 'A key lights up: press its mirror image under the other hand.', how: 'A key lights up on the keyboard drawn on screen. Press its mirror image: the key in the same row, the same distance from the middle, under the other hand (Q and P, D and K, Z and /). Thirty keys in play. A minute; mistakes show the pair. Needs a keyboard.', input: 'type', make: () => new Counterpart() },
-  { id: 'keypad', name: 'Keypad', skill: 'speed', blurb: 'A square lights on a three-by-three grid. Press its key: QWE / ASD / ZXC.', how: 'A grid of nine squares maps onto Q W E, A S D and Z X C. One lights up: press its key, and the next lights at once. The letters fade from the squares as you score, so you work from the layout alone. Thirty seconds. Needs a keyboard.', input: 'type', make: () => new Keypad() },
+  { id: 'counterpart', name: 'Counterpart', skill: 'dexterity', blurb: 'A key lights up: press its mirror image under the other hand.', how: 'A key lights up on the keyboard drawn on screen. Press its mirror image: the key in the same row, the same distance from the middle, under the other hand (Q and P, D and K, Z and /). Thirty keys in play. A minute; mistakes show the pair.', input: 'type', make: () => new Counterpart() },
+  { id: 'keypad', name: 'Keypad', skill: 'speed', blurb: 'A square lights on a three-by-three grid. Press its key: QWE / ASD / ZXC.', how: 'A grid of nine squares maps onto Q W E, A S D and Z X C. One lights up: press its key, and the next lights at once. The letters fade from the squares as you score, so you work from the layout alone. Thirty seconds.', input: 'type', make: () => new Keypad() },
 ];
