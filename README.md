@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-291 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+295 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -136,6 +136,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
 | Pins | A lock’s pins bob up and down. Press as each crosses the line to set it. | keys or tap |
 | Stack | A block slides over the tower. Drop it square: what hangs over is cut off. | keys or tap |
+| Golf | A swing meter. Press once for power on the mark, once more on the line back. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -183,6 +184,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Tray | A tray of things, then the same tray with one gone. Which one is missing? | mouse or tap |
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
+| Tag | A few things and their prices. Then: what did this one cost? | keyboard |
 | Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
 | Oven | Sort numbers, and take the cakes out on time, with no clock in sight. | keyboard |
 
@@ -225,6 +227,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Deal | Cards flash past one at a time. Which suit came up most? | keys or tap |
 | Cancel | A block of letters: click every E, as fast as you can. | mouse or tap |
 | Lantern | A dark room, a small pool of light. Find the one T among the Ls. | mouse or tap |
+| Proof | A line of words with one misspelled. Click it. | mouse or tap |
 
 ### Coordination
 
@@ -251,6 +254,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Mirror | Steer along a track. Every so often the controls swap sides. | keys, 2+ keys |
 | Crane | Move the crane, let the swing settle, drop the crate on the pad. | keys, 2+ keys |
 | Etch | Left hand moves across, right hand moves up and down. Trace the path. | keyboard |
+| Seesaw | Tilt a plank to keep a rolling ball over a zone that wanders. | keys, 2+ keys |
 | Sync | Two balls drop, one per hand. Press as each hits the line, together or one after the other. | keys, 2+ keys |
 | Poly | Two tempos at once: 1 against 2, then 2 against 3, up to 7 against 8. Three-way with three keys. | keys, 2+ keys |
 | Drum | Read a left/right/both pattern. Play it in time. | keys, 2+ keys |
