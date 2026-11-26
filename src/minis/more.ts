@@ -150,7 +150,8 @@ class Choice implements Mini {
       const on = this.active.includes(i);
       const lit = this.state === 1 && this.lit === i;
       ctx.strokeStyle = lit ? COL_ACCENT : on ? COL_MID : COL_DIM;
-      ctx.lineWidth = (lit ? 5 : 1) * dpr;
+      // Strings you can see from across a room: thick when lit, clearly drawn when idle.
+      ctx.lineWidth = (lit ? 8 : on ? 3 : 1.5) * dpr;
       if (!on) ctx.globalAlpha = 0.35;
       ctx.beginPath();
       ctx.moveTo(x, top);

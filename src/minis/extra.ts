@@ -964,7 +964,7 @@ class Juggle implements Mini {
         ctx.fill();
       }
     }
-    if (this.time < 4 && !this.over) message(v, { ...a, cy: top + 40 * a.u }, 'hit a ball’s key as it drops into the shaded zone', 'too soon and you fumble it', COL_MID);
+    if (this.time < 4 && !this.over) message(v, { ...a, cy: a.cy + 20 * a.u }, 'hit a ball’s key as it drops into the shaded zone', 'too soon and you fumble it', COL_MID);
     if (this.over) message(v, a, `${this.bounces} bounces`, `best combo ${this.best}`);
     footer(v, touch, this.held);
     return false;

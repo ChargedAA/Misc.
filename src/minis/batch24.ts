@@ -18,7 +18,7 @@ import { SND_CATCH, SND_FALSE, SND_TAP_L, SND_TAP_R, SND_TAP_WEAK } from '../aud
 import type { View } from '../render.ts';
 import type { TouchLayout } from '../touch.ts';
 import { ENGLISH_5K } from './words.ts';
-import { Stair, arena, footer, header, mean, median, ms, pct, progress, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
+import { Stair, arena, footer, gameNow, header, mean, median, ms, pct, progress, scaled, type Mini, type MiniDef, type MiniEnv, type MiniResult } from './kit.ts';
 
 function rint(lo: number, hi: number): number {
   return lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -858,7 +858,7 @@ class Chords implements Mini {
     while (keys.size < n) keys.add(pick([...left, ...right]));
     this.want = [...keys].map(codeOf);
     this.got.clear();
-    this.shownAt = performance.now();
+    this.shownAt = gameNow();
     this.state = 1;
   }
 
