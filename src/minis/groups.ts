@@ -35,7 +35,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   speed: {
     about: 'Tap fast, hold a rate, and stay controlled and in order while you do.',
     groups: [
-      { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal'] },
+      { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal', 'ramp', 'shuttle'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
       { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain'] },
       { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code'] },
@@ -136,8 +136,8 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
       { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
-      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry'] },
-      { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo'] },
+      { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc'] },
+      { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo', 'anchor'] },
     ],
     routine: ['hunt', 'chords', 'type'],
     benchmark: 'hunt',
@@ -250,6 +250,8 @@ export const ROUNDS: Record<string, [number, string]> = {
   ferry: [10, 'crossings'],
   pan: [30, 'tones'],
   held: [30, 'pairs'],
+  abc: [5, 'runs'],
+  anchor: [16, 'patterns'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],

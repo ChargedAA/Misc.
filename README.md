@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-275 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+279 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -104,6 +104,8 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Sets | Four five-second sprints with short rests. Can you hold your speed? | keys or tap |
 | Tug | Tug of war against a rate that never gets tired. | keys |
 | Pedal | Alternate the pedals to keep the bike above stalling speed up the hills. | keys, 2+ keys |
+| Ramp | A beat that keeps speeding up. Keep pressing with it until you fall behind. | keys or tap |
+| Shuttle | Sweep the mouse from bar to bar and back, as many times as you can. | mouse or tap |
 | Ladder | The target rate steps up every second. Hang on. | keys |
 | Pulse | Ride a target rate that rises, drops and stops. | keys |
 | Steady | Fast is not enough. Fifteen seconds, perfectly even. | keys |
@@ -362,10 +364,12 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Reverse | Type the word backwards. | keyboard |
 | Syntax | Type real lines of code, symbols and all. | keyboard |
 | Entry | Type numbers exactly, fast: amounts, codes and dates. | keyboard |
+| Abc | Type the alphabet, a to z, as fast as you can. | keyboard |
 | Fingers | A home-row pattern, typed three times. Watch it get faster. | keyboard |
 | Sweep | Run along a keyboard row and back. | keyboard |
 | Taps | Press each key the number of times shown: D×3 K×2. | keyboard |
 | Combo | Land a combo of letters, arrows and Space before the clock runs out. | keyboard |
+| Anchor | Hold one key down while the fingers beside it tap a pattern. | keyboard |
 
 ### Ear
 
