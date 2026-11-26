@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-335 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+338 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -146,6 +146,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Golf | A swing meter. Press once for power on the mark, once more on the line back. | keys or tap |
 | Doors | Sliding doors open and shut. Set off so you arrive while they are open. | keys or tap |
 | Ripple | A ring spreads from the middle. Press as it reaches the line. | keys or tap |
+| Cyclone | A light races round a ring. Stop it on the marked spot. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -197,6 +198,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Recall | Words go by one at a time. Type every one you remember. | keyboard |
 | Queue | Shapes join a queue one at a time. Which was third? | mouse or tap |
 | Tag | A few things and their prices. Then: what did this one cost? | keyboard |
+| Shop | A shopping list, then a shelf of items. Pick out the ones that were on it. | mouse or tap |
 | Remind | Sort numbers odd or even, and remember the rule for the rare boxed one. | keys, 2+ keys |
 | Oven | Sort numbers, and take the cakes out on time, with no clock in sight. | keyboard |
 
@@ -237,6 +239,7 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Radar | The sweep reveals contacts. Tap the hostile ones before it comes round again. | mouse or tap |
 | Herd | Sheep wander in and out of a pen. How many are inside now? | keyboard |
 | Mover | A field of still dots. One starts to creep. Click it. | mouse or tap |
+| Step | Lights blink together, except one a little out of step. Click it. | mouse or tap |
 | Stream | Letters fly past. Press for the X. | keys or tap |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
