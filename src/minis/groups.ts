@@ -97,7 +97,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   judgement: {
     about: 'Size things up by eye and ear: lengths, amounts, angles, paths, pitch.',
     groups: [
-      { name: 'Size and amount', desc: 'Lengths, counts, midpoints and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer'] },
+      { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
       { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
@@ -116,7 +116,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
-      { name: 'Everyday sums', desc: 'Times and clocks, worked out in your head', ids: ['later'] },
+      { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till'] },
       { name: 'Words', desc: 'Read fast, find words, chain them', ids: ['rapid', 'relay'] },
       { name: 'Patterns and rules', desc: 'Find the rule, then apply it', ids: ['series', 'matrix', 'odd', 'pattern', 'triad'] },
       { name: 'Relations', desc: 'Combine statements to reach a conclusion', ids: ['relate', 'balance'] },
@@ -156,7 +156,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead'] },
       { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect'] },
-      { name: 'Tracking', desc: 'Stay on something that moves', ids: ['follow'] },
+      { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
     ],
     routine: ['flick', 'follow', 'sphere'],
@@ -234,6 +234,8 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  till: [12, 'customers'],
+  share: [15, 'charts'],
   cancel: [3, 'sheets'],
   later: [12, 'questions'],
   carom: [12, 'shots'],
