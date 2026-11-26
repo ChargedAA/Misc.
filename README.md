@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-370 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+371 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -507,6 +507,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
 | Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |
 | Slash | Things are tossed up. Drag across them to cut them, but never the bombs. | mouse or tap |
+| Keepup | Click under each falling ball to knock it back up. More join; don’t let any land. | mouse or tap |
 | Sphere | 3D: look around with the mouse and shoot the balls. | mouse or tap |
 | Strafe | 3D tracking: keep the crosshair on a ball that strafes and changes direction. | mouse or tap |
 

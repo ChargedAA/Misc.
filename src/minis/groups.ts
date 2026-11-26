@@ -161,7 +161,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio', 'reset', 'cadence'] },
       { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts', 'drag', 'still', 'circle'] },
-      { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon', 'slash'] },
+      { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon', 'slash', 'keepup'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
     ],
     routine: ['flick', 'follow', 'sphere'],
