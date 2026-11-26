@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-355 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+357 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -191,6 +191,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |
 | Recent | Words go by. Then, of two you saw, which came more recently? | keys, 2+ keys |
+| Bus | People get on and off at each stop. How many are on the bus now? | keyboard |
 | Spot | Look, look away, look again. Did anything change? | keys, 2+ keys |
 | Again | Pairs of shapes, one after another. Seen this exact one before? | keys or tap |
 | Link | Shapes and numbers, paired. Which number went with this shape? | mouse or tap |
@@ -480,6 +481,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Shrink | A target shrinks away to nothing. Click it before it is gone. | mouse or tap |
 | Trio | Three targets on a grid. Hit one and it jumps to an empty square. | mouse or tap |
 | Reset | Click the middle, then the target that appears. Back to the middle each time. | mouse or tap |
+| Cadence | Targets appear on the beat. Click each one as its ring closes. | mouse or tap |
 | Micro | Tiny targets. Precision first: every miss costs. | mouse or tap |
 | Round | Draw a circle in one stroke. How round is it? | mouse or tap |
 | Wire | Steer a ring along a bent wire without touching it. | mouse or tap |

@@ -174,6 +174,8 @@ export const CONTROLS: Record<string, Control[]> = {
   average: [['1-4', 'pick the average'], ['TAP', 'or click']],
   vowel: [['L', 'vowel'], ['R', 'consonant']],
   retain: [['L', 'same'], ['R', 'different']],
+  cadence: [['TAP', 'click as the ring closes']],
+  bus: [['0-9', 'how many on board'], ['Enter', 'answer']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],
