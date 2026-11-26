@@ -156,6 +156,8 @@ class Side implements Mini {
 
 // --- Tug --------------------------------------------------------------------------
 
+const TUG_LABEL = 'strongest pull beaten';
+
 class Tug implements Mini {
   private env!: MiniEnv;
   private t0 = 0;
@@ -163,25 +165,31 @@ class Tug implements Mini {
   private times: number[] = [];
   /** Rope position: -1 you lose, +1 you win the round. */
   private rope = 0;
-  private round = 0;
+  /** The opponent's steady rate this round (taps a second): the level. */
+  private level = 4;
+  private startLevel = 4;
+  private beaten = 0;
   private wins = 0;
-  private base = 4;
   private state = 0; // 0 ready, 1 pulling, 2 between
   private at = 0;
   private bestRate = 0;
+  private lost = false;
   private held = 0;
   private result0 = '';
 
   start(env: MiniEnv, now: number): void {
     this.env = env;
-    const keys = env.mode.left + env.mode.right;
-    this.base = keys <= 1 ? 3.5 : keys === 2 ? 5 : 7;
+    // Levels mean the same for everyone: level 8 is someone tapping eight times a second.
+    // You start about five below what you usually beat, so the early rounds are a warm-up.
+    const past = (env.past ?? []).filter((p) => p.label === TUG_LABEL).map((p) => p.value);
+    this.level = past.length ? Math.max(2, Math.round(median(past)) - 5) : 3;
+    this.startLevel = this.level;
     this.last = now;
   }
 
-  /** The opponent's rate: rises through a round and with each round won. */
+  /** The opponent's rate: steady at the level, with a slight wobble, digging in after eight seconds. */
   private them(t: number): number {
-    return this.base + this.round * 0.9 + (t / 1000) * 0.25 + Math.sin(t / 700) * 0.6;
+    return this.level + Math.sin(t / 700) * 0.4 + Math.max(0, t / 1000 - 8) * 0.15;
   }
 
   press(slot: number, ts: number): void {
@@ -211,19 +219,24 @@ class Tug implements Mini {
       const t = now - this.t0;
       const them = this.them(t);
       if (t > 1200 && rate > this.bestRate) this.bestRate = rate;
-      this.rope = clamp(this.rope + (rate - them) * 0.045 * dt, -1, 1);
+      this.rope = clamp(this.rope + (rate - them) * 0.06 * dt, -1, 1);
       if (Math.abs(this.rope) >= 1) {
         const won = this.rope > 0;
-        if (won) this.wins++;
-        this.result0 = won ? 'pulled over' : 'pulled under';
+        if (won) {
+          this.wins++;
+          this.beaten = Math.max(this.beaten, this.level);
+          this.result0 = `beat ${this.level} a second`;
+        } else {
+          this.lost = true;
+          this.result0 = `pulled under at ${this.level} a second`;
+        }
         this.env.sound(won ? SND_CATCH : SND_FALL);
-        this.round++;
         this.state = 2;
         this.at = now + 1500;
-        if (!won) this.round = 99;
       }
     } else if (this.state === 2 && now >= this.at) {
-      if (this.round >= 99) return true;
+      if (this.lost) return true;
+      this.level++;
       this.state = 0;
       this.rope = 0;
     }
@@ -231,7 +244,7 @@ class Tug implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     const dpr = v.dpr;
-    header(v, touch, 'rounds won', String(this.wins), 'them', this.state === 1 ? `${this.them(now - this.t0).toFixed(1)} /s` : '–');
+    header(v, touch, 'level', String(this.level), 'them', this.state === 1 ? `${this.them(now - this.t0).toFixed(1)} /s` : `${this.level} /s`);
     const half = Math.min((a.right - a.left) / 2 - 20 * a.u, 280 * a.u);
     const y = a.cy;
     // The rope, the centre mark, and the two win lines.
@@ -249,7 +262,7 @@ class Tug implements Mini {
     v.text('them', a.cx - half, y + 50 * a.u, v.fontTiny, 'left');
     ctx.fillStyle = COL_LINE;
     v.text(`${rate} /s`, a.cx, y - 50 * a.u, v.fontHud, 'center');
-    if (this.state === 0) message(v, { ...a, cy: y + 90 * a.u }, this.round ? `round ${this.round + 1}: they pull harder` : 'tap to start pulling', 'out-tap them to drag the marker to your side', COL_MID);
+    if (this.state === 0) message(v, { ...a, cy: y + 90 * a.u }, `level ${this.level}: they tap ${this.level} a second`, this.wins ? 'tap to pull' : 'tap faster than them to drag the marker to your side. tap to start', COL_MID);
     if (this.state === 2) message(v, { ...a, cy: y + 90 * a.u }, this.result0);
     footer(v, touch, this.held);
     return false;
@@ -257,13 +270,14 @@ class Tug implements Mini {
 
   result(): MiniResult {
     return {
-      score: this.wins * 200 + this.bestRate * 10,
-      primary: { label: 'rounds won', value: this.wins, unit: '' },
+      score: this.beaten * 150 + this.wins * 20 + this.bestRate * 10,
+      primary: { label: TUG_LABEL, value: this.beaten, unit: '/s' },
       lines: [
         { label: 'rounds won', value: String(this.wins) },
-        { label: 'best rate', value: `${this.bestRate} /s` },
+        { label: 'started at', value: `level ${this.startLevel}` },
+        { label: 'your best rate', value: `${this.bestRate} /s` },
       ],
-      saved: this.round > 0,
+      saved: this.wins + (this.lost ? 1 : 0) > 0,
     };
   }
 }
@@ -847,7 +861,7 @@ export const BATCH5: MiniDef[] = [
     name: 'Tug',
     skill: 'speed',
     blurb: 'Tug of war against a rate that never gets tired.',
-    how: 'Out-tap your opponent to drag the marker to your side. Their rate rises during a round and jumps after each round you win. Lose one and it is over.',
+    how: 'Out-tap your opponent to drag the marker to your side. Each level is an opponent tapping that many times a second, so level 8 means beating 8 a second. You start about five levels below what you usually beat and go up one per win. Lose a round and it is over.',
     input: 'keys',
     make: () => new Tug(),
   },

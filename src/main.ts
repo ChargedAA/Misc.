@@ -106,6 +106,14 @@ sfx.muted = settings.muted;
 sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
 
+/** A game's last dozen saved results at a key count, oldest first. */
+function pastFor(id: string, keys: number): { value: number; label?: string }[] {
+  return history
+    .filter((r) => r.kind === 'mini' && r.game === id && r.mode === keys && typeof r.value === 'number' && Number.isFinite(r.value))
+    .slice(-12)
+    .map((r) => ({ value: r.value!, label: r.vlabel }));
+}
+
 let screen: Screen = 'menu';
 
 /** Showcase mode (an event stand): no menus, three drills, a board for today. */
@@ -975,7 +983,7 @@ function startGame(game: GameId): void {
       sfx.play(id);
       // Three lives: the mistake sounds are the mistakes.
       if (lengthValue === LIVES_LEN && (id === SND_FALSE || id === SND_LURCH) && livesLeft > 0 && --livesLeft === 0) livesEndAt = performance.now() + 900;
-    }, soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan, gain, toHz) => sfx.tone(hz, d, pan, gain, toHz), note: (hz, d, delay) => sfx.note(hz, d, delay), muted: settings.muted, level: e.def.levels ? currentLevel : undefined }, performance.now());
+    }, soundAt: (id, d) => sfx.play(id, d), latency: settings.muted ? 0 : sfx.latencyMs() + (settings.audioOffset ?? 0), tone: (hz, d, pan, gain, toHz) => sfx.tone(hz, d, pan, gain, toHz), note: (hz, d, delay) => sfx.note(hz, d, delay), muted: settings.muted, level: e.def.levels ? currentLevel : undefined, past: pastFor(e.def.id, activeKeys) }, performance.now());
     screen = 'mini';
   } else if (game === 'climb') {
     sim.reset(activeKeys, (Math.random() * 0x100000000) >>> 0);

@@ -1035,7 +1035,7 @@ class Steady implements Mini {
     const t = this.t0 ? now - this.t0 : 0;
     if (this.t0 && !this.over && t >= STEADY_MS) {
       this.over = true;
-      this.endAt = now + 1000;
+      this.endAt = now;
     }
     if (this.over && now >= this.endAt) return true;
     v.clear();

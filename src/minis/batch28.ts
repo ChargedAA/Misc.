@@ -844,6 +844,10 @@ class Crane implements Mini {
 
 // --- Pedal --------------------------------------------------------------------------
 
+const PEDAL_LABEL = 'hardest hill climbed';
+/** A stretch of road: flat, a climb that asks for a pedalling rate, or a free roll down. */
+type Seg = { kind: 0 | 1 | 2; from: number; to: number; need: number };
+
 class Pedal implements Mini {
   private env!: MiniEnv;
   private readonly length = scaled(45000);
@@ -852,9 +856,19 @@ class Pedal implements Mini {
   private speed = 0;
   private dist = 0;
   private lastSide = 0;
-  private lastAt = 0;
+  private strokeTimes: number[] = [];
+  /** The pedalling rate (strokes a second) the next climb will ask for. */
+  private need = 4;
+  private startNeed = 4;
+  private segs: Seg[] = [];
+  /** How close the climb in progress is to a stall: 0 fine, 1 stalled. */
+  private strain = 0;
+  private strainTickAt = 0;
   private stalls = 0;
   private stalledAt = -1e9;
+  private climbed = 0;
+  private hardest = 0;
+  private crestAt = -1e9;
   private repeats = 0;
   private strokes = 0;
   private held = 0;
@@ -863,11 +877,41 @@ class Pedal implements Mini {
     this.env = env;
     this.t0 = now + 600;
     this.last = now;
+    const past = (env.past ?? []).filter((p) => p.label === PEDAL_LABEL).map((p) => p.value);
+    this.need = past.length ? Math.max(3, Math.round(median(past) * 2) / 2 - 2) : 4;
+    this.startNeed = this.need;
+    let d = 0;
+    for (let k = 0; k < 40; k++) {
+      const flat = 26 + Math.random() * 14;
+      this.segs.push({ kind: 0, from: d, to: d + flat, need: 0 });
+      d += flat;
+      this.segs.push({ kind: 1, from: d, to: d + 22, need: 0 });
+      d += 22;
+      this.segs.push({ kind: 2, from: d, to: d + 14, need: 0 });
+      d += 14;
+    }
   }
 
-  /** Slope ahead: hills come and go. */
-  private grade(d: number): number {
-    return Math.max(0, Math.sin(d * 0.02) * 0.8 + Math.sin(d * 0.007) * 0.5);
+  private segAt(d: number): Seg {
+    return this.segs.find((g) => d >= g.from && d < g.to) ?? this.segs[this.segs.length - 1]!;
+  }
+
+  /** Road height (m) at a distance: climbs rise, roll-downs fall back. */
+  private height(d: number): number {
+    let h = 0;
+    for (const g of this.segs) {
+      if (g.from >= d) break;
+      const run = Math.min(d, g.to) - g.from;
+      if (g.kind === 1) h += run * 0.32;
+      else if (g.kind === 2) h -= run * (0.32 * 22) / 14;
+    }
+    return h;
+  }
+
+  private cadence(now: number): number {
+    let n = 0;
+    for (let i = this.strokeTimes.length - 1; i >= 0 && now - this.strokeTimes[i]! <= 1000; i--) n++;
+    return n;
   }
 
   press(slot: number, ts: number): void {
@@ -882,9 +926,7 @@ class Pedal implements Mini {
     }
     this.lastSide = s;
     this.strokes++;
-    const since = Math.min(600, ts - this.lastAt);
-    this.lastAt = ts;
-    this.speed += 1.0 + (600 - since) / 600;
+    this.strokeTimes.push(ts);
     this.env.sound(s < 0 ? SND_TAP_L : SND_TAP_R);
   }
 
@@ -897,75 +939,154 @@ class Pedal implements Mini {
     this.last = now;
     const el = now - this.t0;
     if (el > this.length) return true;
+    const cad = this.cadence(now);
+    const seg = this.segAt(this.dist);
     if (el > 0 && now - this.stalledAt > 1000) {
-      const g = this.grade(this.dist);
-      this.speed -= (0.8 + g * 3.2) * dt + this.speed * 0.25 * dt;
-      if (this.speed < 0) this.speed = 0;
+      if (seg.kind === 1 && !seg.need) seg.need = this.need;
+      let want: number;
+      if (seg.kind === 0) want = cad * 1.4;
+      else if (seg.kind === 2) want = Math.max(9, cad * 1.4);
+      else {
+        // Climbing: at or above the asked rate you keep going; below it you strain, then stall.
+        const short = seg.need - cad;
+        want = short <= 0 ? cad * 0.9 : Math.max(0, cad * 0.9 - short * 2);
+        if (short > 0) {
+          this.strain = Math.min(1, this.strain + dt * (0.6 + short * 0.4));
+          if (now >= this.strainTickAt) {
+            this.strainTickAt = now + 260 - this.strain * 140;
+            this.env.tone?.(150 + this.strain * 90, 60, 0, 0.1);
+          }
+        } else this.strain = Math.max(0, this.strain - dt * 0.8);
+        if (this.strain >= 1) {
+          // Stalled: roll back to the foot of the climb and the hills ease off a little.
+          this.stalls++;
+          this.stalledAt = now;
+          this.strain = 0;
+          this.speed = 0;
+          this.dist = seg.from;
+          seg.need = 0;
+          this.need = Math.max(2, this.need - 0.5);
+          this.env.sound(SND_LURCH);
+          this.env.tone?.(220, 380, 0, 0.16, 70);
+          want = 0;
+        }
+      }
+      this.speed += (want - this.speed) * Math.min(1, dt * 3);
+      const before = this.segAt(this.dist);
       this.dist += this.speed * dt;
-      // On a hill, too slow and you stall.
-      if (g > 0.3 && this.speed < 1.2 && el > 3000 && this.strokes > 4) {
-        this.stalls++;
-        this.stalledAt = now;
-        this.speed = 1.5;
-        this.env.sound(SND_LURCH);
+      if (before.kind === 1 && this.dist >= before.to) {
+        this.climbed++;
+        this.hardest = Math.max(this.hardest, before.need);
+        this.need += 0.5;
+        this.strain = 0;
+        this.crestAt = now;
+        this.env.sound(SND_CATCH);
+        this.env.tone?.(520, 160, 0, 0.1, 780);
       }
     }
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
-    header(v, touch, 'distance', `${Math.round(this.dist)} m`, 'time', `${Math.max(0, Math.ceil((this.length - Math.max(0, el)) / 1000))} s`);
-    const w = Math.min(a.right - a.left, 660 * a.u);
-    const base = a.cy + 80 * a.u;
-    const X = (p: number) => a.cx - w / 2 + p * w;
-    // The road profile ahead, the bike at the left third.
-    ctx.strokeStyle = COL_DIM;
-    ctx.lineWidth = 2 * v.dpr;
-    ctx.beginPath();
-    let hgt = 0;
-    const pts: [number, number][] = [];
-    for (let k = -20; k <= 60; k++) {
-      hgt += this.grade(this.dist + k) * 0.4;
-      pts.push([X((k + 20) / 80), base - hgt * a.u * 4]);
-    }
-    const off = pts[20]![1] - base;
-    pts.forEach(([px, py], k) => (k ? ctx.lineTo(px, py - off) : ctx.moveTo(px, py - off)));
-    ctx.stroke();
-    const bx = X(20 / 80);
-    const by = base;
-    const stalled = now - this.stalledAt < 1000;
-    ctx.strokeStyle = stalled ? COL_ACCENT : COL_LINE;
-    ctx.lineWidth = 2 * v.dpr;
-    for (const dx of [-14, 14]) {
+    const dpr = v.dpr;
+    header(v, touch, 'hills', String(this.climbed), 'time', `${Math.max(0, Math.ceil((this.length - Math.max(0, el)) / 1000))} s`);
+    const w = Math.min(a.right - a.left - 60 * a.u, 620 * a.u);
+    const base = a.cy + 70 * a.u;
+    const left = a.cx - w / 2 - 20 * a.u;
+    const ahead = 70;
+    const behind = 18;
+    const pxPerM = w / (ahead + behind);
+    const h0 = this.height(this.dist);
+    const X = (d: number) => left + (d - this.dist + behind) * pxPerM;
+    const Y = (d: number) => base - (this.height(d) - h0) * pxPerM;
+    // The road ahead: climbs drawn brighter, each labelled with the rate it asks for.
+    ctx.lineWidth = 3 * dpr;
+    ctx.lineCap = 'round';
+    for (const g of this.segs) {
+      if (g.to < this.dist - behind || g.from > this.dist + ahead) continue;
+      const d0 = Math.max(g.from, this.dist - behind);
+      const d1 = Math.min(g.to, this.dist + ahead);
+      ctx.strokeStyle = g.kind === 1 ? (g === seg && this.strain > 0.05 ? COL_ACCENT : COL_MID) : COL_DIM;
       ctx.beginPath();
-      ctx.arc(bx + dx * a.u, by - 12 * a.u, 11 * a.u, 0, TAU);
+      ctx.moveTo(X(d0), Y(d0));
+      ctx.lineTo(X(d1), Y(d1));
+      ctx.stroke();
+      if (g.kind === 1 && g.from > this.dist - 4 && g.from < this.dist + ahead - 10) {
+        const need = g.need || this.need;
+        ctx.fillStyle = COL_LINE;
+        v.text(`${need.toFixed(1)}/s`, X(g.from + 11), Y(g.from + 11) - 22 * a.u, v.fontTiny, 'center');
+      }
+    }
+    ctx.lineCap = 'butt';
+    // The bike, tilted with the road; a pedal that turns with your strokes.
+    const bx = X(this.dist);
+    const by = base;
+    const slope = seg.kind === 1 ? -Math.atan(0.32) : seg.kind === 2 ? Math.atan((0.32 * 22) / 14) : 0;
+    const stalled = now - this.stalledAt < 1000;
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(slope);
+    ctx.strokeStyle = stalled ? COL_ACCENT : COL_LINE;
+    ctx.lineWidth = 2 * dpr;
+    for (const dx of [-15, 15]) {
+      ctx.beginPath();
+      ctx.arc(dx * a.u, -12 * a.u, 11 * a.u, 0, TAU);
       ctx.stroke();
     }
     ctx.beginPath();
-    ctx.moveTo(bx - 14 * a.u, by - 12 * a.u);
-    ctx.lineTo(bx, by - 30 * a.u);
-    ctx.lineTo(bx + 14 * a.u, by - 12 * a.u);
+    ctx.moveTo(-15 * a.u, -12 * a.u);
+    ctx.lineTo(-2 * a.u, -12 * a.u);
+    ctx.lineTo(8 * a.u, -30 * a.u);
+    ctx.lineTo(-8 * a.u, -30 * a.u);
+    ctx.lineTo(-2 * a.u, -12 * a.u);
+    ctx.moveTo(8 * a.u, -30 * a.u);
+    ctx.lineTo(15 * a.u, -12 * a.u);
     ctx.stroke();
-    // A speedometer bar with the stall line.
-    const sx = a.cx + w / 2 - 30 * a.u;
-    ctx.strokeStyle = COL_DIM;
-    ctx.lineWidth = v.dpr;
-    ctx.strokeRect(sx, a.top + 10 * a.u, 14 * a.u, 120 * a.u);
-    ctx.fillStyle = this.speed < 1.2 ? COL_ACCENT : COL_LINE;
-    const fill = Math.min(1, this.speed / 8);
-    ctx.fillRect(sx, a.top + 10 * a.u + 120 * a.u * (1 - fill), 14 * a.u, 120 * a.u * fill);
+    const crank = (this.strokes * Math.PI) % TAU;
+    ctx.beginPath();
+    ctx.moveTo(-2 * a.u - Math.cos(crank) * 6 * a.u, -12 * a.u - Math.sin(crank) * 6 * a.u);
+    ctx.lineTo(-2 * a.u + Math.cos(crank) * 6 * a.u, -12 * a.u + Math.sin(crank) * 6 * a.u);
+    ctx.stroke();
+    ctx.restore();
+    if (now - this.crestAt < 700) {
+      ctx.fillStyle = COL_LINE;
+      v.text('made it', bx, by - 56 * a.u, v.fontTiny, 'center');
+    }
+    // Rate gauge: your strokes a second against what this (or the next) climb asks for.
+    const gx = a.right - 26 * a.u;
+    const gt = a.top + 14 * a.u;
+    const gh = 150 * a.u;
+    const top = Math.max(10, this.need + 3);
+    const next = seg.kind === 1 ? seg.need : this.need;
+    ctx.fillStyle = COL_FAINT;
+    ctx.fillRect(gx, gt, 14 * a.u, gh);
+    const below = seg.kind === 1 && cad < seg.need;
+    ctx.fillStyle = below ? COL_ACCENT : COL_LINE;
+    const f = Math.min(1, cad / top);
+    ctx.fillRect(gx, gt + gh * (1 - f), 14 * a.u, gh * f);
     ctx.fillStyle = COL_MID;
-    ctx.fillRect(sx - 4 * a.u, a.top + 10 * a.u + 120 * a.u * (1 - 1.2 / 8), 22 * a.u, v.dpr);
-    note(v, a, stalled ? 'stalled: pedal harder on the hills' : `alternate ${handLabel(this.env, -1)} and ${handLabel(this.env, 1)}. the same pedal twice slips. keep above the line on hills`, stalled ? COL_ACCENT : COL_MID);
+    ctx.fillRect(gx - 6 * a.u, gt + gh * (1 - next / top), 26 * a.u, 2 * dpr);
+    v.text(`${cad}/s`, gx + 7 * a.u, gt + gh + 18 * a.u, v.fontTiny, 'center');
+    // Strain: fills while you are under the climb's rate; full is a stall.
+    if (seg.kind === 1 && this.strain > 0) {
+      ctx.fillStyle = COL_FAINT;
+      ctx.fillRect(a.cx - 80 * a.u, a.top + 14 * a.u, 160 * a.u, 6 * a.u);
+      ctx.fillStyle = COL_ACCENT;
+      ctx.fillRect(a.cx - 80 * a.u, a.top + 14 * a.u, 160 * a.u * this.strain, 6 * a.u);
+    }
+    note(v, a, stalled ? 'stalled: rolled back to the foot of the hill' : el < 4000 ? `alternate ${handLabel(this.env, -1)} and ${handLabel(this.env, 1)}. keep at the climb\'s rate on hills` : below ? 'too slow: pedal faster' : '', stalled || below ? COL_ACCENT : COL_MID);
     footer(v, touch, this.held);
     return false;
   }
 
   result(): MiniResult {
     return {
-      score: Math.max(0, Math.round(this.dist * 2 - this.stalls * 30)),
-      primary: { label: 'distance', value: Math.round(this.dist), unit: 'm' },
+      score: Math.max(0, Math.round(this.dist + this.climbed * 40 + this.hardest * 60 - this.stalls * 30)),
+      primary: { label: PEDAL_LABEL, value: this.hardest, unit: '/s', decimals: 1 },
       lines: [
+        { label: 'hills climbed', value: String(this.climbed) },
         { label: 'stalls', value: String(this.stalls) },
+        { label: 'distance', value: `${Math.round(this.dist)} m` },
+        { label: 'first hill asked for', value: `${this.startNeed.toFixed(1)} /s` },
         { label: 'same pedal twice', value: String(this.repeats) },
       ],
       saved: this.strokes > 10,
@@ -1113,6 +1234,6 @@ export const BATCH28: MiniDef[] = [
   { id: 'etch', name: 'Etch', skill: 'coordination', blurb: 'Left hand moves across, right hand moves up and down. Trace the path.', how: 'Like an Etch A Sketch: the left hand moves the pen across (A left, D right) and the right hand moves it up and down (I up, K down; the arrow keys work too). Hold to keep moving. Trace the grey path to each circle. Later paths have diagonals, which need both hands at once. Needs a keyboard.', input: 'type', make: () => new Etch() },
   { id: 'row', name: 'Row', skill: 'coordination', blurb: 'One oar per hand. Pull evenly to go straight down the river.', how: 'The left hand pulls the left oar, the right hand the right one. Each stroke pushes the boat on and turns it away from that side, so even strokes go straight and an extra stroke on one side steers. Hitting a bank slows you down. One minute: how far can you row?', input: 'keys', minKeys: 2, make: () => new Row() },
   { id: 'crane', name: 'Crane', skill: 'coordination', blurb: 'Move the crane, let the swing settle, drop the crate on the pad.', how: 'Hold the left or right hand to move the crane along its rail. The crate swings below it: moving starts the swing, and stopping does too. Press both hands together to let go; the crate keeps its swing as it falls. Land it on the white pad, which shrinks as you go.', input: 'keys', minKeys: 2, make: () => new Crane() },
-  { id: 'pedal', name: 'Pedal', skill: 'speed', blurb: 'Alternate the pedals to keep the bike above stalling speed up the hills.', how: 'Each press of the other hand is a pedal stroke; the same hand twice just slips. Faster strokes add more speed. Hills slow you down, and too slow on a hill and you stall for a second. Forty-five seconds: how far can you ride?', input: 'keys', minKeys: 2, make: () => new Pedal() },
+  { id: 'pedal', name: 'Pedal', skill: 'speed', blurb: 'Alternate the pedals and hold each hill’s rate to the top. The hills get steeper as you climb them.', how: 'Alternate hands to pedal; the same hand twice slips. Each hill shows the rate it needs (strokes a second). Drop below it on the climb and the strain bar fills with a warning tick; let it fill and you stall and roll back. Each hill you climb asks for half a stroke more; a stall eases it off. Forty-five seconds.', input: 'keys', minKeys: 2, make: () => new Pedal() },
   { id: 'drone', name: 'Drone', skill: 'coordination', blurb: 'A rotor per hand. Fly through the gates.', how: 'Hold the left hand for the left rotor and the right hand for the right one. Both together lift you; one alone also tips the drone, which pushes it sideways. Let go and you fall. Fly through the gap in each gate. Gaps narrow; three misses end it.', input: 'keys', minKeys: 2, make: () => new Drone() },
 ];

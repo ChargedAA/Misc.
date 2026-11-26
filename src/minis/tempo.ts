@@ -78,7 +78,7 @@ class Sprint implements Mini {
     const t = this.t0 ? now - this.t0 : 0;
     if (this.t0 && !this.over && t >= SPRINT_MS) {
       this.over = true;
-      this.endAt = now + 900;
+      this.endAt = now;
       this.env.sound(SND_UI);
     }
     if (this.over && now >= this.endAt) return true;
@@ -487,6 +487,7 @@ class Cross implements Mini {
   private errs: number[] = [];
   private last = 0;
   private pressed = false;
+  private hitAt = 0;
   private held = 0;
   private drawn = 0;
 
@@ -521,6 +522,7 @@ class Cross implements Mini {
   private hit(ts: number): void {
     if (this.state !== 0 || this.pressed || ts < this.t0) return;
     this.pressed = true;
+    this.hitAt = ts;
     this.last = ts - this.crossAt;
     this.errs.push(this.last);
     this.hide.update(Math.abs(this.last) < 45);
@@ -590,13 +592,17 @@ class Cross implements Mini {
       }
     } else if (this.state === 1) {
       const e = this.last;
-      // Where the dot was when you pressed.
+      // The dot stops dead where it was when you pressed; a bracket spans the gap to the line.
       const px = clamp(xLine + (e / this.dur) * (xEnd - xStart), a.cx - half, a.cx + half);
-      ctx.strokeStyle = COL_ACCENT;
-      ctx.lineWidth = 2 * dpr;
-      ctx.beginPath();
-      ctx.arc(px, y, 9 * a.u, 0, Math.PI * 2);
-      ctx.stroke();
+      if (e < 400) {
+        ctx.fillStyle = COL_MID;
+        ctx.fillRect(Math.min(px, xLine), y + 16 * a.u, Math.abs(px - xLine), dpr);
+        const pop = Math.max(0, 1 - (now - this.hitAt) / 160);
+        ctx.fillStyle = COL_ACCENT;
+        ctx.beginPath();
+        ctx.arc(px, y, 9 * a.u * (1 + 0.35 * pop), 0, Math.PI * 2);
+        ctx.fill();
+      }
       message(v, { ...a, cy: y + 70 * a.u }, e >= 400 ? 'missed' : `${e > 0 ? '+' : ''}${Math.round(e)} ms`, e >= 400 ? '' : Math.abs(e) < 15 ? 'dead on' : e > 0 ? 'late' : 'early');
     }
     if (this.i < 2 && this.state === 0) {

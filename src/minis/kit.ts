@@ -92,6 +92,8 @@ export interface MiniEnv {
   note?(hz: number, ms: number, delayMs?: number): void;
   /** Play a pure tone (listening drills): pan from -1 to 1, and an optional glide to `toHz`. */
   tone?(hz: number, ms: number, pan?: number, gain?: number, toHz?: number): void;
+  /** This game's recent saved results at this key count, oldest first, for games that start near your usual level. */
+  past?: { value: number; label?: string }[];
 }
 
 export interface Mini {
