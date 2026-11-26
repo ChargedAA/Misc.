@@ -179,6 +179,7 @@ export const CONTROLS: Record<string, Control[]> = {
   glass: [['1-4', 'the real time'], ['TAP', 'or click']],
   arrange: [['TAP', 'click shortest to longest']],
   kite: [['L', 'pull left'], ['R', 'pull right'], ['BOTH', 'drive']],
+  shortest: [['1-4', 'the shortest total'], ['TAP', 'or click']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

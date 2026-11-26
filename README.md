@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-360 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+361 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -396,6 +396,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Plan | Jobs with lengths, deadlines and values. Put them in the best order. | mouse or tap |
 | Hanoi | Move the tower peg to peg, never a big disk on a small one. | mouse or tap |
 | Maze | Arrow keys through a maze to the exit. | keyboard |
+| Shortest | A map of towns and road lengths. What is the shortest trip from A to B? | mouse or tap |
 | Slide | Put a scrambled 3×3 sliding puzzle back in order. | mouse or tap |
 | Toggle | Each tap flips a tile and its neighbours. Turn them all off. | mouse or tap |
 | Latin | Fill a 4×4 square so each row and column has 1 to 4 once. | mouse or tap |
