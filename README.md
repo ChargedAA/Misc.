@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-372 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+376 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -343,11 +343,14 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Race | One ball rolls steadily, one speeds up from rest. Both vanish: which wins? | keys, 2+ keys |
 | Lever | Weights on a beam. Click where the pivot must go to balance it. | mouse or tap |
 | Landing | A ball is thrown and vanishes at the top of its flight. Click where it lands. | mouse or tap |
+| Forecast | A noisy trend of twelve points. Click where the next one most likely lands. | mouse or tap |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
 | Vanish | A street in perspective. Click where its lines meet. | mouse or tap |
 | Figure | Place a feature on a figure by the classic drawing proportions. | mouse or tap |
+| Spacing | Two dots on a line. Click where the next one goes, at the same spacing. | mouse or tap |
+| Proportion | Make the second rectangle the same shape as the first, at a different size. | mouse or tap |
 | Sure | Which line is longer, and how sure are you? Scored on calibration. | keys, 2+ keys |
 | Range | How many dots? Give a range you are 80% sure of. | mouse or tap |
 | Hands | An analog clock flashes. What time was it? | keyboard |
@@ -356,6 +359,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Vernier | Two lines, one a hair to the side. Which side? | keys, 2+ keys |
 | Pump | Pump a balloon for points; bank before it pops. Each size has its own risk. | keys, 2+ keys |
 | Jars | Two jars of marbles. Which gives the better chance of drawing orange? | keys, 2+ keys |
+| Stake | A known chance of winning an even-money bet. How much of your bank do you stake? | mouse or tap |
 
 ### Reasoning
 

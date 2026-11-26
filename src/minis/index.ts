@@ -90,6 +90,7 @@ import { BATCH88 } from './batch88.ts';
 import { BATCH89 } from './batch89.ts';
 import { BATCH90 } from './batch90.ts';
 import { BATCH91 } from './batch91.ts';
+import { BATCH92 } from './batch92.ts';
 import { SKILLS } from './kit.ts';
 import { quick } from './groups.ts';
 import { COORDINATION } from './coord.ts';
@@ -117,7 +118,7 @@ const BUILT_IN: Entry[] = [
 ];
 
 /** Drills added from the forty-ninth batch on: new to anyone who played before them. */
-export const LATER: MiniDef[] = [...BATCH49, ...BATCH50, ...BATCH51, ...BATCH52, ...BATCH53, ...BATCH54, ...BATCH55, ...BATCH56, ...BATCH57, ...BATCH58, ...BATCH59, ...BATCH60, ...BATCH61, ...BATCH62, ...BATCH63, ...BATCH64, ...BATCH65, ...BATCH66, ...BATCH67, ...BATCH68, ...BATCH69, ...BATCH70, ...BATCH71, ...BATCH72, ...BATCH73, ...BATCH74, ...BATCH75, ...BATCH76, ...BATCH77, ...BATCH78, ...BATCH79, ...BATCH80, ...BATCH81, ...BATCH82, ...BATCH83, ...BATCH84, ...BATCH85, ...BATCH86, ...BATCH87, ...BATCH88, ...BATCH89, ...BATCH90, ...BATCH91];
+export const LATER: MiniDef[] = [...BATCH49, ...BATCH50, ...BATCH51, ...BATCH52, ...BATCH53, ...BATCH54, ...BATCH55, ...BATCH56, ...BATCH57, ...BATCH58, ...BATCH59, ...BATCH60, ...BATCH61, ...BATCH62, ...BATCH63, ...BATCH64, ...BATCH65, ...BATCH66, ...BATCH67, ...BATCH68, ...BATCH69, ...BATCH70, ...BATCH71, ...BATCH72, ...BATCH73, ...BATCH74, ...BATCH75, ...BATCH76, ...BATCH77, ...BATCH78, ...BATCH79, ...BATCH80, ...BATCH81, ...BATCH82, ...BATCH83, ...BATCH84, ...BATCH85, ...BATCH86, ...BATCH87, ...BATCH88, ...BATCH89, ...BATCH90, ...BATCH91, ...BATCH92];
 export const MINIS: MiniDef[] = [...REACTION, ...SPEED, ...TIMING, ...MEMORY, ...ATTENTION, ...COORDINATION, ...MORE, ...EXTRA, ...BATCH4, ...BATCH5, ...BATCH6, ...BATCH7, ...BATCH8, ...BATCH9, ...BATCH10, ...BATCH11, ...BATCH12, ...BATCH13, ...BATCH14, ...BATCH15, ...BATCH16, ...BATCH17, ...BATCH18, ...BATCH19, ...BATCH20, ...BATCH21, ...BATCH22, ...BATCH23, ...BATCH24, ...BATCH25, ...BATCH26, ...BATCH27, ...BATCH28, ...BATCH29, ...BATCH30, ...BATCH31, ...BATCH32, ...BATCH33, ...BATCH34, ...BATCH35, ...BATCH36, ...BATCH37, ...BATCH38, ...BATCH39, ...BATCH40, ...BATCH41, ...BATCH42, ...BATCH43, ...BATCH44, ...BATCH45, ...BATCH46, ...BATCH47, ...BATCH48, ...LATER];
 
 export const ENTRIES: Entry[] = [
