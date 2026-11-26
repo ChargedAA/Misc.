@@ -2318,3 +2318,51 @@ body.showcase .screen.ready {
   opacity: 0.4;
   cursor: default;
 }
+
+/* Favourites: a star after the name, and a row of chips on the home screen. */
+.fav {
+  margin-left: 8px;
+  color: #ffd84d;
+  font-size: 0.85em;
+}
+
+.favhead {
+  margin-top: 26px;
+}
+
+.favs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.favchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.favchip .gb {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+  border-radius: 999px;
+}
+
+.favchip:hover,
+.favchip:focus-visible {
+  border-color: var(--line);
+  outline: none;
+}
+
+.mhead h1 > .ico {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  color: var(--mid);
+}

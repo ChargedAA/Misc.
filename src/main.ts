@@ -66,7 +66,7 @@ import { clamp, clockShift, keysFor, picksKeys, setClockShift, setDefaultKeys, s
 import { flagsHtml, gameBadge } from './icons.ts';
 import { Ui, esc, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { SHOWCASE, attractHtml, boardHtml, cleanInitials, doneHtml, saveEntry, setShowcaseOn, showcaseLength, showcaseOn, stepHtml, today, type ShowcaseEntry } from './showcase.ts';
-import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type Menu, type MenuCtx } from './menus.ts';
+import { GROUPS, columnsHtml, customMenu, dailyMenu, gameMenu, gameStatsMenu, groupMenu, randomMenu, searchMenu, settingsMenu, accountMenu, customizeMenu, lengthOf, ACCENTS, boardsMenu, boardMenu, playerMenu, overallMenu, skillMenu, startMenu, statsMenu, type FindOpts, type Menu, type MenuCtx } from './menus.ts';
 
 type Screen =
   | 'menu'
@@ -106,6 +106,17 @@ const settings = loadSettings();
 sfx.muted = settings.muted;
 sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
+
+/** Starred games, in the order starred; and Find's filters and order. */
+let favs: string[] = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem('tension.favs') ?? '[]') as unknown;
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+})();
+const findOpts: FindOpts = { skill: '', need: '', sort: 'match' };
 setLives(settings.lives ?? 3);
 setDefaultKeys(settings.keyCount ?? 2);
 
@@ -466,7 +477,7 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id), dailyResume: dailyProgress()?.idx ?? null };
+  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id), dailyResume: dailyProgress()?.idx ?? null, favs, find: findOpts };
 }
 
 /** Name Google suggested at sign-in, and a message for the account block. */
@@ -1807,6 +1818,29 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'fav': {
+      favs = favs.includes(arg) ? favs.filter((x) => x !== arg) : [...favs, arg];
+      try {
+        localStorage.setItem('tension.favs', JSON.stringify(favs));
+      } catch {
+        // Kept for this visit only.
+      }
+      uiClick();
+      showMenu();
+      break;
+    }
+    case 'findskill':
+      findOpts.skill = arg;
+      showMenu();
+      break;
+    case 'findneed':
+      findOpts.need = arg as FindOpts['need'];
+      showMenu();
+      break;
+    case 'findsort':
+      findOpts.sort = arg as FindOpts['sort'];
+      showMenu();
+      break;
     case 'gkeys': {
       // One key count for every game: the per-game choices give way to it.
       const n = Math.max(1, Math.min(6, Number(arg) || 2));

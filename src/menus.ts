@@ -215,6 +215,16 @@ export interface MenuCtx {
   isNew?: (id: string) => boolean;
   /** A daily set left part-way today: the next drill to play (0-based). */
   dailyResume?: number | null;
+  /** Games starred as favourites, in the order starred. */
+  favs?: string[];
+  /** Find: filters and order. */
+  find?: FindOpts;
+}
+
+export interface FindOpts {
+  skill: string;
+  need: '' | 'nosound' | 'mouse' | 'keys';
+  sort: 'match' | 'az' | 'played' | 'new' | 'fav';
 }
 
 const NEW_TAG = '<span class="nw">new</span>';
@@ -312,6 +322,13 @@ export function startMenu(c: MenuCtx): Menu {
       ),
     ],
     enter: { label: 'Daily', act: 'go', arg: 'daily' },
+    after: c.favs?.length
+      ? `<h3 class="ihead favhead">Favourites</h3><div class="favs">${c.favs
+          .map((id) => entry(id))
+          .filter((e): e is Entry => !!e)
+          .map((e) => `<button class="favchip" data-act="go" data-arg="game:${e.id}">${gameBadge(e.name, e.skill)}<span>${e.name}</span></button>`)
+          .join('')}</div>`
+      : '',
     split: true,
     wide: true,
   };
@@ -518,19 +535,56 @@ export function searchGames(q: string): Entry[] {
 }
 
 export function searchMenu(c: MenuCtx, q: string): Menu {
-  const total = gamesOf(SKILLS.map((k) => k.id)).length;
+  const all = gamesOf(SKILLS.map((k) => k.id));
+  const o: FindOpts = c.find ?? { skill: '', need: '', sort: 'match' };
+  const plays = new Map<string, number>();
+  for (const r of c.history) if (r.kind === 'mini' && r.game) plays.set(r.game, (plays.get(r.game) ?? 0) + 1);
+  const favs = c.favs ?? [];
   // "new" lists the drills not yet opened, ahead of anything that merely mentions the word.
-  const fresh = q.trim().toLowerCase() === 'new' && c.isNew ? gamesOf(SKILLS.map((k) => k.id)).filter((e) => c.isNew!(e.id)) : [];
-  const found = (fresh.length ? fresh : searchGames(q)).slice(0, fresh.length ? 200 : 30);
+  const word = q.trim().toLowerCase();
+  let found = word === 'new' && c.isNew ? all.filter((e) => c.isNew!(e.id)) : word ? searchGames(q) : [...all];
+  found = found.filter(
+    (e) =>
+      (!o.skill || e.skill === o.skill) &&
+      (o.need !== 'nosound' || !NEEDS_SOUND.has(e.id)) &&
+      (o.need !== 'mouse' || e.input === 'pointer' || e.input === 'both') &&
+      (o.need !== 'keys' || e.input !== 'pointer'),
+  );
+  const order = ENTRIES.map((e) => e.id);
+  if (o.sort === 'az') found.sort((a, b) => a.name.localeCompare(b.name));
+  else if (o.sort === 'played') found.sort((a, b) => (plays.get(b.id) ?? 0) - (plays.get(a.id) ?? 0) || a.name.localeCompare(b.name));
+  else if (o.sort === 'new') found.sort((a, b) => order.indexOf(b.id) - order.indexOf(a.id));
+  else if (o.sort === 'fav') found.sort((a, b) => Number(favs.includes(b.id)) - Number(favs.includes(a.id)) || a.name.localeCompare(b.name));
+  else if (!word) found.sort((a, b) => a.name.localeCompare(b.name));
+  const shown = found.slice(0, 120);
   const skillName = (id: string) => SKILLS.find((k) => k.id === id)?.name ?? '';
+  const sel = (act: string, label: string, opts: [string, string][], cur: string) =>
+    `<label class="pick"><span class="lbl">${label}</span><select data-act="${act}" aria-label="${label}">${opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
+  const filters = `<div class="picks">
+    ${sel('findskill', 'Skill', [['', 'All skills'], ...SKILLS.map((k) => [k.id, k.name] as [string, string])], o.skill)}
+    ${sel('findneed', 'Needs', [['', 'Anything'], ['nosound', 'No sound'], ['mouse', 'Mouse or touch'], ['keys', 'Keyboard']], o.need)}
+    ${sel('findsort', 'Sort', [['match', word ? 'Best match' : 'A to Z'], ['az', 'A to Z'], ['played', 'Most played by you'], ['new', 'Newest first'], ['fav', 'Favourites first']], o.sort)}
+  </div>`;
   return {
     title: 'FIND',
-    sub: q ? `${found.length || 'No'} match${found.length === 1 ? '' : 'es'}` : `Search ${total} drills by name, skill or what they train`,
-    extra: `<div class="lbform search"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="type a name, skill or idea: pitch, balance, typing, new…" value="${esc(q)}" aria-label="Search drills"></div>${q && !found.length ? '<p class="muted">Nothing matches. Try a skill (reaction, ear) or a kind of task (rhythm, maze, chord).</p>' : ''}`,
-    items: found.map((e) => ({ label: `${e.name}${flagsHtml(e)}`, icon: gameBadge(e.name, e.skill), desc: e.blurb, meta: `${skillName(e.skill)}${bestOf(c, e.id) ? `${DOT}${bestOf(c, e.id)}` : ''}`, act: 'go', arg: `game:${e.id}`, code: 'Unidentified', keyName: '' })),
+    titleHtml: `${toolIcon('search')} FIND`,
+    sub: `${found.length} of ${all.length} drills${found.length > shown.length ? `${DOT}first ${shown.length} shown` : ''}`,
+    extra: `<div class="lbform search"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="type a name, skill or idea: pitch, balance, typing, new…" value="${esc(q)}" aria-label="Search drills"></div>${filters}${!found.length ? '<p class="muted">Nothing matches. Try fewer filters, a skill (reaction, ear) or a kind of task (rhythm, maze, chord).</p>' : ''}`,
+    items: shown.map((e) => ({
+      label: `${e.name}${favs.includes(e.id) ? FAV_STAR : ''}${flagsHtml(e)}`,
+      icon: gameBadge(e.name, e.skill),
+      desc: e.blurb,
+      meta: `${skillName(e.skill)}${plays.get(e.id) ? `${DOT}${plays.get(e.id)} played` : ''}`,
+      act: 'go',
+      arg: `game:${e.id}`,
+      code: 'Unidentified',
+      keyName: '',
+    })),
     wide: true,
   };
 }
+
+const FAV_STAR = '<span class="fav" title="Favourite">\u2605</span>';
 
 /** A custom difficulty: nudge it, then go on to the keys. */
 export function customMenu(c: MenuCtx, id: string): Menu {
@@ -601,7 +655,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   `;
   return {
     title: e.name.toUpperCase(),
-    titleHtml: `${gameBadge(e.name, e.skill)}${e.name.toUpperCase()}${flagsHtml(e)}`,
+    titleHtml: `${gameBadge(e.name, e.skill)}${e.name.toUpperCase()}${c.favs?.includes(id) ? FAV_STAR : ''}${flagsHtml(e)}`,
     sub: `${skill.name}${group ? `${DOT}${group.name}` : ''}`,
     extra,
     items: [
@@ -617,6 +671,7 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
         icon: toolIcon('play'),
       },
       { label: 'Stats', icon: toolIcon('stats'), meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
+      { label: c.favs?.includes(id) ? 'Unfavourite' : 'Favourite', icon: toolIcon('star'), desc: c.favs?.includes(id) ? 'Take it off your favourites' : 'Keep it on the home screen and first in Find', act: 'fav', arg: id, code: 'KeyV', keyName: 'V' },
       { label: 'Share', icon: toolIcon('share'), desc: 'Send someone a link straight to this game', act: 'share', arg: id, code: 'KeyK', keyName: 'K' },
     ],
     enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
