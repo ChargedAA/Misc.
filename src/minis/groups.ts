@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
       { name: 'Rhythm games', desc: 'Read a rhythm, or hit notes as they fall, in time', ids: ['sight', 'notes'] },
@@ -99,7 +99,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Size and amount', desc: 'Lengths, counts, midpoints, shares and numbers', ids: ['longer', 'more', 'guess', 'middle', 'line', 'angle', 'centroid', 'closer', 'share', 'curves'] },
       { name: 'Angle, shade, motion', desc: 'Including when the surroundings try to fool you', ids: ['tilt', 'shade', 'faster', 'first', 'flow', 'align'] },
-      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom'] },
+      { name: 'In motion', desc: 'Judge gaps, paths and amounts as they change', ids: ['merge', 'pour', 'bank', 'topple', 'hoop', 'carom', 'cannon'] },
       { name: 'Time', desc: 'How long things last', ids: ['duration'] },
       { name: 'Colour', desc: 'See, remember and mix a colour exactly', ids: ['hue', 'mix'] },
       { name: 'Drawing eye', desc: 'Perspective and proportion, as artists judge them', ids: ['vanish', 'figure'] },
@@ -155,7 +155,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'The mouse (or a finger): get to a target fast, click it exactly, stay on it as it moves, and aim in 3D.',
     groups: [
       { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead'] },
-      { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect'] },
+      { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts'] },
       { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
     ],
@@ -234,6 +234,9 @@ export function durationOf(id: string): string {
 /** Each game's standard length: a round count, or seconds for timed drills. Short is half, long double. */
 export const ROUNDS: Record<string, [number, string]> = {
   round: [5, 'circles'],
+  cannon: [15, 'shots'],
+  pins: [120, 's'],
+  darts: [12, 'darts'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
