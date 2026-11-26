@@ -39,7 +39,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal', 'ramp', 'shuttle', 'clicker'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
       { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain', 'keypad'] },
-      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity', 'dots', 'alpha', 'warm', 'vowel'] },
+      { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity', 'dots', 'alpha', 'warm', 'vowel', 'magnitude'] },
     ],
     routine: ['sprint', 'steady', 'trill'],
     benchmark: 'sprint',

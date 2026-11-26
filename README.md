@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-367 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+368 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -126,6 +126,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Alpha | Two words. Which comes first in the dictionary? | keys, 2+ keys |
 | Warm | A colour: warm or cool? Later the word printed on it tries to mislead. | keys, 2+ keys |
 | Vowel | A letter: vowel or consonant? Letter after letter, as fast as you can. | keys, 2+ keys |
+| Magnitude | Two numbers, one in big print. Press the side of the bigger number, not the bigger print. | keys, 2+ keys |
 
 ### Timing
 
