@@ -2309,3 +2309,12 @@ body.showcase .screen.ready {
     box-shadow: none;
   }
 }
+
+.home-picks {
+  margin: -6px 0 22px;
+}
+
+.pick select:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

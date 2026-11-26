@@ -47,10 +47,16 @@ export function picksKeys(id: string, input: InputKind): boolean {
   return usesKeyCount(input) && MULTI_KEY.has(id);
 }
 
-/** The key count a game is played with: the saved choice where there is one, else one key per hand. */
+/** The key count chosen on the home screen, for every game that lets you pick. */
+let defaultKeys = 2;
+export function setDefaultKeys(n: number): void {
+  defaultKeys = Math.max(1, Math.min(6, Math.round(n) || 2));
+}
+
+/** The key count a game is played with: a saved choice for it, else the one set on the home screen. */
 export function keysFor(id: string, input: InputKind, saved: number | undefined, minKeys = 1): number {
   // Never a count the game cannot be played with (Rush needs three).
-  return picksKeys(id, input) ? Math.max(saved ?? 2, minKeys) : 2;
+  return picksKeys(id, input) ? Math.max(saved ?? defaultKeys, minKeys) : 2;
 }
 
 export interface MiniLine {

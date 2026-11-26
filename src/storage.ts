@@ -71,6 +71,9 @@ export interface Settings {
   lengths?: Record<string, number>;
   /** Lives per run when a game is played until you run out (3 unless chosen). */
   lives?: number;
+  /** Keys per game and, for two keys, which pair: chosen once on the home screen. */
+  keyCount?: number;
+  keyset?: string;
 }
 
 export interface RtSummary {
@@ -217,6 +220,8 @@ export function loadSettings(): Settings {
     keysets: record(saved?.keysets, isStr),
     lengths: record(saved?.lengths, isNum),
     lives: num(saved?.lives, 1, 99),
+    keyCount: num(saved?.keyCount, 1, 6),
+    keyset: typeof saved?.keyset === 'string' ? saved.keyset : undefined,
     look: lookOf(saved?.look),
     session: typeof saved?.session === 'string' && saved.session.length < 300 ? saved.session : undefined,
     account: typeof saved?.account === 'string' ? saved.account.slice(0, 16) : undefined,
@@ -260,7 +265,7 @@ export const KEYSETS: Record<string, { label: string; left: string; right: strin
 
 /** The bindings a game is played with: the saved ones, or a two-key set chosen for that game. */
 export function bindingsFor(settings: Settings, id: string, keys: number): Bindings {
-  const set = KEYSETS[settings.keysets?.[id] ?? ''];
+  const set = KEYSETS[settings.keysets?.[id] ?? settings.keyset ?? ''];
   if (set && keys === 2) return { left: [set.left], right: [set.right], reflex: null };
   return settings.bindings[keys]!;
 }

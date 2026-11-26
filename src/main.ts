@@ -62,7 +62,7 @@ import { GUIDES, LIVES_LEN, NEEDS_SOUND, durationOf, lengthPlan, lengthsFor, liv
 import { SoundCheck } from './minis/soundcheck.ts';
 import { Integrity, browserEnv } from './integrity.ts';
 import { LOCAL, api, fill as fillOnline, googleButton, googleSignedOut, signInMode } from './online.ts';
-import { clamp, clockShift, keysFor, picksKeys, setClockShift, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
+import { clamp, clockShift, keysFor, picksKeys, setClockShift, setDefaultKeys, setFrameLead, setLengthScale, type Mini, type MiniDef, type MiniResult } from './minis/kit.ts';
 import { flagsHtml, gameBadge } from './icons.ts';
 import { Ui, esc, controlsHtml, handKeys, readyHtml, keysLine, streak, cpsResultsHtml, dailySummaryHtml, formatPrimary, miniResultsHtml, type DailyRow, keysHtml, pauseHtml, miniPauseHtml, reflexResultsHtml, resultsHtml } from './ui.ts';
 import { SHOWCASE, attractHtml, boardHtml, cleanInitials, doneHtml, saveEntry, setShowcaseOn, showcaseLength, showcaseOn, stepHtml, today, type ShowcaseEntry } from './showcase.ts';
@@ -107,6 +107,7 @@ sfx.muted = settings.muted;
 sfx.volume = settings.volume ?? 0.8;
 let history = loadHistory();
 setLives(settings.lives ?? 3);
+setDefaultKeys(settings.keyCount ?? 2);
 
 /** A game's last dozen saved results at a key count, oldest first. */
 function pastFor(id: string, keys: number): { value: number; label?: string }[] {
@@ -1806,6 +1807,27 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'gkeys': {
+      // One key count for every game: the per-game choices give way to it.
+      const n = Math.max(1, Math.min(6, Number(arg) || 2));
+      settings.keyCount = n;
+      setDefaultKeys(n);
+      for (const e of MINIS) if (picksKeys(e.id, e.input)) delete settings.keys[e.id];
+      if (n !== 2) settings.keyset = undefined;
+      saveSettings(settings);
+      uiClick();
+      showMenu();
+      break;
+    }
+    case 'glayout': {
+      // Which pair of keys two-key games use, for every game.
+      settings.keyset = arg || undefined;
+      settings.keysets = {};
+      saveSettings(settings);
+      uiClick();
+      showMenu();
+      break;
+    }
     case 'lives': {
       // How many lives a lives run has, for every game.
       const n = Math.max(1, Math.min(99, Math.round(Number(arg)) || 3));
@@ -2087,7 +2109,7 @@ function onKeyDown(e: KeyboardEvent): void {
   // Digits: key count on a game page, key-count filter on a game's stats, key set on the keys screen.
   if (!Number.isNaN(digit)) {
     const top = nav[nav.length - 1]!;
-    if (screen === 'menu' && (top.kind === 'game' || top.kind === 'gamekeys') && digit >= 1 && digit <= 6) setKeys(top.arg.split(':')[0] as GameId, digit);
+    if (screen === 'menu' && (top.kind === 'game' || top.kind === 'gamekeys' || nav.length === 1) && digit >= 1 && digit <= 6) onAction('gkeys', String(digit));
     else if (screen === 'menu' && top.kind === 'gamestats' && digit >= 0 && digit <= 6) onAction('gsfilter', String(digit));
     else if (screen === 'keys' && digit >= 1 && digit <= 6) onAction('bindmode', String(digit));
     else if (digit === 0) toggleMute();

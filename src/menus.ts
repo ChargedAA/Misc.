@@ -250,11 +250,27 @@ const SKILL_KEYS: Record<string, [string, string]> = {
   aim: ['KeyG', 'G'],
 };
 
+/** The settings every game shares, on the home screen: how many keys, which pair, how many lives. */
+function playSettings(c: MenuCtx): string {
+  const n = c.settings.keyCount ?? 2;
+  const set = c.settings.keyset ?? '';
+  const lives = livesCount();
+  const preset = [3, 5, 10].includes(lives);
+  const sel = (act: string, label: string, title: string, opts: [string, string, boolean?][], disabled = false) =>
+    `<label class="pick" title="${title}"><span class="lbl">${label}</span><select data-act="${act}" aria-label="${label}"${disabled ? ' disabled' : ''}>${opts.map(([v, l, on]) => `<option value="${v}"${on ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`;
+  return `<div class="picks home-picks">
+    ${sel('gkeys', 'Keys', 'Keys per game, where a game lets you choose. More keys is harder.', MODES.map((m) => [String(m.id), `${m.id} key${m.id === 1 ? '' : 's'}`, m.id === n]))}
+    ${sel('glayout', 'Layout', 'Which pair of keys two-key games use', [['', 'Usual keys', set === ''], ...Object.entries(KEYSETS).map(([k, v]) => [k, v.label, k === set] as [string, string, boolean])], n !== 2)}
+    ${sel('lives', 'Lives', 'For games played until you run out of lives', [['3', '3 lives', lives === 3], ['5', '5 lives', lives === 5], ['10', '10 lives', lives === 10], ['custom', 'Custom…', !preset]])}${preset ? '' : `<input class="num" type="number" min="1" max="99" value="${lives}" data-act="lives" aria-label="Number of lives">`}
+  </div>`;
+}
+
 export function startMenu(c: MenuCtx): Menu {
   return {
     title: 'TENSION',
     titleHtml: LOGO_FULL,
     crumb: LOGO,
+    extra: playSettings(c),
     sub: `Train eleven skills with short drills${c.streak > 1 ? `${DOT}${c.streak} day streak` : ''}`,
     tools: [
       { label: 'Find', act: 'go', arg: 'search', code: 'KeyF', keyName: 'F' , icon: toolIcon('search') },
@@ -560,26 +576,16 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
   const keys = keysFor(id, e.input, c.settings.keys[id], e.minKeys);
   const lenScale = lengthOf(c.settings, id);
-  const min = e.minKeys ?? 1;
   const usesKeys = picksKeys(id, e.input);
   const binds = bindingsFor(c.settings, id, keys);
   const how = e.def ? e.def.how : controlsHint(id, keys, binds);
   const controls = e.def ? controlsHtml(id, e.input, keys, binds) : keysLine(keys, binds);
-  // Two-key games can also be played on the Shift keys or the arrows.
-  const set = c.settings.keysets?.[id] ?? '';
-  const sets = (e.input === 'keys' || e.input === 'both') && keys === 2
-    ? `<label class="pick"><span class="lbl">Layout</span><select data-act="keyset" data-arg="${id}" aria-label="Which keys">${[['', `Usual keys (${keysLine(2, c.settings.bindings[2]!).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()})`], ...Object.entries(KEYSETS).map(([k, v]) => [k, v.label])]
-        .map(([k, label]) => `<option value="${k}"${k === set ? ' selected' : ''}>${label}</option>`)
-        .join('')}</select></label>`
-    : '';
+  const set = c.settings.keysets?.[id] || c.settings.keyset || '';
   const custom = e.def?.custom;
   const diff = e.def?.levels
     ? `<label class="pick"><span class="lbl">Difficulty</span><select data-act="setlevel" data-arg="${id}" aria-label="Difficulty">${e.def.levels
         .map((l) => `<option value="${l.value}"${l.value === level ? ' selected' : ''}>${l.label}</option>`)
         .join('')}${custom ? `<option value="custom"${e.def.levels.some((l) => l.value === level) ? '' : ' selected'}>Custom${e.def.levels.some((l) => l.value === level) ? '…' : `: ${level} ${custom.unit}`}</option>` : ''}</select></label>`
-    : '';
-  const count = usesKeys
-    ? `<label class="pick"><span class="lbl">Keys</span><select data-act="keycount" data-arg="${id}" aria-label="How many keys" title="Or press 1 to 6">${MODES.map((m) => `<option value="${m.id}"${m.id === keys ? ' selected' : ''}${m.id < min ? ' disabled' : ''}>${m.id} key${m.id === 1 ? '' : 's'}</option>`).join('')}</select></label>`
     : '';
   const best = c.bestFor(id, keys);
   const sessions = c.history.filter((r) => gameOf(r) === id).length;
@@ -590,7 +596,8 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
     <dt>Controls</dt><dd>${controls}</dd>
     ${ROUNDS[id] ? (lvName ? `<dt>Difficulty</dt><dd>${lvName}</dd>` : '') : `<dt>Length</dt><dd>${durationOf(id)}${lvName ? `${DOT}${lvName}` : ''}</dd>`}
   </dl>
-  ${ROUNDS[id] || sets || diff || count ? `<div class="picks">${diff}${ROUNDS[id] ? lengthPicker(id, lenScale) : ''}${count}${sets}</div>${ROUNDS[id] ? `<p class="note">Standard takes ${durationOf(id)}.</p>` : ''}` : ''}
+  ${usesKeys ? `<p class="note">Played with ${keys} key${keys === 1 ? '' : 's'}${set ? ` on the ${KEYSETS[set]!.label.toLowerCase()}` : ''}${keys > (c.settings.keyCount ?? 2) ? ' (its least)' : ''}. Keys and layout are set on the home screen.</p>` : ''}
+  ${ROUNDS[id] || diff ? `<div class="picks">${diff}${ROUNDS[id] ? lengthPicker(id, lenScale) : ''}</div>${ROUNDS[id] ? `<p class="note">Standard takes ${durationOf(id)}.</p>` : ''}` : ''}
   `;
   return {
     title: e.name.toUpperCase(),
