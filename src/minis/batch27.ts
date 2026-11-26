@@ -30,6 +30,9 @@ function note(v: View, a: Arena, text: string, color = COL_MID): void {
 
 const G = 9.81;
 
+/** A half-metre ruler: it falls through your fingers in about 320 ms, so a slow catch is still a catch. */
+const RULER_M = 0.5;
+
 class Ruler implements Mini {
   private env!: MiniEnv;
   private readonly total = scaled(12);
@@ -82,7 +85,7 @@ class Ruler implements Mini {
     if (this.state === 1) {
       const t = (now - this.dropAt) / 1000;
       this.fallen = 0.5 * G * t * t;
-      if (this.fallen > 0.3) {
+      if (this.fallen > RULER_M) {
         this.missed++;
         this.env.sound(SND_FALL);
         this.i++;
@@ -97,25 +100,40 @@ class Ruler implements Mini {
     const a = arena(v, touch);
     const ctx = v.ctx;
     header(v, touch, 'catch', `${Math.min(this.i + 1, this.total)} / ${this.total}`, 'median', ms(median(this.rts)));
-    // A 30 cm ruler, scaled to the arena; your fingers are the two short lines.
-    const pxPerM = (a.bottom - a.top - 60 * a.u) / 0.45;
-    const fingerY = a.top + 0.08 * pxPerM + 20 * a.u;
-    const top = fingerY - 0.02 * pxPerM + Math.min(this.fallen, 0.3) * pxPerM;
-    const w = 46 * a.u;
-    ctx.strokeStyle = COL_LINE;
-    ctx.lineWidth = 1.5 * v.dpr;
-    ctx.strokeRect(a.cx - w / 2, top, w, 0.3 * pxPerM);
-    for (let cm = 0; cm <= 30; cm++) {
-      const y = top + (cm / 100) * pxPerM;
-      ctx.fillStyle = COL_MID;
-      ctx.fillRect(a.cx - w / 2, y, cm % 5 === 0 ? 14 * a.u : 7 * a.u, v.dpr);
-      if (cm % 5 === 0 && cm) v.text(String(cm), a.cx + 6 * a.u, y + 4 * v.dpr, v.fontTiny, 'left');
+    // As in the real test: someone holds the ruler by its top end; its zero mark starts level with
+    // your open fingers near the bottom, and it falls down through them. Where you pinch is the reading.
+    const pxPerM = (a.bottom - a.top - 70 * a.u) / (RULER_M + 0.12);
+    const fingerY = a.bottom - 0.06 * pxPerM - 30 * a.u;
+    const d = Math.min(this.fallen, RULER_M + 0.1);
+    const bottom = fingerY + d * pxPerM;
+    const top = bottom - RULER_M * pxPerM;
+    const w = 44 * a.u;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+    ctx.clip();
+    ctx.fillStyle = '#e8e2cf';
+    ctx.fillRect(a.cx - w / 2, top, w, RULER_M * pxPerM);
+    for (let cm = 0; cm <= RULER_M * 100; cm++) {
+      const y = bottom - (cm / 100) * pxPerM;
+      ctx.fillStyle = '#2a2a2e';
+      ctx.fillRect(a.cx - w / 2, y, cm % 5 === 0 ? 16 * a.u : 8 * a.u, v.dpr);
+      if (cm % 5 === 0 && cm) v.text(String(cm), a.cx + 4 * a.u, y + 4 * v.dpr, v.fontTiny, 'left');
     }
-    ctx.fillStyle = this.state === 2 ? COL_ACCENT : COL_DIM;
-    ctx.fillRect(a.cx - w / 2 - 34 * a.u, fingerY + 0.02 * pxPerM, 26 * a.u, 3 * v.dpr);
-    ctx.fillRect(a.cx + w / 2 + 8 * a.u, fingerY + 0.02 * pxPerM, 26 * a.u, 3 * v.dpr);
+    ctx.restore();
+    // The dropper's hand pinches the top until it lets go.
+    if (this.state === 0) {
+      ctx.fillStyle = '#6c6c74';
+      ctx.fillRect(a.cx - w / 2 - 18 * a.u, top - 6 * a.u, 14 * a.u, 30 * a.u);
+      ctx.fillRect(a.cx + w / 2 + 4 * a.u, top - 6 * a.u, 14 * a.u, 30 * a.u);
+    }
+    // Your thumb and finger: open while waiting, closed on the ruler once you catch.
+    const gap = this.state === 2 && !(this.missed && this.fallen >= RULER_M) ? 0 : 16 * a.u;
+    ctx.fillStyle = this.state === 2 ? COL_LINE : '#a8a8b0';
+    ctx.fillRect(a.cx - w / 2 - gap - 30 * a.u, fingerY - 5 * a.u, 30 * a.u, 10 * a.u);
+    ctx.fillRect(a.cx + w / 2 + gap, fingerY - 5 * a.u, 30 * a.u, 10 * a.u);
     if (this.state === 2) {
-      const last = this.missed && this.fallen >= 0.3 ? 'dropped' : `${(this.fallen * 100).toFixed(1)} cm  ·  ${Math.round(this.rts[this.rts.length - 1] ?? 0)} ms`;
+      const last = this.missed && this.fallen >= RULER_M ? 'dropped' : `${(this.fallen * 100).toFixed(1)} cm  ·  ${Math.round(this.rts[this.rts.length - 1] ?? 0)} ms`;
       note(v, a, last, COL_LINE);
     } else note(v, a, 'press any key to catch the ruler the moment it starts to fall');
     footer(v, touch, this.held);
@@ -767,6 +785,9 @@ class Drive implements Mini {
 
 // --- Flipper ------------------------------------------------------------------------
 
+/** Flipper geometry, in field units: pivots near the walls, tips toward the middle gap. */
+const FLIP = { pivotX: [0.02, 0.98], tipX: [0.455, 0.545], pivotY: 0.84, downY: 0.92, upY: 0.76, r: 0.022, half: 0.012 };
+
 class Flipper implements Mini {
   private env!: MiniEnv;
   private bx = 0.5;
@@ -779,7 +800,10 @@ class Flipper implements Mini {
   private overAt = 0;
   private lives = 3;
   private flips = 0;
-  private flipAt: [number, number] = [-1e9, -1e9];
+  /** How far up each flipper is (0 resting, 1 fully up), and how fast it moved last frame. */
+  private ang: [number, number] = [0, 0];
+  private spin: [number, number] = [0, 0];
+  private kickAt: [number, number] = [-1e9, -1e9];
   private time = 0;
   private held = 0;
 
@@ -790,18 +814,23 @@ class Flipper implements Mini {
   }
 
   private serve(): void {
-    this.bx = rnd(0.3, 0.7);
+    // Served onto one flipper or the other, never straight down the gap.
+    this.bx = Math.random() < 0.5 ? rnd(0.15, 0.35) : rnd(0.65, 0.85);
     this.by = 0.12;
-    this.vx = rnd(-0.25, 0.25);
+    this.vx = rnd(-0.15, 0.15);
     this.vy = 0;
   }
 
-  press(slot: number, ts: number): void {
+  private side(s: number): boolean {
+    for (let k = 0; k < 6; k++) if (this.held & (1 << k) && sideOf(k) === s) return true;
+    return false;
+  }
+
+  press(slot: number, _ts: number): void {
     this.held |= 1 << slot;
     const s = sideOf(slot);
     if (s === 0) return;
     this.started = true;
-    this.flipAt[s < 0 ? 0 : 1] = ts;
     this.env.sound(s < 0 ? SND_TAP_L : SND_TAP_R);
   }
 
@@ -809,12 +838,42 @@ class Flipper implements Mini {
     this.held &= ~(1 << slot);
   }
 
+  private tipY(side: number): number {
+    return FLIP.downY + (FLIP.upY - FLIP.downY) * this.ang[side]!;
+  }
+
   frame(now: number, v: View, touch: TouchLayout): boolean {
     const dt = Math.min(0.03, (now - this.last) / 1000);
     this.last = now;
     if (this.over && now >= this.overAt) return true;
+    // A held key keeps its flipper up; it swings up fast and falls back a little slower.
+    for (const side of [0, 1]) {
+      const want = this.side(side ? 1 : -1) ? 1 : 0;
+      const before = this.ang[side]!;
+      const step = want > before ? dt / 0.05 : dt / 0.09;
+      this.ang[side] = want > before ? Math.min(1, before + step) : Math.max(0, before - step);
+      this.spin[side] = dt > 0 ? (this.ang[side]! - before) / dt : 0;
+    }
     if (this.started && !this.over) {
       this.time += dt;
+      // Small steps, so a fast ball can never pass clean through a flipper between two frames.
+      const steps = Math.max(1, Math.ceil(dt / 0.003));
+      for (let k = 0; k < steps; k++) this.step(dt / steps, now);
+      if (this.by > 1.02) {
+        this.lives--;
+        this.env.sound(this.lives > 0 ? SND_LURCH : SND_FALL);
+        if (this.lives <= 0) {
+          this.over = true;
+          this.overAt = now + 1300;
+        } else this.serve();
+      }
+    }
+    this.draw(now, v, touch);
+    return false;
+  }
+
+  private step(dt: number, now: number): void {
+    {
       const g = 1.1 + Math.min(0.8, this.time * 0.01);
       this.vy += g * dt;
       this.bx += this.vx * dt;
@@ -827,32 +886,53 @@ class Flipper implements Mini {
         this.vy = Math.abs(this.vy) * 0.8;
         this.by = 0.03;
       }
-      // Flippers: left covers x 0.08-0.45, right 0.55-0.92, at y 0.86. A flip within
-      // 150 ms of the ball arriving there sends it back up, angled by where it hit.
-      if (this.vy > 0 && this.by > 0.82 && this.by < 0.92) {
-        for (const side of [0, 1]) {
-          const lo = side ? 0.55 : 0.08;
-          const hi = side ? 0.92 : 0.45;
-          if (this.bx >= lo && this.bx <= hi && now - this.flipAt[side]! < 150) {
-            const along = side ? (this.bx - lo) / (hi - lo) : 1 - (this.bx - lo) / (hi - lo);
-            this.vy = -rnd(1.1, 1.4) - Math.min(0.4, this.time * 0.004);
-            this.vx = (side ? -1 : 1) * (0.15 + along * 0.5) * (Math.random() < 0.25 ? -1 : 1);
-            this.by = 0.82;
+      // The ball meets each flipper as a solid bar: it bounces off the surface, and a flipper that
+      // is swinging up throws it, harder toward the tip.
+      for (const side of [0, 1]) {
+        const px = FLIP.pivotX[side]!;
+        const py = FLIP.pivotY;
+        const tx = FLIP.tipX[side]!;
+        const ty = this.tipY(side);
+        const ex = tx - px;
+        const ey = ty - py;
+        const len2 = ex * ex + ey * ey;
+        const t = Math.max(0, Math.min(1, ((this.bx - px) * ex + (this.by - py) * ey) / len2));
+        const qx = px + t * ex;
+        const qy = py + t * ey;
+        let nx = this.bx - qx;
+        let ny = this.by - qy;
+        const d = Math.hypot(nx, ny);
+        const reach = FLIP.r + FLIP.half;
+        if (d >= reach || d === 0) continue;
+        nx /= d;
+        ny /= d;
+        // Only the top face: a ball that has slipped underneath is gone.
+        if (ny > 0.3) continue;
+        // How fast that point of the flipper is moving (upward is negative y).
+        const surfVy = this.spin[side]! * (FLIP.upY - FLIP.downY) * t;
+        const relX = this.vx;
+        const relY = this.vy - surfVy;
+        const vn = relX * nx + relY * ny;
+        if (vn < 0) {
+          const e = 0.45;
+          this.vx = relX - (1 + e) * vn * nx;
+          this.vy = relY - (1 + e) * vn * ny + surfVy;
+          if (this.spin[side]! > 0.5) {
+            // A real flip: send it back up the table, angled by where it struck.
+            this.vy = Math.min(this.vy, -(1.05 + 0.4 * t) - Math.min(0.35, this.time * 0.004));
+            this.vx += (side ? -1 : 1) * (0.1 + 0.45 * t);
             this.flips++;
-            this.flipAt[side] = -1e9;
+            this.kickAt[side] = now;
             this.env.sound(SND_RING + Math.min(4, Math.floor(this.flips / 8)));
           }
         }
-      }
-      if (this.by > 1.02) {
-        this.lives--;
-        this.env.sound(this.lives > 0 ? SND_LURCH : SND_FALL);
-        if (this.lives <= 0) {
-          this.over = true;
-          this.overAt = now + 1300;
-        } else this.serve();
+        this.bx = qx + nx * reach;
+        this.by = qy + ny * reach;
       }
     }
+  }
+
+  private draw(now: number, v: View, touch: TouchLayout): void {
     v.clear();
     const a = arena(v, touch);
     const ctx = v.ctx;
@@ -869,36 +949,35 @@ class Flipper implements Mini {
     ctx.lineTo(X(1), Y(0));
     ctx.lineTo(X(1), Y(1));
     ctx.stroke();
-    // Flippers: up while just flipped.
     for (const side of [0, 1]) {
-      const up = now - this.flipAt[side]! < 150 ? 1 : 0;
-      const pivot = side ? X(0.92) : X(0.08);
-      const tip = side ? X(0.55) : X(0.45);
-      // A tapered paddle from a round pivot.
-      const ty = Y(up ? 0.8 : 0.9);
-      const py = Y(0.84);
+      const up = this.ang[side]!;
+      const lit = now - this.kickAt[side]! < 200;
+      const pivot = X(FLIP.pivotX[side]!);
+      const tip = X(FLIP.tipX[side]!);
+      const ty = Y(this.tipY(side));
+      const py = Y(FLIP.pivotY);
       const dx = tip - pivot;
       const dy = ty - py;
       const len = Math.hypot(dx, dy) || 1;
-      const nx = (-dy / len) * 7 * a.u;
-      const ny = (dx / len) * 7 * a.u;
-      ctx.fillStyle = up ? COL_ACCENT : COL_LINE;
+      const thick = FLIP.half * h * 1.4;
+      const nx = (-dy / len) * thick;
+      const ny = (dx / len) * thick;
+      ctx.fillStyle = lit ? COL_ACCENT : up > 0.05 ? '#d6d6dc' : COL_LINE;
       ctx.beginPath();
       ctx.moveTo(pivot + nx, py + ny);
-      ctx.lineTo(tip + nx * 0.35, ty + ny * 0.35);
-      ctx.lineTo(tip - nx * 0.35, ty - ny * 0.35);
+      ctx.lineTo(tip + nx * 0.4, ty + ny * 0.4);
+      ctx.lineTo(tip - nx * 0.4, ty - ny * 0.4);
       ctx.lineTo(pivot - nx, py - ny);
       ctx.closePath();
       ctx.fill();
-      ngon(ctx, pivot, py, 8 * a.u, 8, up ? '#b8402a' : '#a3a3ab');
+      ngon(ctx, pivot, py, thick * 1.1, 8, lit ? '#b8402a' : '#a3a3ab');
     }
-    ball(ctx, X(this.bx), Y(this.by), 8 * a.u, TONE.light);
+    ball(ctx, X(this.bx), Y(this.by), FLIP.r * h, TONE.light);
     ctx.fillStyle = COL_MID;
-    v.text(handLabel(this.env, -1), X(0.2), Y(0.97), v.fontTiny, 'center');
-    v.text(handLabel(this.env, 1), X(0.8), Y(0.97), v.fontTiny, 'center');
-    if (!this.started) note(v, a, 'flip with the hand on the side the ball comes down. press to start', COL_MID);
+    v.text(handLabel(this.env, -1), X(0.2), Y(0.98), v.fontTiny, 'center');
+    v.text(handLabel(this.env, 1), X(0.8), Y(0.98), v.fontTiny, 'center');
+    if (!this.started) note(v, a, 'hold a key to raise its flipper; flip as the ball reaches it. press to start', COL_MID);
     footer(v, touch, this.held);
-    return false;
   }
 
   result(): MiniResult {
@@ -1044,12 +1123,12 @@ class Hopper implements Mini {
 }
 
 export const BATCH27: MiniDef[] = [
-  { id: 'ruler', name: 'Ruler', skill: 'reaction', blurb: 'Catch a falling ruler. Where you catch it gives your reaction time.', how: 'A ruler hangs between your fingers. At a random moment it drops: press any key to catch it. How far it fell becomes your reaction time, the classic way. Grabbing before it moves counts as too early.', input: 'both', make: () => new Ruler() },
+  { id: 'ruler', name: 'Ruler', skill: 'reaction', blurb: 'Catch a falling ruler. Where you catch it gives your reaction time.', how: 'A ruler hangs between your fingers. At a random moment it drops: press any key to catch it. Its zero mark starts level with your open fingers and it falls down through them; the mark where you catch it becomes your reaction time, the classic way. Grabbing before it moves counts as too early.', input: 'both', make: () => new Ruler() },
   { id: 'bat', name: 'Bat', skill: 'timing', blurb: 'Swing as the pitch reaches the plate. Fast balls, slow balls, change-ups.', how: 'The pitcher on the right throws. Press to swing as the ball reaches the plate on the left. Pitches vary in speed, and some are change-ups that slow down halfway. Within 45 ms is a clean hit; within 110 ms you still make contact.', input: 'both', make: () => new Bat() },
   { id: 'fly', name: 'Fly', skill: 'attention', blurb: 'Swat a fly that never flies straight.', how: 'A fly darts around the board, changing direction and speed without warning. Click or tap it to swat it. Each one is a little faster. Forty-five seconds.', input: 'pointer', make: () => new Fly() },
   { id: 'radar', name: 'Radar', skill: 'attention', blurb: 'The sweep reveals contacts. Tap the hostile ones before it comes round again.', how: 'A radar sweep turns once every two seconds. Contacts appear as it passes them and fade. Tap the orange triangles before the sweep reaches them again, or they get through. Leave the grey dots alone. One minute.', input: 'pointer', make: () => new Radar() },
   { id: 'stamp', name: 'Stamp', skill: 'timing', blurb: 'Stamp each box as it passes under the press. Not the grey ones.', how: 'Boxes ride a conveyor at different speeds. Press any key to stamp a white box as its middle passes the mark under the press. Grey boxes must not be stamped. Scored on how close to the middle you land.', input: 'both', make: () => new Stamp() },
   { id: 'drive', name: 'Drive', skill: 'timing', blurb: 'A three-press golf swing: start, set the power, hit the sweet spot.', how: 'Press to start the swing; a marker runs up the meter. Press again exactly on the orange mark, the power this hole needs. The marker then runs back: press a third time as it crosses the white line, the sweet spot. Both misses add up. It speeds up as you go.', input: 'both', make: () => new Drive() },
-  { id: 'flipper', name: 'Flipper', skill: 'reaction', blurb: 'Two flippers keep the ball in play.', how: 'The ball falls. Flip with the hand on the side it comes down, just as it reaches the flipper; where it hits sets the angle back up. Miss and it drains. Gravity grows over time; three balls.', input: 'keys', minKeys: 2, make: () => new Flipper() },
+  { id: 'flipper', name: 'Flipper', skill: 'reaction', blurb: 'Two flippers keep the ball in play.', how: 'The ball falls. Each hand works its own flipper: it stays up while you hold the key. Flip as the ball reaches it; where it strikes sets the angle back up, and a resting flipper lets the ball roll off. Miss and it drains. Gravity grows over time; three balls.', input: 'keys', minKeys: 2, make: () => new Flipper() },
   { id: 'hopper', name: 'Hopper', skill: 'timing', blurb: 'Hop across lanes of traffic through the gaps.', how: 'Each press (either hand) hops you one lane forward. Lanes of traffic move both ways at their own speeds: hop when there is a gap coming. Reach the far side and a busier road appears. Three lives.', input: 'keys', minKeys: 2, make: () => new Hopper() },
 ];

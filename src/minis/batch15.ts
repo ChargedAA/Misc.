@@ -45,6 +45,7 @@ class Lights implements Mini {
   private lit = 0;
   private rts: number[] = [];
   private jumps = 0;
+  private misses = 0;
   private last = 0;
   private jumped = false;
   private at = 0;
@@ -104,15 +105,18 @@ class Lights implements Mini {
       if (k >= 5) this.state = 1;
     }
     if (this.state === 1 && now >= this.outAt) this.state = 2;
-    if (this.state === 2 && now - this.outAt > 1500) {
+    // No start within a second counts as a miss: a mistake, like a jump start.
+    if (this.state === 2 && now - this.outAt > 1000) {
       this.round++;
-      this.last = 1500;
+      this.misses++;
+      this.last = -1;
       this.jumped = false;
+      this.env.sound(SND_FALSE);
       this.state = 3;
       this.at = now + 1200;
     }
     if (this.state === 3 && now >= this.at) {
-      if (this.round >= scaled(LIGHTS_ROUNDS) || this.jumps >= 8) return true;
+      if (this.round >= scaled(LIGHTS_ROUNDS) || this.jumps + this.misses >= 8) return true;
       this.arm(now + 400);
     }
     v.clear();
@@ -140,7 +144,7 @@ class Lights implements Mini {
         }
       }
     }
-    if (this.state === 3) message(v, { ...a, cy: a.cy + gap * 1.5 }, this.jumped ? 'jump start' : `${Math.round(this.last)} ms`, '', this.jumped ? COL_ACCENT : COL_LINE);
+    if (this.state === 3) message(v, { ...a, cy: a.cy + gap * 1.5 }, this.jumped ? 'jump start' : this.last < 0 ? 'too slow' : `${Math.round(this.last)} ms`, '', this.jumped || this.last < 0 ? COL_ACCENT : COL_LINE);
     else if (this.round === 0) {
       ctx.fillStyle = COL_MID;
       v.text('five lights come on. when they all go out, go. not before', a.cx, a.cy + gap * 1.5, v.fontTiny, 'center');
@@ -152,12 +156,13 @@ class Lights implements Mini {
   result(): MiniResult {
     const med = median(this.rts);
     return {
-      score: this.rts.length ? Math.max(0, Math.round(Math.max(0, 500 - med) * 4 + this.rts.length * 10 - this.jumps * 30)) : 0,
+      score: this.rts.length ? Math.max(0, Math.round(Math.max(0, 500 - med) * 4 + this.rts.length * 10 - (this.jumps + this.misses) * 30)) : 0,
       primary: { label: 'median start', value: med, unit: 'ms', lower: true },
       lines: [
         { label: 'median start', value: ms(med) },
         { label: 'best start', value: this.rts.length ? ms(Math.min(...this.rts)) : '–' },
         { label: 'jump starts', value: String(this.jumps) },
+        { label: 'too slow', value: String(this.misses) },
       ],
       rts: this.rts,
       saved: this.rts.length >= 3,

@@ -2017,6 +2017,8 @@ idleNote.className = 'sc-idle';
 idleNote.hidden = true;
 document.body.append(idleNote);
 setInterval(() => {
+  // Nobody there: a run on lives would otherwise go on for ever, so a minute without input pauses it.
+  if (!showcase && screen === 'mini' && lengthValue === LIVES_LEN && performance.now() - lastInputAt > 60000) pauseMini();
   if (!showcase || screen === 'attract') {
     idleNote.hidden = true;
     return;

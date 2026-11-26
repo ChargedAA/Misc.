@@ -100,8 +100,10 @@ class Swerve extends Steer {
     this.nextAt = now + 1500;
   }
 
-  private windowMs(): number {
-    return Math.max(180, 950 - this.cleared * 12);
+  private windowMs(w = 0.6): number {
+    // Never shorter than a quick reaction plus the time to steer clear of a block this wide.
+    const escape = 230 + ((w + 0.12) / 1.7) * 1000;
+    return Math.max(escape + 60, 950 - this.cleared * 12);
   }
 
   protected override onPress(side: number, ts: number): void {
@@ -118,10 +120,11 @@ class Swerve extends Steer {
       this.x = clamp(this.x + steerOf(this.held) * 1.7 * dt, -1, 1);
       this.scroll += dt * 1.2;
       if (!this.hz && now >= this.nextAt) {
-        // Pop up right where the car is heading, so it has to move.
-        const w = 0.35 + Math.random() * 0.25;
-        const x = clamp(this.x + (Math.random() - 0.5) * 0.2, -1 + w / 2, 1 - w / 2);
-        const W = this.windowMs();
+        // Pop up where the car will be if it keeps going as it is, so weaving does not dodge it for you.
+        const w = Math.max(0.3, 0.6 - this.cleared * 0.002) * (0.75 + Math.random() * 0.25);
+        const W = this.windowMs(w);
+        const ahead = this.x + steerOf(this.held) * 1.7 * (W / 1000);
+        const x = clamp(ahead + (Math.random() - 0.5) * 0.15, -1 + w / 2, 1 - w / 2);
         this.hz = { x, w, at: now, hitAt: now + W, firstMove: 0, done: false };
       }
       const h = this.hz;
@@ -198,11 +201,13 @@ interface Drop {
 }
 
 const BASKET_SPEED = 1.9;
+/** The height (share of the field) where drops reach the basket, matched to where it is drawn. */
+const CATCH_Y = 0.93;
 
 class Catch extends Steer {
   private x = 0;
-  private lastX = 0;
-  private lastArrive = 0;
+  /** White drops still to land: when, and where. */
+  private plan: { t: number; x: number }[] = [];
   private drops: Drop[] = [];
   private spawn = 0.8;
   private caught = 0;
@@ -219,26 +224,49 @@ class Catch extends Steer {
       if (this.spawn <= 0) {
         const v = 0.35 + this.time * 0.006 + Math.random() * 0.15;
         const grey = this.time > 6 && Math.random() < 0.3;
+        const arrive = this.time + CATCH_Y / v;
+        // Plan against every white drop still to land, in order of landing, not of spawning:
+        // the basket must be able to get from each white to the next in time.
+        this.plan = this.plan.filter((p) => p.t > this.time - 0.5);
+        const before = this.plan.filter((p) => p.t <= arrive).sort((p, q) => q.t - p.t)[0];
+        const after = this.plan.filter((p) => p.t > arrive).sort((p, q) => p.t - q.t)[0];
+        const reach = (dt: number) => Math.max(0, dt) * BASKET_SPEED * 0.75;
+        let lo = -0.95;
+        let hi = 0.95;
+        if (before) {
+          lo = Math.max(lo, before.x - reach(arrive - before.t));
+          hi = Math.min(hi, before.x + reach(arrive - before.t));
+        }
+        if (after) {
+          lo = Math.max(lo, after.x - reach(after.t - arrive));
+          hi = Math.min(hi, after.x + reach(after.t - arrive));
+        }
         let x = -0.95 + Math.random() * 1.9;
-        // Every white drop must be reachable from the white drop before it.
-        const arrive = this.time + 0.92 / v;
-        if (!grey && this.lastArrive) {
-          const reach = Math.max(0.1, (arrive - this.lastArrive) * BASKET_SPEED * 0.8);
-          x = clamp(x, this.lastX - reach, this.lastX + reach);
-        }
+        let ok = true;
         if (!grey) {
-          this.lastX = x;
-          this.lastArrive = Math.max(arrive, this.lastArrive);
+          if (lo > hi) ok = false;
+          else x = lo + Math.random() * (hi - lo);
+        } else {
+          // A grey must land well clear of where the basket has to be at that moment.
+          const need = before && after ? before.x + ((after.x - before.x) * (arrive - before.t)) / (after.t - before.t) : (before ?? after)?.x;
+          if (need !== undefined) {
+            for (let tries = 0; tries < 10 && Math.abs(x - need) < 0.4; tries++) x = -0.95 + Math.random() * 1.9;
+            ok = Math.abs(x - need) >= 0.4;
+          }
         }
-        this.drops.push({ x, y: 0, v, grey, done: false });
-        this.spawn = Math.max(0.35, 1.0 - this.time * 0.01) * (0.7 + Math.random() * 0.6);
+        if (ok) {
+          if (!grey) this.plan.push({ t: arrive, x });
+          this.drops.push({ x, y: 0, v, grey, done: false });
+        }
+        this.spawn = ok ? Math.max(0.35, 1.0 - this.time * 0.01) * (0.7 + Math.random() * 0.6) : 0.1;
       }
       for (const d of this.drops) {
         if (d.done) continue;
         d.y += d.v * dt;
-        if (d.y >= 0.92) {
+        if (d.y >= CATCH_Y) {
           d.done = true;
-          const inBasket = Math.abs(d.x - this.x) < 0.14;
+          // The basket's rim is 0.14 either side of its middle; a drop counts if any of it is inside.
+          const inBasket = Math.abs(d.x - this.x) < 0.16;
           if (d.grey) {
             if (inBasket) this.lose(now);
             else this.dodged++;
