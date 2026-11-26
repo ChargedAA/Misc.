@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-263 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+267 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -129,6 +129,7 @@ Press at exactly the right moment: on a beat, as something arrives, or after a s
 | Bounce | A ball bounces lower and quicker. Press on the bounces once it goes dark. | keys or tap |
 | Spin | Rings turn, each with a gap. Launch the ball when every gap lines up. | keys or tap |
 | Pins | A lock’s pins bob up and down. Press as each crosses the line to set it. | keys or tap |
+| Stack | A block slides over the tower. Drop it square: what hangs over is cut off. | keys or tap |
 | Swing | Press as the pendulum passes the bottom. It speeds up, then hides. | keys or tap |
 | Meet | Two dots close in at different speeds. Press as they touch. | keys or tap |
 | Hop | Run, jump the blocks, and slam down to land in time. | keys or tap |
@@ -211,7 +212,9 @@ Pick the signal out of the noise, follow it, and stay sharp when little happens.
 | Stream | Letters fly past. Press for the X. | keys or tap |
 | Except | Press for every digit except 3. The rare 3 is the trap. | keys or tap |
 | Clock | A dot ticks round a dial. Now and then it skips a step. Catch the skips. | keys or tap |
+| Deal | Cards flash past one at a time. Which suit came up most? | keys or tap |
 | Cancel | A block of letters: click every E, as fast as you can. | mouse or tap |
+| Lantern | A dark room, a small pool of light. Find the one T among the Ls. | mouse or tap |
 
 ### Coordination
 
@@ -304,6 +307,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Fraction | Two fractions. Which is bigger? | keys, 2+ keys |
 | Rank | Four numbers: press them from smallest to largest. | keyboard |
 | Units | Two amounts in different units. Which is bigger? | keys, 2+ keys |
+| Ten | A grid of digits. Click pairs that make ten, as fast as you can. | mouse or tap |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Script | A tiny program. Type what it prints. | keyboard |

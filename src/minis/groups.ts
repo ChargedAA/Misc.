@@ -47,7 +47,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Press at exactly the right moment: on a beat, as something arrives, or after a set time.',
     groups: [
       { name: 'Keep a beat', desc: 'Hold a tempo, with and without the click', ids: ['tempo', 'offbeat', 'drift', 'even', 'shuffle', 'pace'] },
-      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
+      { name: 'Intercept', desc: 'Time a press to something moving, even when it hides', ids: ['cross', 'bounce', 'spin', 'pins', 'stack', 'swing', 'meet', 'hop', 'tower', 'keep', 'bat', 'stamp', 'drive', 'hopper'] },
       { name: 'Reproduce', desc: 'Copy a duration or a rhythm from memory', ids: ['gap', 'second', 'echo', 'morse', 'rope'] },
       { name: 'Hear the timing', desc: 'Notice when a beat is off, by ear', ids: ['late'] },
       { name: 'Rhythm games', desc: 'Read a rhythm, or hit notes as they fall, in time', ids: ['sight', 'notes'] },
@@ -89,7 +89,8 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'At a glance', desc: 'Take in a lot in one brief look', ids: ['glance', 'count', 'flicker', 'rotate', 'schulte', 'blink'] },
       { name: 'Monitor', desc: 'Keep several things in view and step in at the right moment', ids: ['gauges', 'tally', 'trail', 'radar', 'herd'] },
       { name: 'Stay alert', desc: 'Catch the rare target in a long, dull stream', ids: ['stream', 'except', 'clock'] },
-      { name: 'Search', desc: 'Find every target on a busy page', ids: ['cancel'] },
+      { name: 'Keep count', desc: 'Tally what flashes past, then report it', ids: ['deal'] },
+      { name: 'Search', desc: 'Find the target on a busy page, or in the dark', ids: ['cancel', 'lantern'] },
     ],
     routine: ['track', 'find', 'except'],
     benchmark: 'track',
@@ -114,7 +115,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten'] },
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
       { name: 'Everyday sums', desc: 'Times, clocks and change, worked out in your head', ids: ['later', 'till'] },
@@ -240,6 +241,8 @@ export const ROUNDS: Record<string, [number, string]> = {
   darts: [12, 'darts'],
   graph: [12, 'charts'],
   map: [12, 'maps'],
+  deal: [12, 'deals'],
+  lantern: [12, 'rooms'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
