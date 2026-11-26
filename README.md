@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-371 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+372 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -76,6 +76,7 @@ Respond to a signal fast, pick the right response, and hold back the wrong one.
 | Alert | Two minutes of waiting. Stop the counter the moment it starts. | keys or tap |
 | Ruler | Catch a falling ruler. Where you catch it gives your reaction time. | keys or tap |
 | Edge | Keep your eyes on the middle. Press when a dot appears out at the edge. | keys or tap |
+| Either | A light, a tone, or both at once. Press the moment either comes. Which is fastest for you? | keys or tap |
 | Dawn | A dark square starts, very slowly, to brighten. Press the moment you notice. | keys or tap |
 | Choice | Press whichever string lights. More strings, more thinking. | keys, 2+ keys |
 | Flank | Answer the middle arrow. Ignore the crowd. | keys |

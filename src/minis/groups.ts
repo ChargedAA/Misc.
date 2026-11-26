@@ -23,7 +23,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reaction: {
     about: 'Respond to a signal fast, pick the right response, and hold back the wrong one.',
     groups: [
-      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert', 'ruler', 'edge'] },
+      { name: 'React to a cue', desc: 'One signal, one press, as fast as you can', ids: ['snap', 'lights', 'ears', 'duel', 'alert', 'ruler', 'edge', 'either'] },
       { name: 'Notice a change', desc: 'Catch something that creeps up rather than flashes', ids: ['dawn'] },
       { name: 'Choose a response', desc: 'Several possible answers: pick the right one quickly', ids: ['choice', 'flank', 'whack', 'reflex'] },
       { name: 'Hold back', desc: 'Stop, or override, the press you were about to make', ids: ['stop', 'swap', 'opposite', 'dodge', 'parry', 'goalie', 'volley', 'brake', 'twice'] },
@@ -307,6 +307,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   slice: [30, 'pairs'],
   wider: [24, 'pairs'],
   switched: [14, 'rows'],
+  either: [30, 'signals'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],

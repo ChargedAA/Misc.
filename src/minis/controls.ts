@@ -190,6 +190,7 @@ export const CONTROLS: Record<string, Control[]> = {
   switched: [['TAP', 'click the two that swapped']],
   pendulum: [['ANY', 'tap at each end of the swing'], ['TAP', 'or tap']],
   keepup: [['TAP', 'click under a ball']],
+  either: [['ANY', 'light or tone: press'], ['TAP', 'or tap']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],
