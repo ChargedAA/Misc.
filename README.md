@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-359 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+360 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -280,6 +280,7 @@ Use both hands at once: separate jobs, shared rhythms, and exact togetherness.
 | Slalom | Ski down with momentum and pass every flag on the side its pennant points to. | keys, 2+ keys |
 | Row | One oar per hand. Pull evenly to go straight down the river. | keys, 2+ keys |
 | Drone | A rotor per hand. Fly through the gates. | keys, 2+ keys |
+| Kite | A two-line stunt kite. Pull one line to turn, both to drive. Fly it through the rings. | keys, 2+ keys |
 | Dock | Thrust a drifting ship into the dock and stop dead inside it. | keys, 2+ keys |
 | Lander | Feather the thrust and touch down softly on the pad. | keys |
 | Mirror | Steer along a track. Every so often the controls swap sides. | keys, 2+ keys |

@@ -178,6 +178,7 @@ export const CONTROLS: Record<string, Control[]> = {
   bus: [['0-9', 'how many on board'], ['Enter', 'answer']],
   glass: [['1-4', 'the real time'], ['TAP', 'or click']],
   arrange: [['TAP', 'click shortest to longest']],
+  kite: [['L', 'pull left'], ['R', 'pull right'], ['BOTH', 'drive']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

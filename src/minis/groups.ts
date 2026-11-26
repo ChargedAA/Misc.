@@ -61,7 +61,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Two hands, two jobs', desc: 'Each hand steers its own thing', ids: ['split', 'twin', 'orbit', 'juggle', 'pole', 'pat', 'rally', 'basins', 'runners'] },
       { name: 'Vehicles', desc: 'Steer something with its own physics', ids: ['hitch', 'marble', 'ferry'] },
-      { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone'] },
+      { name: 'Steer', desc: 'Turn, carve and thread a path with momentum', ids: ['comet', 'slalom', 'row', 'drone', 'kite'] },
       { name: 'Fine control', desc: 'Move, brake and stop exactly where you mean to', ids: ['dock', 'lander', 'mirror', 'crane', 'etch', 'seesaw'] },
       { name: 'Rhythm across hands', desc: 'Patterns and tempos split between the hands', ids: ['sync', 'poly', 'drum', 'strings'] },
       { name: 'Full runs', desc: 'Everything at once, until you fall', ids: ['climb', 'zigzag', 'ship', 'straight'] },
