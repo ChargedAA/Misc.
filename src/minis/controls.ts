@@ -170,6 +170,8 @@ export const CONTROLS: Record<string, Control[]> = {
   coins: [['0-9', 'how many coins'], ['Enter', 'answer']],
   wanted: [['TAP', 'click the exact matches']],
   plates: [['TAP', 'click a plate to spin it']],
+  hide: [['TAP', 'click where it was']],
+  average: [['1-4', 'pick the average'], ['TAP', 'or click']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

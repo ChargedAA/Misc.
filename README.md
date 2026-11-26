@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-351 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+353 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -185,6 +185,7 @@ Hold more in your head, keep it up to date, and remember where things were.
 | Pairs | Turn tiles two at a time. Remember where everything was. | mouse or tap |
 | Twist | Tiles flash on a grid, then the grid turns. Tap where they are now. | mouse or tap |
 | Rooms | Things appear around a floor plan, one at a time. Where was this one? | mouse or tap |
+| Hide | Digits fill a grid, then are covered. Where was the 7? | mouse or tap |
 | Back | Does it match the one n steps ago? Two streams at once. | keys |
 | Running | Digits stream by and stop without warning. Type the last few. | mouse or tap |
 | Hold | Remember positions while checking sums in between. | keys or tap |
@@ -364,6 +365,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Product | Two products, like 23 × 4 and 19 × 5. Which is bigger? | keys, 2+ keys |
 | Solve | Find x: x + 7 = 15, 3x = 21, 2x + 3 = 11. | keyboard |
 | Operator | 6 □ 3 = 18. Which sign goes in the gap? | mouse or tap |
+| Average | A handful of numbers. Which is their average? | mouse or tap |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |

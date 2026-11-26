@@ -73,7 +73,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     about: 'Hold more in your head, keep it up to date, and remember where things were.',
     groups: [
       { name: 'Span', desc: 'How much you can hold and play back in order', ids: ['digits', 'sequence', 'path', 'order', 'melody', 'route', 'backward'] },
-      { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms'] },
+      { name: 'Places', desc: 'Where things were, even after the view turns', ids: ['grid', 'where', 'pairs', 'twist', 'rooms', 'hide'] },
       { name: 'Updating', desc: 'Keep what you hold current as new items arrive, or through a distraction', ids: ['back', 'running', 'hold', 'recent'] },
       { name: 'Recognise and pair', desc: 'Seen it before? What went with it?', ids: ['spot', 'again', 'link', 'sounds', 'legend', 'tray', 'newest', 'source'] },
       { name: 'Lists', desc: 'Remember what came and in what order', ids: ['recall', 'queue', 'tag', 'shop'] },
@@ -116,7 +116,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten', 'percent', 'product', 'solve', 'operator'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten', 'percent', 'product', 'solve', 'operator', 'average'] },
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
@@ -297,6 +297,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   sustain: [16, 'holds'],
   accent: [24, 'runs'],
   landing: [12, 'throws'],
+  hide: [12, 'grids'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
