@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-362 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+363 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -325,6 +325,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Flow | A cloud of jittering dots. Which way are most of them drifting? | keys, 2+ keys |
 | Align | Turn your line until it is parallel to the other, then let go. | keys, 2+ keys |
 | Illusion | Two lines dressed to fool the eye. Which is really longer? | keys, 2+ keys |
+| Parallel | Turn your line until it runs parallel to the reference line across the screen. | keys, 2+ keys |
 | Merge | Cars stream past the junction. Pull out into the first safe gap. | keys or tap |
 | Pour | Fill the glass to the line. It keeps flowing after you let go. | keys |
 | Bank | A ball heads for the wall and vanishes. Where will it land after the bounce? | mouse or tap |
