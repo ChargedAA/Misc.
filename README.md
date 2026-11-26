@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-353 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+355 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -124,6 +124,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Dots | A scatter of dots. How many? Answer at a glance, over and over. | mouse or tap |
 | Alpha | Two words. Which comes first in the dictionary? | keys, 2+ keys |
 | Warm | A colour: warm or cool? Later the word printed on it tries to mislead. | keys, 2+ keys |
+| Vowel | A letter: vowel or consonant? Letter after letter, as fast as you can. | keys, 2+ keys |
 
 ### Timing
 
@@ -451,6 +452,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Octave | A note: which octave is it in? | mouse or tap |
 | Note | A note in any octave: name it. | mouse or tap |
 | Interval | Two notes, up, down or together: how far apart? | mouse or tap |
+| Retain | A note, then others to distract you. Was the last note the first one again? | keys, 2+ keys |
 | Chord | A chord: name it, root and type. | mouse or tap |
 | Scale | A scale: major, which minor, or which mode? | mouse or tap |
 | Contour | A melody: which of four near-identical shapes? | mouse or tap |
