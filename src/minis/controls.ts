@@ -182,6 +182,8 @@ export const CONTROLS: Record<string, Control[]> = {
   shortest: [['1-4', 'the shortest total'], ['TAP', 'or click']],
   duo: [['TAP', 'mouse: stay in the ring'], ['L', 'push the needle left'], ['R', 'push it right']],
   parallel: [['L', 'turn anticlockwise'], ['R', 'turn clockwise'], ['BOTH', 'lock it in']],
+  counterpart: [['a-z', 'the mirror-image key']],
+  keypad: [['KeyQ', 'to C: the lit square']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

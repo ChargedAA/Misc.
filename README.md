@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-363 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+365 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -118,6 +118,7 @@ Tap fast, hold a rate, and stay controlled and in order while you do.
 | Roll | Run through your keys in order, round and round, fast and clean. | keys, 2+ keys |
 | Trill | Alternate in order, flat out, for ten seconds. Fast and even both count. | keys, 2+ keys |
 | Rain | Letters fall. Type them before they land. | keyboard |
+| Keypad | A square lights on a three-by-three grid. Press its key: QWE / ASD / ZXC. | keyboard |
 | Code | A symbol for each key. Turn symbols into presses as fast as you can. | keys, 4+ keys |
 | Match | Two dot patterns: the same, or one dot different? As many as you can. | keys, 2+ keys |
 | Parity | Odd or even? Number after number, as fast as you can. | keys, 2+ keys |
@@ -425,6 +426,7 @@ The whole keyboard: find any key blind, press chords, type fast, and keep finger
 | Flip | Press the key mirrored across the keyboard from the one shown. | keyboard |
 | Dial | Type numbers on the number row. | keyboard |
 | Arrows | Arrow-key sequences, quick and clean. | keyboard |
+| Counterpart | A key lights up: press its mirror image under the other hand. | keyboard |
 | Chords | Press two or three keys at exactly the same instant. | keyboard |
 | Type | A typing test: lines of common words. Words per minute. | keyboard |
 | Ghost | A word flashes and hides. Type it. | keyboard |

@@ -38,7 +38,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Peak rate', desc: 'How fast you can go, and how long it lasts', ids: ['sprint', 'sets', 'tug', 'pedal', 'ramp', 'shuttle', 'clicker'] },
       { name: 'Controlled rate', desc: 'Hit and hold a target rate, no faster, no slower', ids: ['burst', 'ladder', 'pulse', 'steady', 'exact'] },
-      { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain'] },
+      { name: 'In order', desc: 'Speed across several keys without slipping', ids: ['roll', 'trill', 'rain', 'keypad'] },
       { name: 'Speed of thought', desc: 'Turn what you see into the right press, fast', ids: ['code', 'match', 'parity', 'dots', 'alpha', 'warm', 'vowel'] },
     ],
     routine: ['sprint', 'steady', 'trill'],
@@ -135,7 +135,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   dexterity: {
     about: 'The whole keyboard: find any key blind, press chords, type fast, and keep fingers independent.',
     groups: [
-      { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows'] },
+      { name: 'Find the key', desc: 'Reach the right key without looking', ids: ['hunt', 'flip', 'dial', 'arrows', 'counterpart'] },
       { name: 'Together', desc: 'Several keys at the same instant', ids: ['chords'] },
       { name: 'Typing', desc: 'Words, code and numbers at speed, from sight and from memory', ids: ['type', 'ghost', 'reverse', 'syntax', 'entry', 'abc', 'caps', 'symbols'] },
       { name: 'Finger control', desc: 'Patterns, counts and runs that train each finger', ids: ['fingers', 'sweep', 'taps', 'combo', 'anchor', 'lefty'] },
