@@ -482,13 +482,15 @@ export function searchGames(q: string): Entry[] {
 }
 
 export function searchMenu(c: MenuCtx, q: string): Menu {
-  const found = searchGames(q).slice(0, 30);
   const total = gamesOf(SKILLS.map((k) => k.id)).length;
+  // "new" lists the drills not yet opened, ahead of anything that merely mentions the word.
+  const fresh = q.trim().toLowerCase() === 'new' && c.isNew ? gamesOf(SKILLS.map((k) => k.id)).filter((e) => c.isNew!(e.id)) : [];
+  const found = (fresh.length ? fresh : searchGames(q)).slice(0, fresh.length ? 200 : 30);
   const skillName = (id: string) => SKILLS.find((k) => k.id === id)?.name ?? '';
   return {
     title: 'FIND',
     sub: q ? `${found.length || 'No'} match${found.length === 1 ? '' : 'es'}` : `Search ${total} drills by name, skill or what they train`,
-    extra: `<div class="lbform search"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="type a name, skill or idea: pitch, balance, typing…" value="${esc(q)}" aria-label="Search drills"></div>${q && !found.length ? '<p class="muted">Nothing matches. Try a skill (reaction, ear) or a kind of task (rhythm, maze, chord).</p>' : ''}`,
+    extra: `<div class="lbform search"><input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="type a name, skill or idea: pitch, balance, typing, new…" value="${esc(q)}" aria-label="Search drills"></div>${q && !found.length ? '<p class="muted">Nothing matches. Try a skill (reaction, ear) or a kind of task (rhythm, maze, chord).</p>' : ''}`,
     items: found.map((e) => ({ label: e.name, desc: e.blurb, meta: `${skillName(e.skill)}${bestOf(c, e.id) ? `${DOT}${bestOf(c, e.id)}` : ''}`, act: 'go', arg: `game:${e.id}`, code: 'Unidentified', keyName: '' })),
     wide: true,
   };
