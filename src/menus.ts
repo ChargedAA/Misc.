@@ -496,25 +496,6 @@ export function searchMenu(c: MenuCtx, q: string): Menu {
   };
 }
 
-/** A game with difficulty levels: pick one first. */
-function levelMenu(c: MenuCtx, e: Entry): Menu {
-  const def = e.def!;
-  const last = c.levels[e.id] ?? 0;
-  const custom = c.custom[e.id] ?? def.custom?.def ?? 0;
-  // Space, as everywhere, goes forward: the difficulty you played last. Letters pick the others.
-  const lastName = def.levels!.find((l) => l.value === last)?.label ?? `Custom, ${last} ${def.custom?.unit ?? ''}`;
-  const items: Item[] = [{ label: `Play: ${lastName}`, desc: 'The difficulty you played last', act: 'go', arg: `gamekeys:${e.id}:${last}`, code: 'Space', keyName: 'SPACE', hero: true }];
-  def.levels!.forEach((l, i) => items.push({ label: l.label, desc: l.desc, meta: l.value === last ? 'last used' : '', act: 'go', arg: `gamekeys:${e.id}:${l.value}`, current: l.value === last, slot: i }));
-  if (def.custom) items.push({ label: 'Custom', desc: `Your own window, now ${custom} ${def.custom.unit}`, meta: last === custom && !def.levels!.some((l) => l.value === last) ? 'last used' : '', act: 'go', arg: `custom:${e.id}`, ...(def.levels!.length < 6 ? { slot: def.levels!.length } : { code: 'Comma', keyName: ',' }) });
-  return {
-    title: e.name.toUpperCase(),
-    sub: `${SKILLS.find((k) => k.id === e.skill)?.name}${DOT}${e.blurb}`,
-    items,
-    enter: { label: 'Last difficulty', act: 'go', arg: `gamekeys:${e.id}:${last}` },
-    after: `<p class="hint">${def.how}</p>`,
-  };
-}
-
 /** A custom difficulty: nudge it, then go on to the keys. */
 export function customMenu(c: MenuCtx, id: string): Menu {
   const e = entry(id)!;
@@ -525,7 +506,7 @@ export function customMenu(c: MenuCtx, id: string): Menu {
     sub: `${e.name}${DOT}${cu.min} to ${cu.max} ${cu.unit}`,
     extra: `<p class="bigval">${v}<small>${cu.unit}</small></p>`,
     items: [
-      { label: `Play at ${v} ${cu.unit}`, act: 'go', arg: `gamekeys:${id}:${v}` },
+      { label: `Use ${v} ${cu.unit}`, desc: 'Back to the game with this difficulty', act: 'setlevelback', arg: `${id}:${v}` },
       { label: `\u2212 25 ${cu.unit}`, act: 'custom', arg: `${id}:-25`, disabled: v <= cu.min },
       { label: `+ 25 ${cu.unit}`, act: 'custom', arg: `${id}:25`, disabled: v >= cu.max },
       { label: `\u2212 100 ${cu.unit}`, act: 'custom', arg: `${id}:-100`, disabled: v <= cu.min },
@@ -537,7 +518,8 @@ export function customMenu(c: MenuCtx, id: string): Menu {
 /** A drill's page: what it is, how to play, the setup, and Start, together. */
 export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
   const e = entry(id)!;
-  if (e.def?.levels && level === undefined) return levelMenu(c, e);
+  // Difficulty is chosen right here, on the one page, rather than on a page of its own first.
+  if (e.def?.levels && level === undefined) level = c.levels[id] ?? e.def.levels[0]!.value;
   const lv = level === undefined ? '' : `:${level}`;
   const lvName = level === undefined ? '' : (e.def!.levels!.find((l) => l.value === level)?.label ?? `${level} ${e.def!.custom?.unit ?? ''}`);
   const keys = keysFor(id, e.input, c.settings.keys[id], e.minKeys);
@@ -568,6 +550,13 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
       ? `<div class="counts small lengths" aria-label="Length">${lengthsFor(id)
           .map((l) => `<button data-act="length" data-arg="${id}:${l.value}" aria-pressed="${l.value === lenScale}">${l.label}<small>${roundsLabel(id, l.value)}</small></button>`)
           .join('')}<button hidden data-act="length" data-arg="${id}" data-key="KeyL"></button><span class="lbl">length${DOT}standard is ${durationOf(id)}<span class="kbonly">${DOT}L to change</span></span></div>`
+      : ''
+  }
+  ${
+    e.def?.levels
+      ? `<div class="counts small lengths" aria-label="Difficulty">${e.def.levels
+          .map((l) => `<button data-act="setlevel" data-arg="${id}:${l.value}" aria-pressed="${l.value === level}">${l.label}</button>`)
+          .join('')}${e.def.custom ? `<button data-act="go" data-arg="custom:${id}" aria-pressed="${!e.def.levels.some((l) => l.value === level)}">Custom<small>${c.custom[id] ?? e.def.custom.def} ${e.def.custom.unit}</small></button>` : ''}<span class="lbl">difficulty</span></div>`
       : ''
   }
   ${

@@ -273,20 +273,18 @@ class Endless implements Mini {
     if (o) {
       const toGo = (o.hitAt - now) / 1000; // seconds left
       const y = ballY - toGo * TRACK_SPEED * H;
-      const fresh = now - o.at < 90;
+      // A new obstacle grows into place over its first tenth of a second, so its arrival is clear.
+      const grow = Math.min(1, (now - o.at) / 100);
+      const k = 0.5 + 0.5 * grow;
       if (y < a.top + H + 30 * a.u) {
-        ctx.fillStyle = o.done && !o.ok ? COL_ACCENT : fresh ? COL_LINE : COL_LINE;
+        ctx.fillStyle = o.done && !o.ok ? COL_ACCENT : COL_LINE;
         if (o.type === 0) {
           o.blocked.forEach((b, l) => {
-            if (b) ctx.fillRect(laneX(l) - laneW * 0.36, y - laneW * 0.36, laneW * 0.72, laneW * 0.72);
+            if (b) ctx.fillRect(laneX(l) - laneW * 0.36 * k, y - laneW * 0.36 * k, laneW * 0.72 * k, laneW * 0.72 * k);
           });
         } else {
-          ctx.fillRect(x0 + 4 * dpr, y - 5 * a.u, laneW * 3 - 8 * dpr, 10 * a.u);
-        }
-        if (fresh) {
-          ctx.strokeStyle = COL_MID;
-          ctx.lineWidth = dpr;
-          ctx.strokeRect(x0 - 2 * dpr, y - laneW * 0.45, laneW * 3 + 4 * dpr, laneW * 0.9);
+          const w = (laneW * 3 - 8 * dpr) * k;
+          ctx.fillRect(a.cx - w / 2, y - 5 * a.u * k, w, 10 * a.u * k);
         }
       }
     }

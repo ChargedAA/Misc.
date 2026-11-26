@@ -1646,6 +1646,23 @@ function onAction(action: string, arg: string): void {
       showMenu();
       break;
     }
+    case 'setlevelback': {
+      const [id, v] = arg.split(':');
+      levels[id!] = Number(v);
+      saveMap('tension.levels', levels);
+      uiClick();
+      back();
+      break;
+    }
+    case 'setlevel': {
+      // Pick a game's difficulty on its own page.
+      const [id, v] = arg.split(':');
+      levels[id!] = Number(v);
+      saveMap('tension.levels', levels);
+      uiClick();
+      showMenu();
+      break;
+    }
     case 'length': {
       // Cycle or set the length a game is played at: short, standard, long.
       const [id, v] = arg.split(':');
