@@ -157,6 +157,8 @@ export const CONTROLS: Record<string, Control[]> = {
   shop: [['TAP', 'click the listed items']],
   step: [['TAP', 'click the light out of step']],
   cyclone: [['ANY', 'stop the light'], ['TAP', 'or tap']],
+  slash: [['TAP', 'hold and drag to cut']],
+  dice: [['1-4', 'pick the sum'], ['TAP', 'or click']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

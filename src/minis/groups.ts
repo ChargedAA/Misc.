@@ -127,7 +127,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
       { name: 'Test and deduce', desc: 'Gather clues, then reason to the answer. No clock', ids: ['probe', 'crack'] },
       { name: 'Plan', desc: 'Weigh deadlines and values to find the best order', ids: ['plan', 'hanoi', 'maze'] },
       { name: 'Puzzles', desc: 'Small puzzles with one right state to reach', ids: ['slide', 'toggle', 'latin', 'target', 'pipes'] },
-      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view', 'gears'] },
+      { name: 'Space and words', desc: 'Turn things in your head; rearrange letters', ids: ['compass', 'letters', 'jumble', 'fold', 'symmetry', 'net', 'view', 'gears', 'dice'] },
     ],
     routine: ['sum', 'series', 'relate'],
     benchmark: 'matrix',
@@ -161,7 +161,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
     groups: [
       { name: 'Flick', desc: 'Get there and click, fast', ids: ['flick', 'aim', 'pop', 'lead', 'gallery', 'shrink', 'trio', 'reset'] },
       { name: 'Precision', desc: 'Small targets, steady strokes, every click exact', ids: ['micro', 'round', 'wire', 'reflect', 'darts', 'drag', 'still', 'circle'] },
-      { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon'] },
+      { name: 'Tracking', desc: 'Stay on something that moves, or clear of it', ids: ['follow', 'swarm', 'balloon', 'slash'] },
       { name: '3D', desc: 'Mouse-look and a crosshair: flick and track', ids: ['sphere', 'strafe'] },
     ],
     routine: ['flick', 'follow', 'sphere'],

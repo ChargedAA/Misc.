@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-338 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+340 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -393,6 +393,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Net | A flat cube net and four cubes. Which cube does it fold into? | mouse or tap |
 | View | Blocks seen from above, a camera on one side. Which picture does it take? | mouse or tap |
 | Gears | A train of gears. Which way does the last one turn? | keys, 2+ keys |
+| Dice | Opposite faces of a die add to seven. What do the faces underneath add to? | mouse or tap |
 
 ### Dexterity
 
@@ -475,6 +476,7 @@ The mouse (or a finger): get to a target fast, click it exactly, stay on it as i
 | Follow | Keep the pointer on a target that wanders and speeds up. | mouse or tap |
 | Swarm | Keep the pointer clear of a swarm of shots. How long can you last? | mouse or tap |
 | Balloon | Click the balloon to bat it up. Keep it off the floor. | mouse or tap |
+| Slash | Things are tossed up. Drag across them to cut them, but never the bombs. | mouse or tap |
 | Sphere | 3D: look around with the mouse and shoot the balls. | mouse or tap |
 | Strafe | 3D tracking: keep the crosshair on a ball that strafes and changes direction. | mouse or tap |
 
