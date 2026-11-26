@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-332 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+335 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -319,6 +319,7 @@ Size things up by eye and ear: lengths, amounts, angles, paths, pitch.
 | Carom | A ball sets off and vanishes. Where will it stop, after its bounces? | mouse or tap |
 | Cannon | Set the barrel’s angle to land a shot on the target. Wind joins later. | keys, 2+ keys |
 | Velo | Watch a dot’s speed, then set your own to the same speed from memory. | keys, 2+ keys |
+| Race | One ball rolls steadily, one speeds up from rest. Both vanish: which wins? | keys, 2+ keys |
 | Duration | How long was the disc on screen? Mark it on a time scale. | mouse or tap |
 | Hue | A colour shows, then hides. Find it on the colour wheel. Needs full colour vision. | mouse or tap |
 | Mix | Mix cyan, magenta and yellow ink to match a colour. | mouse or tap |
@@ -360,6 +361,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Till | A price and what was paid. Type the change. | keyboard |
 | Weekday | “Tuesday, plus 10 days.” What day is it? | mouse or tap |
 | Roman | Roman numerals: type the number. | keyboard |
+| Binary | A binary number. Type its value. | keyboard |
 | Rapid | Words flash one at a time, faster each time. Then a question about them. | keys, 2+ keys |
 | Relay | A word chain: each word starts with the last letter of the one before. | keyboard |
 | Series | Five numbers. What comes next? | mouse or tap |
@@ -426,6 +428,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Tune | Nudge a tone up or down until it matches the first. | keys, 2+ keys |
 | Louder | Two tones. Was the second louder or softer? | keys, 2+ keys |
 | Glide | A tone slides up or down in pitch. Which way? The slides get smaller. | keys, 2+ keys |
+| Sharp | A pulsing tone starts to drift up or down. Which way? As soon as you can tell. | keys, 2+ keys |
 | Pan | One tone, placed a little left or right. Which side? Best with headphones. | keys, 2+ keys |
 | Held | Two tones. Which one lasted longer? | keys, 2+ keys |
 | Octave | A note: which octave is it in? | mouse or tap |
