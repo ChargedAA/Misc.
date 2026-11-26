@@ -116,7 +116,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   reasoning: {
     about: 'Think fast and stay right: numbers, patterns, rules, space and words.',
     groups: [
-      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten', 'percent', 'product', 'solve'] },
+      { name: 'Quick arithmetic', desc: 'Check, compare, carry and estimate sums against the clock', ids: ['sum', 'compare', 'chain', 'ballpark', 'sevens', 'prime', 'fraction', 'rank', 'units', 'ten', 'percent', 'product', 'solve', 'operator'] },
       { name: 'Data and sets', desc: 'Read a chart; sort things by two rules at once', ids: ['graph', 'venn'] },
       { name: 'Logic', desc: 'True or false, from and, or and not', ids: ['logic'] },
       { name: 'Code', desc: 'Read a program and say what it does', ids: ['script'] },
@@ -146,7 +146,7 @@ export const GUIDES: Record<Skill, SkillGuide> = {
   ear: {
     about: 'Hear pitch: which is higher, which is in tune, which note, interval or chord.',
     groups: [
-      { name: 'Higher or lower', desc: 'Fine differences in pitch and loudness', ids: ['pitch', 'intune', 'tune', 'louder', 'glide', 'sharp'] },
+      { name: 'Higher or lower', desc: 'Fine differences in pitch and loudness', ids: ['pitch', 'intune', 'tune', 'louder', 'glide', 'sharp', 'accent'] },
       { name: 'Where and how long', desc: 'Which side a sound came from; which lasted longer', ids: ['pan', 'held'] },
       { name: 'Name it', desc: 'Octaves, notes and the distance between them', ids: ['octave', 'note', 'interval'] },
       { name: 'Harmony and melody', desc: 'Chords, scales, the shape of a tune, and how many voices', ids: ['chord', 'scale', 'contour', 'voices', 'changed'] },
@@ -295,6 +295,7 @@ export const ROUNDS: Record<string, [number, string]> = {
   pictures: [15, 'pairs'],
   source: [10, 'lists'],
   sustain: [16, 'holds'],
+  accent: [24, 'runs'],
   clicks: [15, 'bursts'],
   entry: [60, 's'],
   rank: [60, 's'],
@@ -536,4 +537,4 @@ export function lengthPlan(id: string, value: number): { scale: number; limitMs:
 }
 
 /** Games that cannot be played without sound. */
-export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'glide', 'brisk', 'missing', 'sharp', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);
+export const NEEDS_SOUND: ReadonlySet<string> = new Set(['same', 'pan', 'held', 'glide', 'brisk', 'missing', 'sharp', 'accent', 'pitch', 'tune', 'intune', 'octave', 'note', 'interval', 'chord', 'contour', 'scale', 'louder', 'voices', 'pace', 'shuffle', 'dictate', 'copy', 'pat', 'safe', 'changed', 'clicks', 'ears', 'late', 'beeps', 'sounds', 'melody', 'offbeat', 'echo', 'tempo']);

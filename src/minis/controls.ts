@@ -163,6 +163,8 @@ export const CONTROLS: Record<string, Control[]> = {
   pictures: [['TAP', 'click the cell that differs']],
   source: [['1-4', 'pick the colour'], ['TAP', 'or click']],
   sustain: [['ANY', 'hold for the beats asked'], ['TAP', 'or hold the button']],
+  operator: [['1-4', 'pick the sign'], ['TAP', 'or click']],
+  accent: [['1-8', 'the louder beat'], ['TAP', 'or click its box']],
   map: [['0-9', 'the distance in km'], ['Enter', 'answer']],
   clicks: [['0-9', 'how many'], ['Enter', 'answer']],
   entry: [['0-9', 'digits, with . / and -']],

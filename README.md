@@ -60,7 +60,7 @@ not saved; neither are practice runs.
 
 ## Games
 
-344 drills across 11 skills. Each skill's drills are listed in the order of its groups.
+346 drills across 11 skills. Each skill's drills are listed in the order of its groups.
 
 ### Reaction
 
@@ -360,6 +360,7 @@ Think fast and stay right: numbers, patterns, rules, space and words.
 | Percent | Quick percentages: 15% of 80, or what share 12 is of 48. | mouse or tap |
 | Product | Two products, like 23 × 4 and 19 × 5. Which is bigger? | keys, 2+ keys |
 | Solve | Find x: x + 7 = 15, 3x = 21, 2x + 3 = 11. | keyboard |
+| Operator | 6 □ 3 = 18. Which sign goes in the gap? | mouse or tap |
 | Graph | A line chart and a question about it. Read it fast and right. | mouse or tap |
 | Venn | Two overlapping circles with rules. Where does this shape belong? | mouse or tap |
 | Logic | Lights A, B, C and a statement like “A and not B”. True or false? | keys, 2+ keys |
@@ -437,6 +438,7 @@ Hear pitch: which is higher, which is in tune, which note, interval or chord.
 | Louder | Two tones. Was the second louder or softer? | keys, 2+ keys |
 | Glide | A tone slides up or down in pitch. Which way? The slides get smaller. | keys, 2+ keys |
 | Sharp | A pulsing tone starts to drift up or down. Which way? As soon as you can tell. | keys, 2+ keys |
+| Accent | Eight beats, one a little louder. Which one? | mouse or tap |
 | Pan | One tone, placed a little left or right. Which side? Best with headphones. | keys, 2+ keys |
 | Held | Two tones. Which one lasted longer? | keys, 2+ keys |
 | Octave | A note: which octave is it in? | mouse or tap |
