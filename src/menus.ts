@@ -219,6 +219,9 @@ export interface MenuCtx {
   favs?: string[];
   /** Find: filters and order. */
   find?: FindOpts;
+  /** Games to try next, with the reason for each; and how often each game was skipped. */
+  suggest?: { id: string; why: string }[];
+  skips?: Record<string, number>;
 }
 
 export interface FindOpts {
@@ -325,13 +328,21 @@ export function startMenu(c: MenuCtx): Menu {
       ),
     ],
     enter: { label: 'Daily', act: 'go', arg: 'daily' },
-    after: c.favs?.length
+    after: `${
+      c.suggest?.length
+        ? `<h3 class="ihead favhead">Try next</h3><div class="favs">${c.suggest
+            .map((x) => ({ x, e: entry(x.id) }))
+            .filter((o): o is { x: { id: string; why: string }; e: Entry } => !!o.e)
+            .map(({ x, e }) => `<button class="favchip sugg" data-act="go" data-arg="game:${e.id}">${gameBadge(e.name, e.skill)}<span>${e.name}<small>${esc(x.why)}</small></span></button>`)
+            .join('')}</div>`
+        : ''
+    }${c.favs?.length
       ? `<h3 class="ihead favhead">Favourites</h3><div class="favs">${c.favs
           .map((id) => entry(id))
           .filter((e): e is Entry => !!e)
           .map((e) => `<button class="favchip" data-act="go" data-arg="game:${e.id}">${gameBadge(e.name, e.skill)}<span>${e.name}</span></button>`)
           .join('')}</div>`
-      : '',
+      : ''}`,
     split: true,
     wide: true,
   };
@@ -673,13 +684,26 @@ export function gameMenu(c: MenuCtx, id: string, level?: number): Menu {
         hero: true,
         icon: toolIcon('play'),
       },
+      { label: 'Leaderboard', icon: toolIcon('boards'), desc: 'Everyone’s best at this length, keys and difficulty', act: 'go', arg: `board:${id}:${ROUNDS[id] ? lenScale : 1}:${usesKeys ? keys : 0}:${level ?? 0}:0`, code: 'KeyB', keyName: 'B' },
       { label: 'Stats', icon: toolIcon('stats'), meta: sessions ? `${sessions} sessions` : 'none yet', act: 'go', arg: `gamestats:${id}`, code: 'KeyS', keyName: 'S' },
       { label: c.favs?.includes(id) ? 'Unfavourite' : 'Favourite', icon: toolIcon('star'), desc: c.favs?.includes(id) ? 'Take it off your favourites' : 'Keep it on the home screen and first in Find', act: 'fav', arg: id, code: 'KeyV', keyName: 'V' },
       { label: 'Share', icon: toolIcon('share'), desc: 'Send someone a link straight to this game', act: 'share', arg: id, code: 'KeyK', keyName: 'K' },
     ],
     enter: { label: 'Start', act: 'play', arg: `${id}:${keys}${lv}` },
-    after: best ? `<p class="best">${bestLine(id, best)}</p>` : '',
+    after: `${best ? `<p class="best">${bestLine(id, best)}</p>` : ''}${topRuns(c, id, usesKeys ? keys : 0)}`,
   };
+}
+
+/** Your five best runs at this game (same keys, set lengths only), for the game's own page. */
+function topRuns(c: MenuCtx, id: string, keys: number): string {
+  const recs = c.history.filter((r) => r.kind === 'mini' && r.game === id && r.len !== 0 && (!keys || r.mode === keys) && typeof r.value === 'number' && Number.isFinite(r.value) && (!r.lower || r.value > 0));
+  if (recs.length < 2) return '';
+  const lower = !!recs[recs.length - 1]!.lower;
+  const top = [...recs].sort((a, b) => (lower ? a.value! - b.value! : b.value! - a.value!)).slice(0, 5);
+  const fmt = (r: RunRecord) => fmtPrimary(r.value!, { label: '', value: r.value!, unit: r.unit ?? '', decimals: r.decimals });
+  return `<h3 class="ihead favhead">Your best runs</h3><table class="tops">${top
+    .map((r, i) => `<tr><td class="rk">${i + 1}</td><td class="v">${fmt(r)}</td><td>${r.score ? `${fmtInt(r.score)} pts` : ''}</td><td class="when">${shortDate(r.at)}</td></tr>`)
+    .join('')}</table>`;
 }
 
 /** The game id a history record belongs to. */

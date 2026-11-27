@@ -2421,3 +2421,50 @@ body.showcase .screen.ready {
   padding-right: 28px;
   background-position: right 10px center;
 }
+
+/* Try next: a game and why it is suggested. */
+.favchip.sugg {
+  padding-right: 16px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.favchip.sugg span {
+  display: grid;
+  line-height: 1.25;
+}
+
+.favchip.sugg small {
+  color: var(--dim);
+  font-size: 11.5px;
+}
+
+/* A game's own page: your best runs. */
+.tops {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.tops td {
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--faint);
+  color: var(--mid);
+}
+
+.tops td.rk {
+  width: 24px;
+  color: var(--dim);
+}
+
+.tops td.v {
+  color: var(--line);
+}
+
+.tops td.when {
+  text-align: right;
+  color: var(--dim);
+}

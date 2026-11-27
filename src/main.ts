@@ -120,6 +120,60 @@ let favs: string[] = (() => {
   }
 })();
 const findOpts: FindOpts = { skill: '', need: '', sort: 'match' };
+
+/** How often each game has been skipped in a set or quit unplayed: such games are suggested less. */
+let skips: Record<string, number> = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem('tension.skips') ?? '{}') as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(v).filter(([, n]) => typeof n === 'number')) as Record<string, number>;
+  } catch {
+    return {};
+  }
+})();
+function noteSkip(id: string): void {
+  skips = { ...skips, [id]: (skips[id] ?? 0) + 1 };
+  try {
+    localStorage.setItem('tension.skips', JSON.stringify(skips));
+  } catch {
+    // Kept for this visit only.
+  }
+}
+
+/**
+ * Three games to try next: something new from the skill you play least, something you have not
+ * played in a while, and something new anywhere. Stable through the day; skipped games sink.
+ */
+function suggestions(): { id: string; why: string }[] {
+  const games = MINIS.filter((e) => quick(e.id));
+  const last = new Map<string, number>();
+  const plays = new Map<string, number>();
+  const bySkill = new Map<string, number>();
+  for (const r of history) {
+    if (r.kind !== 'mini' || !r.game) continue;
+    last.set(r.game, r.at);
+    plays.set(r.game, (plays.get(r.game) ?? 0) + 1);
+    const sk = entry(r.game)?.skill;
+    if (sk) bySkill.set(sk, (bySkill.get(sk) ?? 0) + 1);
+  }
+  // A shuffle fixed for the day, so the picks do not jump about on every visit.
+  let seed = [...today()].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) | 0, 7);
+  const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) | 0) >>> 8) / 16777216;
+  const order = games.map((e) => ({ e, r: rand() + (skips[e.id] ?? 0) * 0.35 })).sort((a, b) => a.r - b.r).map((x) => x.e);
+  const out: { id: string; why: string }[] = [];
+  const take = (e: (typeof games)[number] | undefined, why: string) => {
+    if (e && !out.some((o) => o.id === e.id)) out.push({ id: e.id, why });
+  };
+  const leastSkill = [...SKILLS].sort((a, b) => (bySkill.get(a.id) ?? 0) - (bySkill.get(b.id) ?? 0))[0]!;
+  take(order.find((e) => e.skill === leastSkill.id && !plays.has(e.id)) ?? order.find((e) => e.skill === leastSkill.id), `${leastSkill.name}: your least-played skill`);
+  const stale = [...last.entries()].filter(([id]) => (skips[id] ?? 0) < 3).sort((a, b) => a[1] - b[1])[0];
+  if (stale && Date.now() - stale[1] > 3 * 864e5) take(entry(stale[0]) as (typeof games)[number] | undefined, `not played since ${new Date(stale[1]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`);
+  take(order.find((e) => !plays.has(e.id) && !out.some((o) => o.id === e.id)), 'new to you');
+  for (const e of order) {
+    if (out.length >= 3) break;
+    take(e, (plays.get(e.id) ?? 0) < 3 ? 'barely played' : 'a change of pace');
+  }
+  return out.slice(0, 3);
+}
 setLives(settings.lives ?? 3);
 setDefaultKeys(settings.keyCount ?? 2);
 setDifficulty(settings.difficulty ?? 0);
@@ -494,7 +548,7 @@ function menuCtx(): MenuCtx {
     if (r.game === 'daily') dailyDone = Math.max(dailyDone ?? 0, r.score ?? 0);
     else if (r.game) today[r.game] = r;
   }
-  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id), dailyResume: dailyProgress()?.idx ?? null, favs, find: findOpts };
+  return { armedClear: clearArmed > 0 && performance.now() - clearArmed < 5000, settings, history, bests, daily: dailySet(), dailyDone, today, streak: streak(history), perf: perf.show, levels, custom: customLevels, bestFor: (id, k) => bestFor(id as GameId, k), online: { mode: signInMode(import.meta.env.DEV), session: settings.session, name: settings.session ? (settings.account ?? null) : null, suggested: onlineSuggested, note: onlineNote }, isNew: (id) => !seen.has(id), dailyResume: dailyProgress()?.idx ?? null, favs, find: findOpts, suggest: suggestions(), skips };
 }
 
 /** Name Google suggested at sign-in, and a message for the account block. */
@@ -1130,6 +1184,7 @@ function skipDrill(): void {
   if (!dailyQueue) return;
   const id = dailyQueue[dailyIdx]!;
   const e = entry(id);
+  noteSkip(id);
   dailyRows.push({ id, name: e?.name ?? id, skill: e?.skill ?? '', score: 0, primary: '', best: false, saved: false, skipped: true });
   if (endlessScope && dailyIdx + 1 >= dailyQueue.length) dailyQueue.push(pickNext(dailyQueue));
   nextDaily();
@@ -2003,6 +2058,8 @@ function onAction(action: string, arg: string): void {
       mini = null;
       if (dailyQueue) skipDrill();
       else {
+        // Quit within a few seconds, before really playing: counted as a skip.
+        if (miniDef && miniInputs < 3) noteSkip(miniDef.id);
         showMenu(-1);
       }
       break;
